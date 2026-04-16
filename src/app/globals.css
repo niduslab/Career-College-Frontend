@@ -1,21 +1,114 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8faf7;
-  --foreground: #111827;
-  --card: #ffffff;
-  --card-foreground: #111827;
-  --primary: #0f5e4f;
-  --primary-foreground: #f7f9f8;
-  --secondary: #d8e7e2;
-  --secondary-foreground: #0f2d26;
-  --muted: #eef3f1;
-  --muted-foreground: #4b5563;
-  --accent: #c48828;
-  --accent-foreground: #fefaf2;
-  --border: #dbe4df;
-  --input: #dbe4df;
-  --ring: #0f5e4f;
+  /* Primary scale */
+  --primary-50: #f5f2ff;
+  --primary-100: #ece7ff;
+  --primary-200: #dbd2ff;
+  --primary-300: #c0adff;
+  --primary-400: #a37fff;
+  --primary-500: #874cff;
+  --primary-600: #7c27ff;
+  --primary-700: #6f15ec;
+  --primary-800: #0a655d;
+  --primary-900: #4d10a2;
+  --primary-950: #2e076e;
+
+  /* Gray scale */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5dc;
+  --gray-400: #99a1af;
+  --gray-500: #6a7282;
+  --gray-600: #4a5565;
+  --gray-700: #364153;
+  --gray-800: #1e2939;
+  --gray-900: #101828;
+  --gray-950: #030712;
+
+  /* Semantic colors */
+  --success-500: #00a63e;
+  --danger-500: #fb2c36;
+  --warning-500: #ffa500;
+
+  /* Text colors */
+  --text-title: #100d14;
+  --text-paragraph: #4e4758;
+  --text-black: #000000;
+  --text-white: #ffffff;
+
+  /* Typography scale */
+  --fs-h1-big: 72px;
+  --fs-h1-small: 56px;
+  --fs-h2: 48px;
+  --fs-h3: 40px;
+  --fs-h4: 32px;
+  --fs-h5: 24px;
+  --fs-h6: 20px;
+  --fs-p-big: 18px;
+  --fs-p-default: 16px;
+  --fs-p-small: 14px;
+  --fs-caption: 12px;
+  --lh-heading: 1.2;
+  --lh-body: 1.5;
+
+  /* 4px spacing scale */
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-28: 28px;
+  --space-32: 32px;
+  --space-36: 36px;
+  --space-40: 40px;
+  --space-44: 44px;
+  --space-48: 48px;
+  --space-52: 52px;
+  --space-56: 56px;
+  --space-60: 60px;
+  --space-64: 64px;
+  --space-68: 68px;
+  --space-72: 72px;
+  --space-76: 76px;
+  --space-80: 80px;
+  --space-84: 84px;
+  --space-88: 88px;
+  --space-92: 92px;
+  --space-96: 96px;
+  --space-100: 100px;
+  --space-104: 104px;
+  --space-108: 108px;
+  --space-112: 112px;
+  --space-116: 116px;
+  --space-120: 120px;
+  --space-124: 124px;
+  --space-128: 128px;
+  --space-132: 132px;
+  --space-136: 136px;
+  --space-140: 140px;
+  --space-144: 144px;
+  --space-148: 148px;
+  --space-152: 152px;
+
+  /* App aliases (backward compatibility) */
+  --background: var(--gray-50);
+  --foreground: var(--text-title);
+  --card: var(--text-white);
+  --card-foreground: var(--text-title);
+  --primary: var(--primary-600);
+  --primary-foreground: var(--text-white);
+  --secondary: var(--gray-100);
+  --secondary-foreground: var(--gray-700);
+  --muted: var(--gray-100);
+  --muted-foreground: var(--gray-600);
+  --accent: var(--primary-500);
+  --accent-foreground: var(--text-white);
+  --border: var(--gray-200);
+  --input: var(--gray-300);
+  --ring: var(--primary-600);
   --radius: 0.75rem;
 }
 
@@ -24,9 +117,7 @@
 }
 
 body {
-  background:
-    radial-gradient(1200px 500px at 100% -20%, #d9eee7 0%, transparent 65%),
-    linear-gradient(180deg, #f9fbf9 0%, var(--background) 100%);
+  background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-outfit), sans-serif;
 }
@@ -35,5 +126,76 @@ h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-playfair), serif;
+  color: var(--text-title);
+}
+
+.sg-h1-big {
+  font-size: var(--fs-h1-big);
+  line-height: var(--lh-heading);
+}
+
+.sg-h1-small {
+  font-size: var(--fs-h1-small);
+  line-height: var(--lh-heading);
+}
+
+.sg-h2 {
+  font-size: var(--fs-h2);
+  line-height: var(--lh-heading);
+}
+
+.sg-h3 {
+  font-size: var(--fs-h3);
+  line-height: var(--lh-heading);
+}
+
+.sg-h4 {
+  font-size: var(--fs-h4);
+  line-height: var(--lh-heading);
+}
+
+.sg-h5 {
+  font-size: var(--fs-h5);
+  line-height: var(--lh-heading);
+}
+
+.sg-h6 {
+  font-size: var(--fs-h6);
+  line-height: var(--lh-heading);
+}
+
+.sg-p-big {
+  font-size: var(--fs-p-big);
+  line-height: var(--lh-body);
+}
+
+.sg-p-default {
+  font-size: var(--fs-p-default);
+  line-height: var(--lh-body);
+}
+
+.sg-p-small {
+  font-size: var(--fs-p-small);
+  line-height: var(--lh-body);
+}
+
+.sg-caption {
+  font-size: var(--fs-caption);
+  line-height: var(--lh-body);
+}
+
+.sg-w-r {
+  font-weight: 400;
+}
+
+.sg-w-m {
+  font-weight: 500;
+}
+
+.sg-w-sb {
+  font-weight: 600;
+}
+
+.sg-w-b {
+  font-weight: 700;
 }
