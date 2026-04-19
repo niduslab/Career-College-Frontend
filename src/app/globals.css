@@ -199,3 +199,9 @@ h4 {
 .sg-w-b {
   font-weight: 700;
 }
+
+.search-gradient-border {
+  background: linear-gradient(120deg, #6f15ec, #e196fa, #6f15ec);
+  background-size: 200% 200%;
+  background-position: 0% 50%;
+}
