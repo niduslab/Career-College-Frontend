@@ -21,7 +21,7 @@ export function Hero() {
     const ctx = gsap.context(() => {
       gsap.to("[data-hero-badge-video]", {
         y: -8,
-        duration: 3,
+        duration: 0.9,
         ease: "sine.inOut",
         autoRound: false,
         repeat: -1,
@@ -30,12 +30,12 @@ export function Hero() {
 
       gsap.to("[data-hero-badge-tutor]", {
         y: 8,
-        duration: 3,
+        duration: 0.9,
         ease: "sine.inOut",
         autoRound: false,
         repeat: -1,
         yoyo: true,
-        delay: 0.35,
+        delay: 0.12,
       });
     }, heroRef);
 
