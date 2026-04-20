@@ -198,3 +198,22 @@ body {
   background-size: 200% 200%;
   background-position: 0% 50%;
 }
+
+@keyframes industryMarquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.industry-marquee {
+  display: flex;
+  width: max-content;
+  align-items: center;
+  gap: 80px;
+  animation: industryMarquee 26s linear infinite;
+  will-change: transform;
+}

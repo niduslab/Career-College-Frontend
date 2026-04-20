@@ -8,7 +8,7 @@ import image from "@/assets/images/hero/image.webp";
 import avatar1 from "@/assets/images/hero/avatar1.webp";
 import avatar2 from "@/assets/images/hero/avatar2.webp";
 import avatar3 from "@/assets/images/hero/avatar3.webp";
-export function HeroSection() {
+export function Hero() {
   const heroRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
