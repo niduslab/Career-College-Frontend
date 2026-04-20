@@ -122,13 +122,6 @@ body {
   font-family: var(--font-outfit), sans-serif;
 }
 
-h1,
-h2,
-h3,
-h4 {
-  color: var(--text-title);
-}
-
 .sg-h1-big {
   font-size: var(--fs-h1-big);
   line-height: var(--lh-heading);

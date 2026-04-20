@@ -33,6 +33,11 @@ export function Navbar() {
   const searchBorderRefs = useRef<Array<HTMLDivElement | null>>([]);
   const mobilePanelRef = useRef<HTMLDivElement | null>(null);
 
+  const toggleMobileMenu = () => {
+    setIsMobileOpen((prev) => !prev);
+    setMobileDropdown(null);
+  };
+
   useEffect(() => {
     const desktopBorder = searchBorderRefs.current[0];
     const mobileBorder = searchBorderRefs.current[1];
@@ -198,23 +203,31 @@ export function Navbar() {
 
         <button
           type="button"
-          className="relative ml-auto inline-flex h-10 cursor-pointer w-10 items-center justify-center rounded-md border border-(--gray-300) text-(--text-title) transition-colors duration-300 hover:bg-(--gray-50) xl:hidden"
+          className="relative ml-auto inline-flex h-10 w-10 cursor-pointer touch-manipulation items-center justify-center rounded-md border border-(--gray-300) text-(--text-title) transition-colors duration-200 active:bg-(--gray-50) xl:hidden"
           aria-label="Toggle navigation"
           aria-expanded={isMobileOpen}
-          onClick={() => {
-            setIsMobileOpen((prev) => !prev);
-            setMobileDropdown(null);
+          onPointerUp={(event) => {
+            event.preventDefault();
+            toggleMobileMenu();
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" && event.key !== " ") {
+              return;
+            }
+
+            event.preventDefault();
+            toggleMobileMenu();
           }}
         >
           <span
-            className={`absolute transition-all duration-300 ${
+            className={`pointer-events-none absolute transition-all duration-300 ${
               isMobileOpen ? "rotate-90 opacity-0" : "rotate-0 opacity-100"
             }`}
           >
             <Menu size={20} />
           </span>
           <span
-            className={`absolute transition-all duration-300 ${
+            className={`pointer-events-none absolute transition-all duration-300 ${
               isMobileOpen ? "rotate-0 opacity-100" : "-rotate-90 opacity-0"
             }`}
           >
@@ -230,7 +243,7 @@ export function Navbar() {
             : "pointer-events-none grid-rows-[0fr] opacity-0"
         }`}
       >
-        <div className="border-t border-(--gray-200) bg-(--text-white)">
+        <div className="min-h-0 border-t border-(--gray-200) bg-(--text-white)">
           <div ref={mobilePanelRef} className="mx-auto max-w-155 px-4 py-4">
             <div
               ref={(el) => {
@@ -280,23 +293,31 @@ export function Navbar() {
                   }`}
                 />
               </button>
-              {mobileDropdown === "categories" && (
-                <div className="-mt-2 rounded-xl border border-(--gray-200) p-2">
-                  {CATEGORY_DROPDOWN.map((item) => (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      className="block rounded-lg px-3 py-2 text-sm text-(--text-title) hover:bg-(--primary-50) hover:text-(--primary-700)"
-                      onClick={() => {
-                        setIsMobileOpen(false);
-                        setMobileDropdown(null);
-                      }}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
+              <div
+                className={`grid overflow-hidden transition-[grid-template-rows,opacity,margin] duration-300 ease-out ${
+                  mobileDropdown === "categories"
+                    ? "mt-1 grid-rows-[1fr] opacity-100"
+                    : "mt-0 grid-rows-[0fr] opacity-0"
+                }`}
+              >
+                <div className="min-h-0">
+                  <div className="rounded-xl border border-(--gray-200) p-2">
+                    {CATEGORY_DROPDOWN.map((item) => (
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        className="block rounded-lg px-3 py-2 text-sm text-(--text-title) hover:bg-(--primary-50) hover:text-(--primary-700)"
+                        onClick={() => {
+                          setIsMobileOpen(false);
+                          setMobileDropdown(null);
+                        }}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              )}
+              </div>
 
               <button
                 type="button"
@@ -315,23 +336,31 @@ export function Navbar() {
                   }`}
                 />
               </button>
-              {mobileDropdown === "courses" && (
-                <div className="-mt-2 rounded-xl border border-(--gray-200) p-2">
-                  {COURSES_DROPDOWN.map((item) => (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      className="block rounded-lg px-3 py-2 text-sm text-(--text-title) hover:bg-(--primary-50) hover:text-(--primary-700)"
-                      onClick={() => {
-                        setIsMobileOpen(false);
-                        setMobileDropdown(null);
-                      }}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
+              <div
+                className={`grid overflow-hidden transition-[grid-template-rows,opacity,margin] duration-300 ease-out ${
+                  mobileDropdown === "courses"
+                    ? "mt-1 grid-rows-[1fr] opacity-100"
+                    : "mt-0 grid-rows-[0fr] opacity-0"
+                }`}
+              >
+                <div className="min-h-0">
+                  <div className="rounded-xl border border-(--gray-200) p-2">
+                    {COURSES_DROPDOWN.map((item) => (
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        className="block rounded-lg px-3 py-2 text-sm text-(--text-title) hover:bg-(--primary-50) hover:text-(--primary-700)"
+                        onClick={() => {
+                          setIsMobileOpen(false);
+                          setMobileDropdown(null);
+                        }}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              )}
+              </div>
 
               <Link
                 href={NAV_LINKS[2].href}
