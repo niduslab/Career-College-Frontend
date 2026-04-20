@@ -15,7 +15,7 @@ export function IndustryStrip() {
   return (
     <section className="w-full lg:mt-25 mt-10">
       <div className=" px-4 md:px-6 lg:px-8">
-        <h2 className=" text-center text-[34px] leading-12 font-semibold tracking-[-0.4px] text-(--text-title) md:text-[40px] lg:text-[40px]">
+        <h2 className=" text-center text-[24px] lg:leading-12 font-semibold tracking-[-0.4px] text-(--text-title) md:text-[40px] lg:text-[40px]">
           Where Leading Industries
           <br />
           Come Together

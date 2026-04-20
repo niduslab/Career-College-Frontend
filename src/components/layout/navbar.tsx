@@ -376,7 +376,7 @@ export function Navbar() {
 
             <div
               data-mobile-stagger
-              className="mt-4 flex flex-wrap items-center justify-center gap-3"
+              className="mt-4 flex flex-wrap items-center justify-start gap-3"
             >
               <button
                 type="button"
