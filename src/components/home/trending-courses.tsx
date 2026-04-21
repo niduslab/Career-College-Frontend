@@ -1,8 +1,4 @@
-"use client";
-
-import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import type { StaticImageData } from "next/image";
 import {
   ArrowRight,
   BookOpen,
@@ -11,185 +7,57 @@ import {
   Star,
   UsersRound,
 } from "lucide-react";
-import Image1 from "@/assets/images/popular-courses/image1.webp";
-import Image2 from "@/assets/images/popular-courses/image2.webp";
-import Image3 from "@/assets/images/popular-courses/image3.webp";
-import Image4 from "@/assets/images/popular-courses/image4.webp";
-import Image5 from "@/assets/images/popular-courses/image5.webp";
-import Image6 from "@/assets/images/popular-courses/image6.webp";
-import { gsap, prepareGsap } from "@/lib/gsap";
+import image1 from "@/assets/images/popular-courses/image1.webp";
+import image2 from "@/assets/images/popular-courses/image2.webp";
+import image3 from "@/assets/images/popular-courses/image3.webp";
 
-type CourseCard = {
-  category: CategoryTab;
-  title: string;
-  instructor: string;
-  lessons: string;
-  duration: string;
-  students: string;
-  rating: string;
-  price: string;
-  image: StaticImageData;
-};
-
-const CATEGORY_TABS = [
-  "All Courses",
-  "UI/UX Design",
-  "Digital Marketing",
-  "Machine Learning",
-  "Web Development",
-  "Health & Fitness",
-  "Lifestyle",
-] as const;
-
-type CategoryTab = (typeof CATEGORY_TABS)[number];
-
-const COURSES: CourseCard[] = [
+const TRENDING_COURSES = [
   {
-    category: "Digital Marketing",
-    title: "Complete Digital Marketing Mastery Course",
-    instructor: "Jose Portello",
-    lessons: "56 Lessons",
-    duration: "10h 32 min",
-    students: "232 Students",
-    rating: "4.6",
-    price: "$42.99",
-    image: Image1,
-  },
-  {
-    category: "Machine Learning",
-    title: "AI Engineer Agentic Track: The Complete Agent & MCP Course",
-    instructor: "Jose Portello",
-    lessons: "56 Lessons",
-    duration: "10h 32 min",
-    students: "232 Students",
-    rating: "4.6",
-    price: "$42.99",
-    image: Image2,
-  },
-  {
-    category: "Health & Fitness",
-    title: "Diploma in Healthcare Administration & Leadership",
-    instructor: "Jose Portello",
-    lessons: "56 Lessons",
-    duration: "10h 32 min",
-    students: "232 Students",
-    rating: "4.6",
-    price: "$42.99",
-    image: Image3,
-  },
-  {
-    category: "UI/UX Design",
-    title: "Complete Digital Marketing Mastery Course",
-    instructor: "Jose Portello",
-    lessons: "56 Lessons",
-    duration: "10h 32 min",
-    students: "232 Students",
-    rating: "4.6",
-    price: "$42.99",
-    image: Image4,
-  },
-  {
-    category: "Lifestyle",
-    title: "Complete Digital Marketing Mastery Course",
-    instructor: "Jose Portello",
-    lessons: "56 Lessons",
-    duration: "10h 32 min",
-    students: "232 Students",
-    rating: "4.6",
-    price: "$42.99",
-    image: Image5,
-  },
-  {
-    category: "Web Development",
     title: "Complete Full-Stack Web Development",
-    instructor: "Jose Portello",
+    instructor: "Jose Portella",
     lessons: "56 Lessons",
     duration: "10h 32 min",
     students: "232 Students",
     rating: "4.6",
     price: "$42.99",
-    image: Image6,
+    image: image1,
+  },
+  {
+    title: "Learn Python Programming - Beginner to Master",
+    instructor: "Jose Portella",
+    lessons: "56 Lessons",
+    duration: "10h 32 min",
+    students: "232 Students",
+    rating: "4.6",
+    price: "$42.99",
+    image: image2,
+  },
+  {
+    title: "Digital Marketing Powered By AI for Beginners",
+    instructor: "Jose Portella",
+    lessons: "56 Lessons",
+    duration: "10h 32 min",
+    students: "232 Students",
+    rating: "4.6",
+    price: "$42.99",
+    image: image3,
   },
 ];
 
-export function PopularCourses() {
-  const [activeTab, setActiveTab] = useState<CategoryTab>("All Courses");
-  const sectionRef = useRef<HTMLElement | null>(null);
-
-  const filteredCourses = useMemo(() => {
-    if (activeTab === "All Courses") {
-      return COURSES;
-    }
-
-    return COURSES.filter((course) => course.category === activeTab);
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (!sectionRef.current) {
-      return;
-    }
-
-    prepareGsap();
-
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        "[data-course-card]",
-        { opacity: 0, y: 14 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.42,
-          stagger: 0.06,
-          ease: "power2.out",
-          clearProps: "opacity,transform",
-        },
-      );
-    }, sectionRef);
-
-    return () => {
-      ctx.revert();
-    };
-  }, [activeTab]);
-
+export function TrendingCourses() {
   return (
-    <section
-      ref={sectionRef}
-      className="w-full  mt-10 lg:mt-25 bg-(--gray-50) py-12 md:py-16 lg:py-20"
-    >
+    <section className="w-full  mt-10 lg:mt-25 bg-(--gray-50) py-12 md:py-16 lg:py-20">
       <div className="mx-auto w-full max-w-310 px-4 md:px-6 lg:px-8">
         <h2 className="text-center text-[24px] leading-[1.12] font-semibold tracking-[-0.03em] text-(--text-title) md:text-[40px] lg:text-[40px]">
-          Our Popular Courses
+          Learn What&apos;s Trending.
           <br />
-          You Can Start
+          Build What&apos;s Next.
         </h2>
 
-        <div className="-mx-4 mt-6 overflow-x-auto px-4 pb-2 md:mx-0 md:mt-8 md:overflow-visible md:px-0 md:pb-0">
-          <div className="flex w-max flex-nowrap items-center gap-4 md:w-auto md:flex-wrap md:justify-center">
-            {CATEGORY_TABS.map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                aria-pressed={activeTab === tab}
-                onClick={() => {
-                  setActiveTab(tab);
-                }}
-                className={`cursor-pointer whitespace-nowrap h-10 rounded-md px-4 py-1 border sg-p-default   transition-colors md:text-sm ${
-                  activeTab === tab
-                    ? "border-(--primary-700) bg-(--primary-700) text-(--text-white) font-medium"
-                    : "border-(--gray-300) bg-(--gray-100) text-(--text-title) hover:border-(--primary-300) font-normal"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div className="mt-10 grid lg:gap-5 gap-4 md:mt-12 lg:mt-15 md:grid-cols-2 lg:grid-cols-3">
-          {filteredCourses.map((course, index) => (
+          {TRENDING_COURSES.map((course, index) => (
             <article
-              key={`${course.title}-${index}`}
-              data-course-card
+              key={course.title}
               className="rounded-2xl  border border-(--gray-200) bg-(--text-white) p-4"
             >
               <div
@@ -224,6 +92,7 @@ export function PopularCourses() {
                     {course.rating}
                   </span>
                 </div>
+
                 <p className="mt-2 sg-p-small font-normal text-(--text-paragraph)">
                   By {course.instructor}
                 </p>

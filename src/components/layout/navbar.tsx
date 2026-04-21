@@ -195,7 +195,7 @@ export function Navbar() {
           </button>
           <button
             type="button"
-            className="h-10 shrink-0 whitespace-nowrap rounded-md bg-(--primary-700) px-5 sg-p-default font-semibold text-(--text-white) transition-colors hover:bg-(--primary-700)"
+            className="h-10 cursor-pointer shrink-0 whitespace-nowrap rounded-md bg-(--primary-700) px-5 sg-p-default font-semibold text-(--text-white) transition-colors hover:bg-(--primary-700)"
           >
             Sign Up
           </button>

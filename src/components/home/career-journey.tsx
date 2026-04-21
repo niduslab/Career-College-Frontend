@@ -136,7 +136,7 @@ export function CareerJourney() {
 
           <button
             type="button"
-            className="mt-8 inline-flex h-11.75 w-fit items-center gap-2 rounded-md bg-(--primary-700) px-5 lg:sg-p-default sg-p-small font-semibold text-(--text-white) transition-transform duration-300 hover:-translate-y-px"
+            className="mt-8 inline-flex cursor-pointer h-11.75 w-fit items-center gap-2 rounded-md bg-(--primary-700) px-5 lg:sg-p-default sg-p-small font-semibold text-(--text-white) transition-transform duration-300 hover:-translate-y-px"
           >
             Explore Our Courses
             <ArrowRight size={20} strokeWidth={1.5} />
