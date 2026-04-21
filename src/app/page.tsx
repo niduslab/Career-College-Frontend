@@ -7,6 +7,7 @@ import { LearningJourneySteps } from "@/components/home/learning-journey-steps";
 import { Testimonials } from "@/components/home/testimonials";
 import { InstructorsSection } from "@/components/home/instructors-section";
 import { UpcomingWebinars } from "@/components/home/upcoming-webinars";
+import { FaqSection } from "@/components/home/faq-section";
 
 export default function HomePage() {
   return (
@@ -20,6 +21,7 @@ export default function HomePage() {
       <InstructorsSection />
       <Testimonials />
       <UpcomingWebinars />
+      <FaqSection />
     </>
   );
 }
