@@ -154,8 +154,10 @@ export function Hero() {
               <Video size={16} strokeWidth={2.2} />
             </span>
             <p className="leading-tight whitespace-nowrap text-(--text-title)">
-              <span className="block sg-p-small font-medium">120+</span>
-              <span className="block sg-p-caption text-(--text-paragraph) font-normal">
+              <span className="block lg:sg-p-small sg-caption font-medium">
+                120+
+              </span>
+              <span className="block sg-caption lg:sg-p-small text-(--text-paragraph) font-normal">
                 Video Course
               </span>
             </p>
@@ -170,8 +172,10 @@ export function Hero() {
               <UserRoundCheck size={16} strokeWidth={2.2} />
             </span>
             <p className="leading-tight whitespace-nowrap text-(--text-title)">
-              <span className="block sg-p-small font-medium">30+</span>
-              <span className="block sg-p-caption text-(--text-paragraph) font-normal">
+              <span className="block lg:sg-p-small sg-caption font-medium">
+                30+
+              </span>
+              <span className="block lg:sg-p-small sg-caption text-(--text-paragraph) font-normal">
                 Expert Tutor
               </span>
             </p>
