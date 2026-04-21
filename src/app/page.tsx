@@ -4,6 +4,7 @@ import { IndustryStrip } from "@/components/home/industry-strip";
 import { PopularCourses } from "@/components/home/popular-courses";
 import { TrendingCourses } from "@/components/home/trending-courses";
 import { LearningJourneySteps } from "@/components/home/learning-journey-steps";
+import { InstructorsSection } from "@/components/home/instructors-section";
 
 export default function HomePage() {
   return (
@@ -14,6 +15,7 @@ export default function HomePage() {
       <CareerJourney />
       <TrendingCourses />
       <LearningJourneySteps />
+      <InstructorsSection />
     </>
   );
 }
