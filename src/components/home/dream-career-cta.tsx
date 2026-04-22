@@ -109,7 +109,7 @@ export function DreamCareerCta() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="mt-10   w-full lg:mt-25">
+    <section ref={sectionRef} className="mt-10 lg:mb-25 mb-10  w-full lg:mt-25">
       <div className="mx-auto w-full max-w-310 px-4 md:px-6 lg:px-8">
         <div className="relative min-h-90 overflow-hidden rounded-2xl border border-(--gray-200) bg-[linear-gradient(90deg,#f3f0ff_0%,#f6f4ef_100%)] px-3 py-7 sm:px-6 sm:py-10 md:min-h-106 md:px-8 md:py-12 lg:min-h-112 lg:px-10 lg:py-14">
           <div

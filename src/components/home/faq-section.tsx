@@ -87,11 +87,9 @@ export function FaqSection() {
                 <button
                   type="button"
                   onClick={() => {
-                    setActiveIndex((current) =>
-                      current === index ? -1 : index,
-                    );
+                    setActiveIndex(index);
                   }}
-                  className="flex w-full items-start justify-between gap-4 text-left"
+                  className="flex w-full items-start justify-between gap-4 text-left cursor-pointer"
                 >
                   <span
                     className={`lg:sg-h6 sg-p-big font-semibold ${
@@ -116,13 +114,13 @@ export function FaqSection() {
                 </button>
 
                 <div
-                  className={`grid transition-[grid-template-rows,opacity,margin] duration-300 ease-out ${
+                  className={`overflow-hidden transition-[max-height,opacity,margin] duration-300 ease-out ${
                     isActive
-                      ? "mt-4 grid-rows-[1fr] opacity-100"
-                      : "mt-0 grid-rows-[0fr] opacity-0"
+                      ? "mt-4 max-h-40 opacity-100"
+                      : "mt-0 max-h-0 opacity-0"
                   }`}
                 >
-                  <p className="max-w-170 overflow-hidden font-normal lg:sg-p-default sg-caption text-white">
+                  <p className="max-w-170 font-normal lg:sg-p-default sg-caption text-white">
                     {item.answer}
                   </p>
                 </div>
