@@ -8,6 +8,7 @@ import { Testimonials } from "@/components/home/testimonials";
 import { InstructorsSection } from "@/components/home/instructors-section";
 import { UpcomingWebinars } from "@/components/home/upcoming-webinars";
 import { FaqSection } from "@/components/home/faq-section";
+import { InsightsResources } from "@/components/home/insights-resources";
 
 export default function HomePage() {
   return (
@@ -22,6 +23,7 @@ export default function HomePage() {
       <Testimonials />
       <UpcomingWebinars />
       <FaqSection />
+      <InsightsResources />
     </>
   );
 }
