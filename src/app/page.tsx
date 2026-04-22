@@ -9,6 +9,7 @@ import { InstructorsSection } from "@/components/home/instructors-section";
 import { UpcomingWebinars } from "@/components/home/upcoming-webinars";
 import { FaqSection } from "@/components/home/faq-section";
 import { InsightsResources } from "@/components/home/insights-resources";
+import { DreamCareerCta } from "@/components/home/dream-career-cta";
 
 export default function HomePage() {
   return (
@@ -24,6 +25,7 @@ export default function HomePage() {
       <UpcomingWebinars />
       <FaqSection />
       <InsightsResources />
+      <DreamCareerCta />
     </>
   );
 }
