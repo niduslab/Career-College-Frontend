@@ -27,6 +27,7 @@ const COURSES_DROPDOWN = [
 
 export function Navbar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [mobileDropdown, setMobileDropdown] = useState<
     "categories" | "courses" | null
   >(null);
@@ -94,8 +95,42 @@ export function Navbar() {
     };
   }, [isMobileOpen]);
 
+  useEffect(() => {
+    const onScroll = () => {
+      setIsScrolled(window.scrollY > 8);
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 1280) {
+        setIsMobileOpen(false);
+        setMobileDropdown(null);
+      }
+    };
+
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
   return (
-    <header className="w-full border-b border-(--gray-200) bg-(--text-white)">
+    <header
+      className={`sticky top-0 z-50 w-full border-b transition-[border-color,box-shadow,background-color,backdrop-filter] duration-300 ${
+        isScrolled
+          ? "border-(--gray-200) bg-(--text-white)/95 shadow-[0_8px_24px_rgba(16,24,40,0.08)] backdrop-blur-md"
+          : "border-(--gray-200) bg-(--text-white)"
+      }`}
+    >
       <div className="mx-auto flex h-18 w-full max-w-310 items-center lg:gap-10 gap-6  px-4 md:px-6 lg:px-8">
         <Link
           href="/"
