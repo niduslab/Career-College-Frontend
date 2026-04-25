@@ -48,10 +48,10 @@ export function Hero() {
     <main className="relative overflow-hidden bg-(--gray-50) pb-14 pt-8 md:pt-10">
       <section
         ref={heroRef}
-        className="relative mx-auto grid w-full max-w-310 items-center gap-8 rounded-[28px] px-4 py-5 md:px-6 md:py-8 lg:grid-cols-[1.04fr_0.96fr] lg:gap-10 lg:px-8 lg:py-9"
+        className="relative isolate mx-auto grid w-full max-w-310 items-center gap-8 rounded-[28px] px-4 py-5 md:px-6 md:py-8 lg:grid-cols-[1.04fr_0.96fr] lg:gap-10 lg:px-8 lg:py-9"
       >
         <div
-          className="pointer-events-none absolute"
+          className="pointer-events-none absolute -z-10"
           style={{
             width: "386px",
             height: "386px",
@@ -63,7 +63,7 @@ export function Hero() {
           }}
         />
         <div
-          className="pointer-events-none absolute"
+          className="pointer-events-none absolute -z-10"
           style={{
             width: "282px",
             height: "282px",
@@ -93,7 +93,7 @@ export function Hero() {
           <div className="mt-7 flex flex-wrap items-center gap-4">
             <button
               type="button"
-              className="inline-flex h-12 items-center gap-2 sg-p-default   rounded-md bg-(--primary-700) px-6   font-semibold text-(--text-white)   transition-transform duration-300 hover:-translate-y-px"
+              className="inline-flex h-12 cursor-pointer items-center gap-2 sg-p-default   rounded-md bg-(--primary-700) px-6   font-semibold text-(--text-white)   transition-transform duration-300"
             >
               Explore Our Courses
               <ArrowRight size={16} strokeWidth={2.3} />
@@ -154,8 +154,10 @@ export function Hero() {
               <Video size={16} strokeWidth={2.2} />
             </span>
             <p className="leading-tight whitespace-nowrap text-(--text-title)">
-              <span className="block sg-p-small font-medium">120+</span>
-              <span className="block sg-p-caption text-(--text-paragraph) font-normal">
+              <span className="block lg:sg-p-small sg-caption font-medium">
+                120+
+              </span>
+              <span className="block sg-caption lg:sg-p-small text-(--text-paragraph) font-normal">
                 Video Course
               </span>
             </p>
@@ -170,8 +172,10 @@ export function Hero() {
               <UserRoundCheck size={16} strokeWidth={2.2} />
             </span>
             <p className="leading-tight whitespace-nowrap text-(--text-title)">
-              <span className="block sg-p-small font-medium">30+</span>
-              <span className="block sg-p-caption text-(--text-paragraph) font-normal">
+              <span className="block lg:sg-p-small sg-caption font-medium">
+                30+
+              </span>
+              <span className="block lg:sg-p-small sg-caption text-(--text-paragraph) font-normal">
                 Expert Tutor
               </span>
             </p>
