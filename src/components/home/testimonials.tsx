@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Quote,
 } from "lucide-react";
+import { gsap, prepareGsap } from "@/lib/gsap";
 import avatar1 from "@/assets/images/hero/avatar1.webp";
 import avatar2 from "@/assets/images/hero/avatar2.webp";
 import avatar3 from "@/assets/images/hero/avatar3.webp";
@@ -64,6 +65,8 @@ const TESTIMONIALS = [
 
 export function Testimonials() {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
   const [activeArrow, setActiveArrow] = useState<"left" | "right">("right");
 
   const getStepWidth = useCallback(() => {
@@ -117,6 +120,58 @@ export function Testimonials() {
   }, [getStepWidth]);
 
   useEffect(() => {
+    if (!sectionRef.current) {
+      return;
+    }
+
+    prepareGsap();
+
+    const ctx = gsap.context(() => {
+      // Heading fade-in
+      if (headingRef.current) {
+        gsap.fromTo(
+          headingRef.current,
+          { opacity: 0, y: 30 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: headingRef.current,
+              start: "top 80%",
+              toggleActions: "play none none none",
+            },
+          }
+        );
+      }
+
+      // Testimonial cards fade-in
+      gsap.fromTo(
+        "[data-testimonial-card]",
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          stagger: 0.08,
+          ease: "power2.out",
+          clearProps: "opacity,transform",
+          scrollTrigger: {
+            trigger: scrollerRef.current,
+            start: "top 75%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
+    }, sectionRef);
+
+    return () => {
+      ctx.revert();
+    };
+  }, []);
+
+  useEffect(() => {
     const intervalId = window.setInterval(() => {
       setActiveArrow("right");
       slideNext();
@@ -128,10 +183,13 @@ export function Testimonials() {
   }, [slideNext]);
 
   return (
-    <section className="w-full mt-10 lg:mt-25 py-12 md:py-16 lg:py-20">
+    <section ref={sectionRef} className="w-full mt-10 lg:mt-25 py-12 md:py-16 lg:py-20">
       <div className="mx-auto w-full max-w-310 px-4 md:px-6 lg:px-8">
         <div className="flex items-start justify-between gap-4 md:items-center">
-          <h2 className="text-[30px] leading-[1.1] font-semibold tracking-[-0.03em] text-(--text-title) md:text-[40px] lg:text-[40px]">
+          <h2
+            ref={headingRef}
+            className="text-[30px] leading-[1.1] font-semibold tracking-[-0.03em] text-(--text-title) md:text-[40px] lg:text-[40px]"
+          >
             Why People Choose
             <br />
             Career College

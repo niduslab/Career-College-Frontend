@@ -19,6 +19,46 @@ export function Hero() {
     prepareGsap();
 
     const ctx = gsap.context(() => {
+      // Initial fade-in + slide-up animation for hero content
+      gsap.fromTo(
+        "[data-hero-left]",
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          ease: "power2.out",
+        }
+      );
+
+      // Fade-in + slide-up for hero image with slight delay
+      gsap.fromTo(
+        "[data-hero-image-wrap]",
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          ease: "power2.out",
+          delay: 0.2,
+        }
+      );
+
+      // Fade-in badges with stagger
+      gsap.fromTo(
+        "[data-hero-badge]",
+        { opacity: 0, scale: 0.8 },
+        {
+          opacity: 1,
+          scale: 1,
+          duration: 0.6,
+          ease: "back.out",
+          stagger: 0.15,
+          delay: 0.4,
+        }
+      );
+
+      // Floating animation for badges (continuous after fade-in)
       gsap.to("[data-hero-badge-video]", {
         y: -8,
         duration: 0.9,
@@ -26,6 +66,7 @@ export function Hero() {
         autoRound: false,
         repeat: -1,
         yoyo: true,
+        delay: 0.6,
       });
 
       gsap.to("[data-hero-badge-tutor]", {
@@ -35,7 +76,7 @@ export function Hero() {
         autoRound: false,
         repeat: -1,
         yoyo: true,
-        delay: 0.12,
+        delay: 0.72,
       });
     }, heroRef);
 

@@ -38,6 +38,8 @@ const HIGHLIGHTS = [
 
 export function CareerJourney() {
   const sectionRef = useRef<HTMLElement | null>(null);
+  const imageRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!sectionRef.current) {
@@ -55,6 +57,66 @@ export function CareerJourney() {
     }
 
     const ctx = gsap.context(() => {
+      // Image fade-in + slide from left
+      if (imageRef.current) {
+        gsap.fromTo(
+          imageRef.current,
+          { opacity: 0, x: -50 },
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.9,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: imageRef.current,
+              start: "top 75%",
+              toggleActions: "play none none none",
+            },
+          }
+        );
+      }
+
+      // Content fade-in + slide from right
+      if (contentRef.current) {
+        gsap.fromTo(
+          contentRef.current,
+          { opacity: 0, x: 50 },
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.9,
+            ease: "power2.out",
+            delay: 0.15,
+            scrollTrigger: {
+              trigger: contentRef.current,
+              start: "top 75%",
+              toggleActions: "play none none none",
+            },
+          }
+        );
+      }
+
+      // Highlight cards staggered animation
+      gsap.fromTo(
+        "[data-highlight-card]",
+        { opacity: 0, y: 20, scale: 0.95 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.6,
+          stagger: 0.1,
+          ease: "power2.out",
+          clearProps: "opacity,transform",
+          scrollTrigger: {
+            trigger: "[data-highlight-card]",
+            start: "top 75%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
+
+      // Floating card animation
       gsap.to("[data-average-card]", {
         y: -8,
         duration: 0.9,
@@ -62,6 +124,7 @@ export function CareerJourney() {
         autoRound: false,
         repeat: -1,
         yoyo: true,
+        delay: 0.6,
       });
     }, sectionRef);
 
@@ -73,7 +136,7 @@ export function CareerJourney() {
   return (
     <section ref={sectionRef} className="mt-0 w-full py-10 md:py-16 lg:mt-25">
       <div className="mx-auto grid w-full max-w-310 items-stretch gap-8 rounded-[28px] p-4 md:gap-10 md:p-6 lg:grid-cols-[1fr_1.02fr] lg:gap-10 lg:p-8">
-        <div className="relative h-full overflow-hidden rounded-2xl">
+        <div ref={imageRef} className="relative h-full overflow-hidden rounded-2xl">
           <Image
             src={image}
             alt="Student focused on online learning"
@@ -103,7 +166,7 @@ export function CareerJourney() {
           </div>
         </div>
 
-        <div className="flex h-full max-w-145 flex-col justify-between">
+        <div ref={contentRef} className="flex h-full max-w-145 flex-col justify-between">
           <div>
             <h2 className="text-[24px] leading-[1.1] font-semibold tracking-[-0.03em] text-(--text-title) md:text-[40px] xl:text-[40px] lg:text-[30px]">
               Where Your Career Journey
@@ -119,7 +182,7 @@ export function CareerJourney() {
 
             <div className="mt-7 grid gap-4 md:mt-10 sm:grid-cols-2 sm:gap-5">
               {HIGHLIGHTS.map(({ title, description, Icon }) => (
-                <article key={title} className="p-3">
+                <article key={title} data-highlight-card className="p-3">
                   <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-(--gray-100) text-(--primary-700)">
                     <Icon size={24} strokeWidth={2} />
                   </span>

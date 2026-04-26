@@ -115,6 +115,8 @@ const COURSES: CourseCard[] = [
 export function PopularCourses() {
   const [activeTab, setActiveTab] = useState<CategoryTab>("All Courses");
   const sectionRef = useRef<HTMLElement | null>(null);
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
+  const tabsRef = useRef<HTMLDivElement | null>(null);
 
   const filteredCourses = useMemo(() => {
     if (activeTab === "All Courses") {
@@ -132,17 +134,81 @@ export function PopularCourses() {
     prepareGsap();
 
     const ctx = gsap.context(() => {
+      // Heading fade-in + slide-up on scroll
+      if (headingRef.current) {
+        gsap.fromTo(
+          headingRef.current,
+          { opacity: 0, y: 30 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: headingRef.current,
+              start: "top 80%",
+              toggleActions: "play none none none",
+            },
+          }
+        );
+      }
+
+      // Tabs fade-in with slight delay
+      if (tabsRef.current) {
+        gsap.fromTo(
+          tabsRef.current,
+          { opacity: 0, y: 20 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.7,
+            ease: "power2.out",
+            delay: 0.15,
+            scrollTrigger: {
+              trigger: tabsRef.current,
+              start: "top 80%",
+              toggleActions: "play none none none",
+            },
+          }
+        );
+      }
+
+      // Course cards staggered animation
       gsap.fromTo(
         "[data-course-card]",
-        { opacity: 0, y: 14 },
+        { opacity: 0, y: 24, scale: 0.95 },
         {
           opacity: 1,
           y: 0,
-          duration: 0.42,
-          stagger: 0.06,
+          scale: 1,
+          duration: 0.6,
+          stagger: 0.08,
           ease: "power2.out",
           clearProps: "opacity,transform",
-        },
+          scrollTrigger: {
+            trigger: "[data-course-card]",
+            start: "top 75%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
+
+      // View All button fade-in
+      gsap.fromTo(
+        "[data-view-all-btn]",
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          ease: "power2.out",
+          delay: 0.3,
+          scrollTrigger: {
+            trigger: "[data-view-all-btn]",
+            start: "top 85%",
+            toggleActions: "play none none none",
+          },
+        }
       );
     }, sectionRef);
 
@@ -157,13 +223,19 @@ export function PopularCourses() {
       className="w-full  mt-10 lg:mt-25 bg-(--gray-50) py-12 md:py-16 lg:py-20"
     >
       <div className="mx-auto w-full max-w-310 px-4 md:px-6 lg:px-8">
-        <h2 className="text-center text-[24px] leading-[1.12] font-semibold tracking-[-0.03em] text-(--text-title) md:text-[40px] lg:text-[40px]">
+        <h2
+          ref={headingRef}
+          className="text-center text-[24px] leading-[1.12] font-semibold tracking-[-0.03em] text-(--text-title) md:text-[40px] lg:text-[40px]"
+        >
           Our Popular Courses
           <br />
           You Can Start
         </h2>
 
-        <div className="-mx-4 mt-6 overflow-x-auto px-4 pb-2 md:mx-0 md:mt-8 md:overflow-visible md:px-0 md:pb-0">
+        <div
+          ref={tabsRef}
+          className="-mx-4 mt-6 overflow-x-auto px-4 pb-2 md:mx-0 md:mt-8 md:overflow-visible md:px-0 md:pb-0"
+        >
           <div className="flex w-max flex-nowrap items-center gap-4 md:w-auto md:flex-wrap md:justify-center">
             {CATEGORY_TABS.map((tab) => (
               <button
@@ -261,6 +333,7 @@ export function PopularCourses() {
         <div className="mt-8 flex justify-center md:mt-10">
           <button
             type="button"
+            data-view-all-btn
             className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-md bg-(--primary-700) px-6 sg-p-default font-semibold text-(--text-white)"
           >
             View All Courses
