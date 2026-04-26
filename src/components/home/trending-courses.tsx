@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import {
   ArrowRight,
@@ -7,6 +10,7 @@ import {
   Star,
   UsersRound,
 } from "lucide-react";
+import { gsap, prepareGsap } from "@/lib/gsap";
 import image1 from "@/assets/images/popular-courses/image1.webp";
 import image2 from "@/assets/images/popular-courses/image2.webp";
 import image3 from "@/assets/images/popular-courses/image3.webp";
@@ -45,20 +49,132 @@ const TRENDING_COURSES = [
 ];
 
 export function TrendingCourses() {
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
+  const cardsContainerRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!sectionRef.current) {
+      return;
+    }
+
+    prepareGsap();
+
+    const ctx = gsap.context(() => {
+      // Heading animation - fade in with rotation effect
+      if (headingRef.current) {
+        gsap.fromTo(
+          headingRef.current,
+          { opacity: 0, y: 40, rotationX: -10 },
+          {
+            opacity: 1,
+            y: 0,
+            rotationX: 0,
+            duration: 0.9,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: headingRef.current,
+              start: "top 80%",
+              toggleActions: "play none none none",
+            },
+          }
+        );
+      }
+
+      // Cards container - staggered reveal with rotation
+      gsap.fromTo(
+        "[data-trending-card]",
+        { opacity: 0, y: 40, rotationY: -15 },
+        {
+          opacity: 1,
+          y: 0,
+          rotationY: 0,
+          duration: 0.7,
+          stagger: 0.12,
+          ease: "power2.out",
+          clearProps: "opacity,transform",
+          scrollTrigger: {
+            trigger: cardsContainerRef.current,
+            start: "top 70%",
+            toggleActions: "play none none none",
+          },
+        }
+      );
+
+      // Button animation - scale + fade
+      if (buttonRef.current) {
+        gsap.fromTo(
+          buttonRef.current,
+          { opacity: 0, scale: 0.85 },
+          {
+            opacity: 1,
+            scale: 1,
+            duration: 0.6,
+            ease: "back.out",
+            delay: 0.4,
+            scrollTrigger: {
+              trigger: buttonRef.current,
+              start: "top 85%",
+              toggleActions: "play none none none",
+            },
+          }
+        );
+      }
+
+      // Hover animation for cards
+      gsap.utils.toArray("[data-trending-card]").forEach((card: any) => {
+        card.addEventListener("mouseenter", function (this: HTMLElement) {
+          gsap.to(this, {
+            y: -8,
+            boxShadow: "0 20px 40px rgba(16, 24, 40, 0.2)",
+            duration: 0.4,
+            ease: "power2.out",
+            overwrite: "auto",
+          });
+        });
+
+        card.addEventListener("mouseleave", function (this: HTMLElement) {
+          gsap.to(this, {
+            y: 0,
+            boxShadow: "0 0px 0px rgba(16, 24, 40, 0)",
+            duration: 0.4,
+            ease: "power2.out",
+            overwrite: "auto",
+          });
+        });
+      });
+    }, sectionRef);
+
+    return () => {
+      ctx.revert();
+    };
+  }, []);
+
   return (
-    <section className="w-full  mt-10 lg:mt-25 bg-(--gray-50) py-12 md:py-16 lg:py-20">
+    <section
+      ref={sectionRef}
+      className="w-full  mt-10 lg:mt-25 bg-(--gray-50) py-12 md:py-16 lg:py-20"
+    >
       <div className="mx-auto w-full max-w-310 px-4 md:px-6 lg:px-8">
-        <h2 className="text-center text-[24px] leading-[1.12] font-semibold tracking-[-0.03em] text-(--text-title) md:text-[40px] lg:text-[40px]">
+        <h2
+          ref={headingRef}
+          className="text-center text-[24px] leading-[1.12] font-semibold tracking-[-0.03em] text-(--text-title) md:text-[40px] lg:text-[40px]"
+        >
           Learn What&apos;s Trending.
           <br />
           Build What&apos;s Next.
         </h2>
 
-        <div className="mt-10 grid lg:gap-5 gap-4 md:mt-12 lg:mt-15 md:grid-cols-2 lg:grid-cols-3">
+        <div
+          ref={cardsContainerRef}
+          className="mt-10 grid lg:gap-5 gap-4 md:mt-12 lg:mt-15 md:grid-cols-2 lg:grid-cols-3"
+        >
           {TRENDING_COURSES.map((course, index) => (
             <article
               key={course.title}
-              className="rounded-2xl  border border-(--gray-200) bg-(--text-white) p-4"
+              data-trending-card
+              className="rounded-2xl  border border-(--gray-200) bg-(--text-white) p-4 transition-shadow duration-300"
             >
               <div
                 className={`relative overflow-hidden rounded-lg   before:absolute before:inset-0 before:z-10`}
@@ -129,8 +245,9 @@ export function TrendingCourses() {
 
         <div className="mt-8 flex justify-center md:mt-10">
           <button
+            ref={buttonRef}
             type="button"
-            className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-md bg-(--primary-700) px-6 sg-p-default font-semibold text-(--text-white)"
+            className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-md bg-(--primary-700) px-6 sg-p-default font-semibold text-(--text-white) transition-transform duration-300 hover:scale-105"
           >
             View All Courses
             <ArrowRight size={20} strokeWidth={2.4} />

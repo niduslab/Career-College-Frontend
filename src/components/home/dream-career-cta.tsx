@@ -70,6 +70,7 @@ const FLOATING_AVATARS = [
 
 export function DreamCareerCta() {
   const sectionRef = useRef<HTMLElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!sectionRef.current) {
@@ -87,6 +88,26 @@ export function DreamCareerCta() {
     }
 
     const ctx = gsap.context(() => {
+      // Content fade-in + slide-up
+      if (contentRef.current) {
+        gsap.fromTo(
+          contentRef.current,
+          { opacity: 0, y: 40 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.9,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: contentRef.current,
+              start: "top 75%",
+              toggleActions: "play none none none",
+            },
+          }
+        );
+      }
+
+      // Avatar floating animations
       const avatars = gsap.utils.toArray<HTMLElement>("[data-float-avatar]");
       const floatOffsets = [-6, 5, -7, 6, -5, 6, -6, 5, -7, 6];
 
@@ -98,7 +119,7 @@ export function DreamCareerCta() {
           autoRound: false,
           repeat: -1,
           yoyo: true,
-          delay: index * 0.05,
+          delay: index * 0.05 + 0.5,
         });
       });
     }, sectionRef);
@@ -152,7 +173,7 @@ export function DreamCareerCta() {
             </span>
           ))}
 
-          <div className="relative z-30 lg:mt-20 mt-12  mx-auto max-w-170 text-center">
+          <div className="relative z-30 lg:mt-20 mt-12  mx-auto max-w-170 text-center" ref={contentRef}>
             <h2 className="text-[30px] leading-[1.08] font-semibold tracking-[-0.03em] text-(--text-title) sm:text-[34px] md:text-[48px] lg:text-[48px]">
               Take the First Step Toward
               <br />
