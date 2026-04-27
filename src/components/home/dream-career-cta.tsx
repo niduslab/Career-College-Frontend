@@ -103,7 +103,7 @@ export function DreamCareerCta() {
               start: "top 75%",
               toggleActions: "play none none none",
             },
-          }
+          },
         );
       }
 
@@ -168,12 +168,16 @@ export function DreamCareerCta() {
               <Image
                 src={item.image}
                 alt="Learner avatar"
+                fill
                 className="h-full w-full object-cover"
               />
             </span>
           ))}
 
-          <div className="relative z-30 lg:mt-20 mt-12  mx-auto max-w-170 text-center" ref={contentRef}>
+          <div
+            className="relative z-30 lg:mt-20 mt-12  mx-auto max-w-170 text-center"
+            ref={contentRef}
+          >
             <h2 className="text-[30px] leading-[1.08] font-semibold tracking-[-0.03em] text-(--text-title) sm:text-[34px] md:text-[48px] lg:text-[48px]">
               Take the First Step Toward
               <br />

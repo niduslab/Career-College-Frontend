@@ -28,7 +28,7 @@ export function Hero() {
           y: 0,
           duration: 0.8,
           ease: "power2.out",
-        }
+        },
       );
 
       // Fade-in + slide-up for hero image with slight delay
@@ -41,7 +41,7 @@ export function Hero() {
           duration: 0.8,
           ease: "power2.out",
           delay: 0.2,
-        }
+        },
       );
 
       // Fade-in badges with stagger
@@ -55,7 +55,7 @@ export function Hero() {
           ease: "back.out",
           stagger: 0.15,
           delay: 0.4,
-        }
+        },
       );
 
       // Floating animation for badges (continuous after fade-in)
@@ -145,17 +145,23 @@ export function Hero() {
                 <Image
                   src={avatar1}
                   alt="Learner avatar 1"
-                  className="h-10 w-10 rounded-full  object-cover"
+                  width={40}
+                  height={40}
+                  className=" rounded-full  object-cover"
                 />
                 <Image
                   src={avatar2}
                   alt="Learner avatar 2"
-                  className="h-10 w-10 rounded-full  object-cover"
+                  width={40}
+                  height={40}
+                  className=" rounded-full  object-cover"
                 />
                 <Image
                   src={avatar3}
                   alt="Learner avatar 3"
-                  className="h-10 w-10 rounded-full  object-cover"
+                  width={40}
+                  height={40}
+                  className=" rounded-full  object-cover"
                 />
               </div>
               <p>

@@ -43,7 +43,7 @@ export function InsightsResources() {
     prepareGsap();
 
     const ctx = gsap.context(() => {
-      // Heading fade-in
+      // Heading fade-in  as UpcomingWebinars)
       if (headingRef.current) {
         gsap.fromTo(
           headingRef.current,
@@ -58,18 +58,18 @@ export function InsightsResources() {
               start: "top 80%",
               toggleActions: "play none none none",
             },
-          }
+          },
         );
       }
 
-      // Blog cards staggered animation with tilt
+      // Blog cards staggered animation (match UpcomingWebinars logic)
       gsap.fromTo(
         "[data-blog-card]",
-        { opacity: 0, y: 30, rotationZ: -2 },
+        { opacity: 0, y: 24, scale: 0.95 },
         {
           opacity: 1,
           y: 0,
-          rotationZ: 0,
+          scale: 1,
           duration: 0.6,
           stagger: 0.1,
           ease: "power2.out",
@@ -79,10 +79,10 @@ export function InsightsResources() {
             start: "top 70%",
             toggleActions: "play none none none",
           },
-        }
+        },
       );
 
-      // Button animation
+      // Button animation (same as UpcomingWebinars)
       if (buttonRef.current) {
         gsap.fromTo(
           buttonRef.current,
@@ -98,7 +98,7 @@ export function InsightsResources() {
               start: "top 85%",
               toggleActions: "play none none none",
             },
-          }
+          },
         );
       }
     }, sectionRef);
@@ -109,7 +109,10 @@ export function InsightsResources() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="mt-10 w-full bg-(--gray-50) py-12 md:py-16 lg:mt-25 lg:py-20">
+    <section
+      ref={sectionRef}
+      className="mt-10 w-full bg-(--gray-50) py-12 md:py-16 lg:mt-25 lg:py-20"
+    >
       <div className="mx-auto w-full max-w-310 px-4 md:px-6 lg:px-8">
         <h2
           ref={headingRef}
@@ -120,7 +123,10 @@ export function InsightsResources() {
           Growth Resources
         </h2>
 
-        <div ref={cardsRef} className="mt-10 grid lg:gap-5 gap-4 md:mt-12 lg:mt-15 md:grid-cols-2 lg:grid-cols-3">
+        <div
+          ref={cardsRef}
+          className="mt-10 grid lg:gap-5 gap-4 md:mt-12 lg:mt-15 md:grid-cols-2 lg:grid-cols-3"
+        >
           {BLOGS.map((blog) => (
             <article
               key={blog.title}
