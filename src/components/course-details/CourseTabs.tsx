@@ -6,13 +6,9 @@ interface CourseTabsProps {
   setActiveTab: (label: string) => void;
 }
 
-export default function CourseTabs({
-  tabs,
-  activeTab,
-  setActiveTab,
-}: CourseTabsProps) {
+export default function CourseTabs({ tabs, activeTab, setActiveTab }: CourseTabsProps) {
   return (
-    <div className="flex items-center gap-1 flex-wrap py-3 px-1">
+    <nav className="flex items-center gap-2 py-3 overflow-x-auto hide-scrollbar" aria-label="Course sections">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.label;
         return (
@@ -20,11 +16,10 @@ export default function CourseTabs({
             key={tab.label}
             onClick={() => setActiveTab(tab.label)}
             className={`
-              px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap
-              ${
-                isActive
-                  ? "bg-purple-600 text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200
+              ${isActive
+                ? "bg-purple-600 text-white shadow-sm"
+                : "border border-gray-300 text-gray-700 bg-white hover:border-purple-400 hover:text-purple-600"
               }
             `}
           >
@@ -32,6 +27,6 @@ export default function CourseTabs({
           </button>
         );
       })}
-    </div>
+    </nav>
   );
 }

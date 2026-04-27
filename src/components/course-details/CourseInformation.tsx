@@ -1,134 +1,117 @@
+"use client";
 import React from "react";
 import Image from "next/image";
-import { Video, Clock, BarChart3, Award, Radio } from "lucide-react";
+import { Video, Clock, BarChart3, Award } from "lucide-react";
 import image from "@/assets/images/courses-details/image.webp";
 
+const INFO_ITEMS = [
+  { icon: Video,    label: "Total 92 Videos"        },
+  { icon: Clock,    label: "Duration 10 hours 45 min"},
+  { icon: BarChart3,label: "Intermediate Level"      },
+  { icon: Award,    label: "Get Certificate"         },
+];
+
+const SUBSCRIPTIONS = [
+  { id: "starter",  label: "Starter",  price: "$42.99",  suffix: "/year" },
+  { id: "growth",   label: "Growth",   price: "$242.99", suffix: "/year" },
+  { id: "ultimate", label: "Ultimate", price: "$499.00", suffix: "/year" },
+];
+
+type Plan = "one-time" | "subscription";
+
+function Radio({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+        checked ? "border-purple-600 bg-purple-600" : "border-gray-300 bg-white"
+      }`}
+    >
+      {checked && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+    </span>
+  );
+}
+
 export default function CourseInformation() {
-  const [selectedOption, setSelectedOption] = React.useState("one-time");
+  const [plan, setPlan]     = React.useState<Plan>("one-time");
+  const [subPlan, setSubPlan] = React.useState("starter");
+
+  const isSubscription = plan === "subscription";
 
   return (
-    <div className="rounded-2xl bg-white shadow-lg p-6">
-      <div className="mb-4">
-        <Image
-          src={image}
-          alt="Course Cover"
-          width={320}
-          height={176}
-          className="w-full h-44 object-cover rounded-xl"
-        />
-      </div>
-      <h3 className="font-bold text-lg mb-4">Course Information</h3>
-      <ul className="space-y-3 text-sm text-(--gray-700) mb-6">
-        <li className="flex items-center gap-2">
-          <Video size={18} className="text-(--gray-500)" /> Total 92 Videos
-        </li>
-        <li className="flex items-center gap-2">
-          <Clock size={18} className="text-(--gray-500)" /> Duration 10 hours 45 min
-        </li>
-        <li className="flex items-center gap-2">
-          <BarChart3 size={18} className="text-(--gray-500)" /> Intermediate Level
-        </li>
-        <li className="flex items-center gap-2">
-          <Award size={18} className="text-(--gray-500)" /> Get Certificate
-        </li>
-      </ul>
-
-      {/* Purchase Options */}
-      <div className="space-y-3 mb-6">
-        {/* One time option */}
-        <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-(--gray-50) cursor-pointer">
-          <input
-            type="radio"
-            id="one-time"
-            name="purchase"
-            checked={selectedOption === "one-time"}
-            onChange={() => setSelectedOption("one-time")}
-            className="w-4 h-4"
-          />
-          <label htmlFor="one-time" className="flex-1 font-medium text-sm cursor-pointer">
-            One time for 1-person
-          </label>
-          <span className="font-bold text-sm">$42.99</span>
-        </div>
-
-        {/* Subscriptions header */}
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-(--gray-50)">
-          <Radio size={18} className="text-(--primary-600)" />
-          <label className="font-semibold text-sm">Subscriptions</label>
-        </div>
-
-        {/* Subscription options */}
-        <div className="space-y-2 pl-8">
-          <div className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="radio"
-              id="starter"
-              name="subscription"
-              checked={selectedOption === "starter"}
-              onChange={() => setSelectedOption("starter")}
-              className="w-4 h-4"
-            />
-            <label htmlFor="starter" className="flex-1 font-medium text-sm cursor-pointer">
-              Starter
-            </label>
-            <span className="text-sm">
-              <span className="font-bold">$42.99</span>
-              <span className="text-(--gray-500) text-xs ml-1">/year</span>
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="radio"
-              id="growth"
-              name="subscription"
-              checked={selectedOption === "growth"}
-              onChange={() => setSelectedOption("growth")}
-              className="w-4 h-4"
-            />
-            <label htmlFor="growth" className="flex-1 font-medium text-sm cursor-pointer">
-              Growth
-            </label>
-            <span className="text-sm">
-              <span className="font-bold">$242.99</span>
-              <span className="text-(--gray-500) text-xs ml-1">/year</span>
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="radio"
-              id="ultimate"
-              name="subscription"
-              checked={selectedOption === "ultimate"}
-              onChange={() => setSelectedOption("ultimate")}
-              className="w-4 h-4"
-            />
-            <label htmlFor="ultimate" className="flex-1 font-medium text-sm cursor-pointer">
-              Ultimate
-            </label>
-            <span className="text-sm">
-              <span className="font-bold">$499.00</span>
-              <span className="text-(--gray-500) text-xs ml-1">/year</span>
-            </span>
-          </div>
-        </div>
+    <div className="rounded-2xl bg-white shadow-lg overflow-hidden">
+      {/* Cover image */}
+      <div className="w-full h-44 relative">
+        <Image src={image} alt="Course Cover" fill className="object-cover" />
       </div>
 
-      {/* Buttons */}
-      <div className="space-y-2">
-        {selectedOption === "one-time" ? (
-          <button className="w-full bg-(--primary-600) text-white font-semibold py-3 rounded-md hover:bg-(--primary-700) transition">
-            Add to Cart
+      <div className="p-5">
+        {/* Course info list */}
+        <h3 className="font-bold text-base mb-3">Course Information</h3>
+        <ul className="space-y-2.5 text-sm text-gray-600 mb-5">
+          {INFO_ITEMS.map(({ icon: Icon, label }) => (
+            <li key={label} className="flex items-center gap-2">
+              <Icon size={16} className="text-gray-400 shrink-0" />
+              {label}
+            </li>
+          ))}
+        </ul>
+
+        {/* Purchase options */}
+        <div className="space-y-2 mb-5">
+
+          {/* One-time option */}
+          <button
+            onClick={() => setPlan("one-time")}
+            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
+            <Radio checked={plan === "one-time"} />
+            <span className="flex-1 text-sm font-medium text-left">One time for 1-person</span>
+            <span className="text-sm font-bold text-gray-900">$42.99</span>
           </button>
-        ) : (
-          <button className="w-full bg-(--primary-600) text-white font-semibold py-3 rounded-md hover:bg-(--primary-700) transition">
-            Subscribe Now
+
+          {/* Subscriptions toggle */}
+          <div className="rounded-lg border border-gray-200 overflow-hidden">
+            <button
+              onClick={() => setPlan("subscription")}
+              className={`w-full flex items-center gap-3 px-3 py-3 transition-colors ${
+                isSubscription ? "bg-purple-50" : "hover:bg-gray-50"
+              }`}
+            >
+              <Radio checked={isSubscription} />
+              <span className="flex-1 text-sm font-semibold text-left">Subscriptions</span>
+            </button>
+
+            {/* Sub-options — visible only when subscription plan is selected */}
+            {isSubscription && (
+              <div className="border-t border-gray-100 bg-white">
+                {SUBSCRIPTIONS.map((sub) => (
+                  <button
+                    key={sub.id}
+                    onClick={() => setSubPlan(sub.id)}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors"
+                  >
+                    <Radio checked={subPlan === sub.id} />
+                    <span className="flex-1 text-sm font-medium text-left">{sub.label}</span>
+                    <span className="text-sm font-bold text-gray-900">
+                      {sub.price}
+                      <span className="text-xs font-normal text-gray-400">{sub.suffix}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="space-y-2">
+          <button className="w-full bg-purple-600 text-white font-semibold py-3 rounded-lg hover:bg-purple-700 transition-colors text-sm">
+            {isSubscription ? "Subscribe Now" : "Add to Cart"}
           </button>
-        )}
-        <button className="w-full bg-(--gray-100) text-(--primary-700) font-semibold py-3 rounded-md hover:bg-(--gray-200) transition">
-          Membership
-        </button>
+          <button className="w-full bg-gray-100 text-purple-700 font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors text-sm">
+            Membership
+          </button>
+        </div>
       </div>
     </div>
   );
