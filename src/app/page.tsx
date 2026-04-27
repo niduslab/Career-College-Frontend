@@ -10,10 +10,19 @@ import { UpcomingWebinars } from "@/components/home/upcoming-webinars";
 import { FaqSection } from "@/components/home/faq-section";
 import { InsightsResources } from "@/components/home/insights-resources";
 import { DreamCareerCta } from "@/components/home/dream-career-cta";
+import { Breadcrumb } from "@/components/common/breadcrumb";
 
 export default function HomePage() {
   return (
     <>
+      {/* <Breadcrumb
+        title="Find the Perfect Course for Your Career Goals"
+        subtitle="Explore a wide range of expertly crafted courses and easily filter them based on your preferences."
+        items={[
+          { label: "Home", href: "/" },
+          { label: "Courses", active: true },
+        ]}
+      /> */}
       <Hero />
       <IndustryStrip />
       <PopularCourses />
