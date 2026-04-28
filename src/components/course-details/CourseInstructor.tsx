@@ -11,7 +11,7 @@ const STATS = [
 
 export default function CourseInstructor() {
   return (
-    <div>
+    <div className="lg:mt-10 mt-6">
       <h2 className="sg-h5 font-semibold --title-text mb-4">
         Course Instructor
       </h2>

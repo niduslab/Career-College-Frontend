@@ -159,7 +159,7 @@ export default function CourseDetailsPage() {
       </div>
 
       <div ref={inlineTabsRef}>
-        <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8 ">
           <div className="lg:pr-96">
             <CourseTabs
               activeTab={activeTab}
@@ -171,7 +171,7 @@ export default function CourseDetailsPage() {
       </div>
 
       <div
-        className="fixed left-0 right-0 z-40    
+        className="fixed left-0 right-0 z-40 shadow-sm bg-white
                    transition-transform duration-300 ease-in-out"
         style={{
           top: NAVBAR_H,
@@ -191,7 +191,7 @@ export default function CourseDetailsPage() {
       </div>
 
       {/* ── Content ── */}
-      <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8 py-10">
+      <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
         <div className="lg:pr-96">
           <div className="space-y-12">
             {TABS.map(({ label }) => (
