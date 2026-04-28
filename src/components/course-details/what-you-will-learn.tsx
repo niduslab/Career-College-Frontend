@@ -60,7 +60,7 @@ export default function WhatYouWillLearn() {
 
         {/* Show more */}
         <div className="mt-4">
-          <button className="cursor-pointer sg-caption underline font-semibold text-(--primary-700)   transition-colors">
+          <button className="cursor-pointer sg-p-small underline font-semibold text-(--primary-700)   transition-colors">
             Show more
           </button>
         </div>

@@ -1,4 +1,11 @@
-import { Building2, Gem, Cloud, TrendingUp, Boxes } from "lucide-react";
+import {
+  Building2,
+  Gem,
+  Cloud,
+  TrendingUp,
+  Boxes,
+  ArrowRight,
+} from "lucide-react";
 
 const INDUSTRY_ITEMS = [
   { label: "company", Icon: Building2 },
@@ -16,9 +23,7 @@ export function IndustryStrip() {
     <section className="w-full lg:mt-25 mt-10">
       <div className=" px-4 md:px-6 lg:px-8">
         <h2 className=" text-center text-[24px] lg:leading-12 font-semibold tracking-[-0.4px] text-(--text-title) md:text-[40px] lg:text-[40px]">
-          Where Leading Industries
-          <br />
-          Come Together
+          Meet Our Partners
         </h2>
 
         <div className="relative mt-10 overflow-hidden md:mt-12">
@@ -39,6 +44,16 @@ export function IndustryStrip() {
             ))}
           </div>
         </div>
+      </div>
+      <div className="mt-8 flex justify-center md:mt-10">
+        <button
+          type="button"
+          data-view-all-btn
+          className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-md bg-(--primary-700) px-6 sg-p-default font-semibold text-(--text-white)"
+        >
+          View All Partners
+          <ArrowRight size={20} strokeWidth={2.4} />
+        </button>
       </div>
     </section>
   );

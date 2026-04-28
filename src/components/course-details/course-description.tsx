@@ -7,19 +7,21 @@ const FULL_TEXT = [
   "Course length: 10+ hours.",
 ];
 
-export default function Description() {
+export default function CourseDescription() {
   const [expanded, setExpanded] = useState(false);
 
   const visible = expanded ? FULL_TEXT : FULL_TEXT.slice(0, 1);
 
   return (
-    <div>
-      <h2 className="text-xl font-bold text-gray-900 mb-4">Course Description</h2>
+    <div className="mt-6 lg:mt-8">
+      <h2 className="sg-h5 font-semibold --title-text mb-4">
+        Course Description
+      </h2>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <div className="space-y-3">
+      <div className=" rounded-xl border border-gray-200 shadow-sm p-6">
+        <div className="space-y-4">
           {visible.map((para, i) => (
-            <p key={i} className="text-sm text-gray-600 leading-relaxed">
+            <p key={i} className="sg-p-small --text-paragraph leading-relaxed">
               {para}
             </p>
           ))}
@@ -27,7 +29,7 @@ export default function Description() {
 
         <button
           onClick={() => setExpanded(!expanded)}
-          className="mt-4 text-sm font-semibold text-purple-600 hover:text-purple-700 transition-colors"
+          className="mt-4 sg-p-small underline font-semibold text-(--primary-700)   transition-colors"
         >
           {expanded ? "Show less" : "Show more"}
         </button>

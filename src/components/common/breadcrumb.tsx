@@ -27,7 +27,8 @@ export function Breadcrumb({
             width: "791px",
             height: "350px",
             left: "750px",
-
+            top: "0",
+            bottom: "0",
             borderRadius: "791px",
             background: "#4508A9",
             filter: "blur(175px)",

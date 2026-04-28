@@ -1,6 +1,6 @@
 import logo from "@/assets/images/courses-details/logo.webp";
 import Image from "next/image";
-import { Users, Star, BarChart2, BookOpen, PlayCircle } from "lucide-react";
+import { Users, Star, BarChart2, PlayCircle } from "lucide-react";
 
 const STATS = [
   { icon: Users, label: "885,935 Students" },

@@ -2,16 +2,17 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { User, Globe, Users, Star } from "lucide-react";
 import { Breadcrumb } from "@/components/common/breadcrumb";
-import { GradientBackground } from "@/components/common/gradient-background";
-import CourseInformation from "@/components/course-details/CourseInformation";
-import CourseTabs from "@/components/course-details/CourseTabs";
-import CourseInstructor from "@/components/course-details/CourseInstructor";
-import WhatYouWillLearn from "@/components/course-details/WhatYouWillLearn";
-import CourseContent from "@/components/course-details/CourseContent";
-import Requirements from "@/components/course-details/Requirements";
-import Description from "@/components/course-details/Description";
-import LearnersReviews from "@/components/course-details/LearnersReviews";
-import ExploreMoreCourses from "@/components/course-details/ExploreMoreCourses";
+import CourseInformation from "@/components/course-details/course-information";
+import CourseTabs from "@/components/course-details/course-tabs";
+import CourseInstructor from "@/components/course-details/course-instructor";
+import WhatYouWillLearn from "@/components/course-details/what-you-will-learn";
+import CourseContent from "@/components/course-details/course-content";
+import Requirements from "@/components/course-details/course-requirements";
+import Description from "@/components/course-details/course-description";
+import LearnersReviews from "@/components/course-details/learners-reviews";
+import ExploreMoreCourses from "@/components/course-details/Explore-more-courses";
+import CourseRequirements from "@/components/course-details/course-requirements";
+import CourseDescription from "@/components/course-details/course-description";
 
 const TABS = [
   { label: "Course Instructor" },
@@ -107,11 +108,8 @@ export default function CourseDetailsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* ── Hero: full-width dark background ── */}
+    <div className="min-h-screen bg-gray-50 p-4">
       <div className="relative bg-(--gray-950) overflow-visible">
-        {/* <GradientBackground /> */}
-
         <div className="relative z-10 mx-auto max-w-7xl px-4 md:px-6 lg:px-8 py-10 md:py-12 lg:py-16">
           <div className="lg:pr-96">
             <Breadcrumb
@@ -204,8 +202,8 @@ export default function CourseDetailsPage() {
                 {label === "Course Instructor" && <CourseInstructor />}
                 {label === "What You Will Learn" && <WhatYouWillLearn />}
                 {label === "Course Content" && <CourseContent />}
-                {label === "Requirements" && <Requirements />}
-                {label === "Description" && <Description />}
+                {label === "Requirements" && <CourseRequirements />}
+                {label === "Description" && <CourseDescription />}
               </section>
             ))}
           </div>

@@ -1,9 +1,9 @@
 import Image from "next/image";
-import { Star } from "lucide-react";
-import comaSvg  from "@/assets/images/testimonials/Coma.svg";
-import avatar1  from "@/assets/images/hero/avatar1.webp";
-import avatar2  from "@/assets/images/hero/avatar2.webp";
-import avatar3  from "@/assets/images/hero/avatar3.webp";
+import { ArrowRight, Star } from "lucide-react";
+import comaSvg from "@/assets/images/testimonials/Coma.svg";
+import avatar1 from "@/assets/images/hero/avatar1.webp";
+import avatar2 from "@/assets/images/hero/avatar2.webp";
+import avatar3 from "@/assets/images/hero/avatar3.webp";
 
 const REVIEWS = [
   {
@@ -34,27 +34,33 @@ const REVIEWS = [
 
 export default function LearnersReviews() {
   return (
-    <div>
+    <div className="mt-6 lg:mt-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-xl font-bold text-gray-900">Learners Reviews</h2>
-        <a href="#" className="text-sm font-semibold text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors">
-          Show all reviews <span aria-hidden>→</span>
+        <h2 className="sg-h5 font-semibold --title-text mb-4">
+          Learners Reviews
+        </h2>
+        <a
+          href="#"
+          className="sg-p-small underline font-semibold text-(--primary-700) transition-colors inline-flex items-center gap-1"
+        >
+          Show all reviews
+          <ArrowRight size={20} color="#6f15ec" />
         </a>
       </div>
 
       {/* 2×2 review grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {REVIEWS.map((review, i) => (
           <div
             key={i}
-            className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col gap-4"
+            className="bg-gray-100 rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-4"
           >
             {/* Quote mark */}
-            <Image src={comaSvg} alt="" width={32} height={24} className="opacity-80" />
+            <Image src={comaSvg} alt="" width={25} height={28} />
 
             {/* Review text */}
-            <p className="text-sm text-gray-600 leading-relaxed flex-1">
+            <p className="sg-p-default --title-text font-normal leading-relaxed flex-1">
               {review.text}
             </p>
 
@@ -63,15 +69,21 @@ export default function LearnersReviews() {
               <Image
                 src={review.avatar}
                 alt={review.name}
-                width={40}
-                height={40}
-                className="w-10 h-10 rounded-full object-cover shrink-0"
+                width={48}
+                height={48}
+                className="w-12 h-12 rounded-full object-cover shrink-0"
               />
               <div>
-                <p className="text-sm font-semibold text-gray-900">{review.name}</p>
+                <p className="sg-h6 font-semibold --text-title">
+                  {review.name}
+                </p>
                 <div className="flex items-center gap-0.5 mt-0.5">
                   {Array.from({ length: review.rating }).map((_, s) => (
-                    <Star key={s} size={12} className="fill-orange-400 text-orange-400" />
+                    <Star
+                      key={s}
+                      size={16}
+                      className="text-(--warning-500) fill-(--warning-500)"
+                    />
                   ))}
                 </div>
               </div>
