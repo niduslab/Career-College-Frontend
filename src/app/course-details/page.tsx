@@ -110,7 +110,7 @@ export default function CourseDetailsPage() {
     <div className="min-h-screen bg-gray-50">
       {/* ── Hero: full-width dark background ── */}
       <div className="relative bg-(--gray-950) overflow-visible">
-        <GradientBackground />
+        {/* <GradientBackground /> */}
 
         <div className="relative z-10 mx-auto max-w-7xl px-4 md:px-6 lg:px-8 py-10 md:py-12 lg:py-16">
           <div className="lg:pr-96">
@@ -124,27 +124,27 @@ export default function CourseDetailsPage() {
                 { label: "Figma UI/UX Design", active: true },
               ]}
             >
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-(--gray-300) mt-6">
-                <div className="flex items-center gap-1.5">
-                  <User size={14} />
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sg-p-small font-normal text-white mt-6">
+                <div className="flex items-center gap-2">
+                  <User size={16} />
                   <span>Instructor</span>
                   <a
                     href="#"
-                    className="text-(--primary-200) hover:underline font-medium"
+                    className="text-(--primary-500) hover:underline font-medium"
                   >
                     Daniel Walter Scott
                   </a>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Globe size={14} />
+                <div className="flex items-center gap-2">
+                  <Globe size={16} />
                   <span>English</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Users size={14} />
+                <div className="flex items-center gap-2">
+                  <Users size={16} />
                   <span>Enrolled 87,398</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Star size={14} />
+                <div className="flex items-center gap-2">
+                  <Star size={16} />
                   <span>4.7 (46,245 Reviews)</span>
                 </div>
               </div>

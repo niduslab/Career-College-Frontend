@@ -119,10 +119,10 @@ export function Footer() {
                     <span className="inline-flex items-center gap-2 sg-p-small lg:sg-p-default cursor-pointer text-white hover:text-white/90">
                       <Mail size={16} strokeWidth={1.5} color="#ffffff" />
                       <Link
-                        href="mailto:support@jobai.com"
+                        href="mailto:info@niduslab.com"
                         className="text-white hover:text-white/90"
                       >
-                        support@jobai.com
+                        info@niduslab.com
                       </Link>
                     </span>
                   </li>
@@ -130,10 +130,10 @@ export function Footer() {
                     <span className="inline-flex items-center gap-2 sg-p-small lg:sg-p-default text-white hover:text-white/90">
                       <Phone size={16} strokeWidth={1.5} color="#ffffff" />
                       <Link
-                        href="tel:+1234567890"
+                        href="tel:+13474000135"
                         className="text-white hover:text-white/90"
                       >
-                        +1 (234) 567-890
+                        +1347-400-0135
                       </Link>
                     </span>
                   </li>
@@ -141,11 +141,11 @@ export function Footer() {
                     <span className="inline-flex items-start gap-2 sg-p-small lg:sg-p-default text-white hover:text-white/90">
                       <MapPin size={16} strokeWidth={1.5} color="#ffffff" />
                       <Link
-                        href="https://www.google.com/maps/place/123+Main+St,+Cityville,+Country"
+                        href="https://www.google.com/maps/place/Crescent+Street,+Long+Island+City,+NY+-11106/@40.7459055,-73.9487923,17z/data=!3m1!4b1!4m5!3m4!1s0x89c259af18e7a9f:0x2c8d9b8e7a6c8b2!8m2!3d40.7459055!4d-73.9466036"
                         target="_blank"
                         className="text-white hover:text-white/90"
                       >
-                        123 Main St, Cityville, Country
+                        Crescent Street, Long Island City, NY -11106
                       </Link>
                     </span>
                   </li>
