@@ -158,10 +158,7 @@ export default function CourseDetailsPage() {
         </div>
       </div>
 
-      <div
-        ref={inlineTabsRef}
-        className="bg-white border-b border-gray-200 shadow-sm"
-      >
+      <div ref={inlineTabsRef}>
         <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
           <div className="lg:pr-96">
             <CourseTabs
@@ -174,7 +171,7 @@ export default function CourseDetailsPage() {
       </div>
 
       <div
-        className="fixed left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm
+        className="fixed left-0 right-0 z-40    
                    transition-transform duration-300 ease-in-out"
         style={{
           top: NAVBAR_H,

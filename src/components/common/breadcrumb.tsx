@@ -22,13 +22,12 @@ export function Breadcrumb({
         aria-label="Breadcrumb"
       >
         <div
-          className="pointer-events-none absolute"
+          className="pointer-events-none absolute  hidden md:block lg:block"
           style={{
             width: "791px",
             height: "350px",
             left: "750px",
-            // top: "0px",
-            // bottom: "0px",
+
             borderRadius: "791px",
             background: "#4508A9",
             filter: "blur(175px)",
