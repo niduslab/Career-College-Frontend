@@ -12,10 +12,11 @@ const NAV_LINKS = [
 ];
 
 const CATEGORY_DROPDOWN = [
-  { label: "Development", href: "#" },
-  { label: "Design", href: "#" },
-  { label: "Business", href: "#" },
+  { label: "Artificial Intelligence", href: "#" },
+  { label: "UI/UX Design", href: "#" },
   { label: "Marketing", href: "#" },
+  { label: "IT & Software", href: "#" },
+  { label: "Business", href: "#" },
 ];
 
 const COURSES_DROPDOWN = [

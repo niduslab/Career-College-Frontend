@@ -7,12 +7,10 @@ import CourseTabs from "@/components/course-details/course-tabs";
 import CourseInstructor from "@/components/course-details/course-instructor";
 import WhatYouWillLearn from "@/components/course-details/what-you-will-learn";
 import CourseContent from "@/components/course-details/course-content";
-import Requirements from "@/components/course-details/course-requirements";
-import Description from "@/components/course-details/course-description";
 import LearnersReviews from "@/components/course-details/learners-reviews";
-import ExploreMoreCourses from "@/components/course-details/Explore-more-courses";
 import CourseRequirements from "@/components/course-details/course-requirements";
 import CourseDescription from "@/components/course-details/course-description";
+import ExploreMoreCourses from "@/components/course-details/explore-more-courses";
 
 const TABS = [
   { label: "Course Instructor" },
@@ -108,7 +106,7 @@ export default function CourseDetailsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50">
       <div className="relative bg-(--gray-950) overflow-visible">
         <div className="relative z-10 mx-auto max-w-7xl px-4 md:px-6 lg:px-8 py-10 md:py-12 lg:py-16">
           <div className="lg:pr-96">

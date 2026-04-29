@@ -16,7 +16,7 @@ export default function CourseInstructor() {
         Course Instructor
       </h2>
 
-      <div className="rounded-2xl   border-gray-200 p-6 flex items-center gap-5 shadow-sm">
+      <div className="rounded-2xl  border-gray-200 p-6 flex items-center gap-5 shadow-sm">
         <Image
           src={logo}
           alt="Daniel Walter Scott"
@@ -32,7 +32,7 @@ export default function CourseInstructor() {
             {STATS.map(({ icon: Icon, label }) => (
               <div
                 key={label}
-                className="flex items-center gap-2 sg-caption font-normal text-sm --text-paragraph"
+                className="flex items-center gap-2 sg-p-small font-normal text-sm --text-paragraph"
               >
                 <Icon size={16} className="text-gray-500 shrink-0" />
                 <span>{label}</span>

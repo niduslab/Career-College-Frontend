@@ -40,7 +40,7 @@ export default function CourseInformation() {
   const isSubscription = plan === "subscription";
 
   return (
-    <div className="rounded-2xl pb-4 w-100 bg-white shadow-lg overflow-hidden">
+    <div className="sticky top-24 rounded-2xl pb-4 w-100 bg-white shadow-lg overflow-hidden">
       {/* Cover image */}
       <div className=" w-100 h-75 relative rounded-full">
         <Image src={image} alt="Course Cover" fill className="object-cover" />

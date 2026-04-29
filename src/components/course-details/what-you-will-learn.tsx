@@ -32,7 +32,7 @@ export default function WhatYouWillLearn() {
             {LEFT.map((item, i) => (
               <li
                 key={i}
-                className="flex items-start gap-2 sg-caption font-normal --text-paragraph"
+                className="flex items-start gap-2 sg-p-small font-normal --text-paragraph"
               >
                 <span className="mt-0.5 text-gray-500 font-bold leading-none">
                   <Check size={16} />
@@ -47,7 +47,7 @@ export default function WhatYouWillLearn() {
             {RIGHT.map((item, i) => (
               <li
                 key={i}
-                className="flex items-start gap-2 sg-caption font-normal --text-paragraph"
+                className="flex items-start gap-2 sg-p-small font-normal --text-paragraph"
               >
                 <span className="mt-0.5 text-gray-400 font-bold leading-none">
                   <Check size={16} />
