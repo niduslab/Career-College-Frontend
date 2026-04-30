@@ -9,8 +9,7 @@ import { InstructorsSection } from "@/components/home/instructors-section";
 import { UpcomingWebinars } from "@/components/home/upcoming-webinars";
 import { FaqSection } from "@/components/home/faq-section";
 import { InsightsResources } from "@/components/home/insights-resources";
-import { DreamCareerCta } from "@/components/home/dream-career-cta";
-import { Breadcrumb } from "@/components/common/breadcrumb";
+import { DreamCareerCta } from "@/components/common/dream-career-cta";
 
 export default function HomePage() {
   return (

@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { Menu, Search, Sparkles, X, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -212,6 +211,8 @@ export function Navbar() {
                 placeholder="Search any course here"
                 className="w-full bg-transparent text-sm text-(--text-title) outline-none placeholder:text-(--gray-500)"
                 aria-label="Search courses"
+                autoComplete="off"
+                suppressHydrationWarning
               />
               <Search
                 size={17}
@@ -226,12 +227,14 @@ export function Navbar() {
           <button
             type="button"
             className="h-10 cursor-pointer shrink-0 whitespace-nowrap rounded-md border border-(--primary-700) px-5 sg-p-default font-semibold text-(--primary-700) transition-colors hover:bg-(--primary-50)"
+            suppressHydrationWarning
           >
             Login
           </button>
           <button
             type="button"
             className="h-10 cursor-pointer shrink-0 whitespace-nowrap rounded-md bg-(--primary-700) px-5 sg-p-default font-semibold text-(--text-white) transition-colors hover:bg-(--primary-700)"
+            suppressHydrationWarning
           >
             Sign Up
           </button>

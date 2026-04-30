@@ -30,6 +30,7 @@ export function Breadcrumb({
             borderRadius: "791px",
             background: "#4508A9",
             filter: "blur(175px)",
+            overflow: "hidden",
           }}
         /> */}
         {items.map((item, idx) => (
