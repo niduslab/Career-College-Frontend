@@ -18,21 +18,9 @@ export function Breadcrumb({
     <>
       {/* Breadcrumb */}
       <nav
-        className="mb-6 relative flex items-center gap-2 text-sm text-(--gray-200)"
+        className="mb-6 flex items-center gap-2 text-sm text-(--gray-200)"
         aria-label="Breadcrumb"
       >
-        {/* <div
-          className="pointer-events-none absolute  hidden md:block lg:block"
-          style={{
-            width: "791px",
-            height: "350px",
-            left: "750px",
-            borderRadius: "791px",
-            background: "#4508A9",
-            filter: "blur(175px)",
-            overflow: "hidden",
-          }}
-        /> */}
         {items.map((item, idx) => (
           <span key={item.label} className="flex items-center gap-2">
             {item.href && !item.active ? (

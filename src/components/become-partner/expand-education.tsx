@@ -54,14 +54,12 @@ export default function ExpandEducation() {
 
           {/* Right Image */}
           <div className="relative">
-            <div className="relative rounded-2xl overflow-hidden bg-gray-100 w-full h-64 md:h-96 lg:h-133 lg:w-137.5">
+            <div className="relative rounded-2xl overflow-hidden bg-gray-100 w-full h-64 md:h-100 xl:h-133 xl:w-137.5">
               <Image
                 src={image}
                 alt="Education partnership collaboration"
                 fill
                 className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 550px"
-                priority
               />
             </div>
           </div>
