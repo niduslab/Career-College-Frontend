@@ -27,7 +27,7 @@ export default function CourseTabs({
               ${
                 isActive
                   ? "bg-(--primary-700) text-white font-semibold shadow-sm"
-                  : "border border-gray-200 --text-paragraph bg-white "
+                  : "border border-gray-200 text-(--text-paragraph) bg-white "
               }
             `}
           >

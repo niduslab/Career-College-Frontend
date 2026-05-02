@@ -131,7 +131,7 @@ export default function PartnershipFormSection() {
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Institution Name */}
               <div>
-                <label className="block sg-p-default font-semibold --text-title mb-2">
+                <label className="block sg-p-default font-semibold  text-(--text-title) mb-2">
                   Institution Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -149,7 +149,7 @@ export default function PartnershipFormSection() {
 
               {/* Institution Type */}
               <div>
-                <label className="block sg-p-default font-semibold --text-title mb-2">
+                <label className="block sg-p-default font-semibold  text-(--text-title) mb-2">
                   Institution Type <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -192,7 +192,7 @@ export default function PartnershipFormSection() {
 
               {/* Work Email */}
               <div>
-                <label className="block sg-p-default font-semibold --text-title mb-2">
+                <label className="block sg-p-default font-semibold  text-(--text-title) mb-2">
                   Work Email <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -210,7 +210,7 @@ export default function PartnershipFormSection() {
 
               {/* Country */}
               <div>
-                <label className="block sg-p-default font-semibold --text-title mb-2">
+                <label className="block sg-p-default font-semibold  text-(--text-title) mb-2">
                   Country <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -274,7 +274,7 @@ export default function PartnershipFormSection() {
                 />
                 <label
                   htmlFor="agreeToComms"
-                  className="sg-p-default --text-paragraph leading-relaxed"
+                  className="sg-p-default text-(--text-paragraph) leading-relaxed"
                 >
                   I agree to receive other communications from Coursera. You can
                   unsubscribe from these communications at any time.

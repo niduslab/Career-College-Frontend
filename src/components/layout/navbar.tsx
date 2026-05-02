@@ -224,20 +224,20 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-4 xl:flex">
-          <button
-            type="button"
-            className="h-10 cursor-pointer shrink-0 whitespace-nowrap rounded-md border border-(--primary-700) px-5 sg-p-default font-semibold text-(--primary-700) transition-colors hover:bg-(--primary-50)"
+          <Link
+            href="/login"
+            className="h-10 cursor-pointer shrink-0 whitespace-nowrap rounded-md border border-(--primary-700) px-5 sg-p-default font-semibold text-(--primary-700) transition-colors hover:bg-(--primary-50) inline-flex items-center justify-center"
             suppressHydrationWarning
           >
             Login
-          </button>
-          <button
-            type="button"
-            className="h-10 cursor-pointer shrink-0 whitespace-nowrap rounded-md bg-(--primary-700) px-5 sg-p-default font-semibold text-(--text-white) transition-colors hover:bg-(--primary-700)"
+          </Link>
+          <Link
+            href="/signup"
+            className="h-10 cursor-pointer shrink-0 whitespace-nowrap rounded-md bg-(--primary-700) px-5 sg-p-default font-semibold text-(--text-white) transition-colors hover:bg-(--primary-700) inline-flex items-center justify-center"
             suppressHydrationWarning
           >
             Sign Up
-          </button>
+          </Link>
         </div>
 
         <button
@@ -417,18 +417,18 @@ export function Navbar() {
               data-mobile-stagger
               className="mt-4 flex flex-wrap items-center justify-start gap-3"
             >
-              <button
-                type="button"
-                className="h-10 min-w-35 rounded-md border border-(--primary-500) px-8 text-sm font-semibold text-(--primary-600) transition-colors hover:bg-(--primary-50) sm:min-w-42"
+              <Link
+                href="/login"
+                className="h-10 min-w-35 rounded-md border border-(--primary-500) px-8 text-sm font-semibold text-(--primary-600) transition-colors hover:bg-(--primary-50) sm:min-w-42 inline-flex items-center justify-center"
               >
                 Login
-              </button>
-              <button
-                type="button"
-                className="h-10 min-w-35 rounded-md bg-(--primary-600) px-8 text-sm font-semibold text-(--text-white) transition-colors hover:bg-(--primary-700) sm:min-w-42"
+              </Link>
+              <Link
+                href="/signup"
+                className="h-10 min-w-35 rounded-md bg-(--primary-600) px-8 text-sm font-semibold text-(--text-white) transition-colors hover:bg-(--primary-700) sm:min-w-42 inline-flex items-center justify-center"
               >
                 Sign Up
-              </button>
+              </Link>
             </div>
           </div>
         </div>
