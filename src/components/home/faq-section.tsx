@@ -120,7 +120,7 @@ export function FaqSection() {
                       : "mt-0 max-h-0 opacity-0"
                   }`}
                 >
-                  <p className="max-w-170 font-normal lg:sg-p-default sg-caption text-white">
+                  <p className="max-w-170 font-normal lg:sg-p-default sg-p-small text-white">
                     {item.answer}
                   </p>
                 </div>

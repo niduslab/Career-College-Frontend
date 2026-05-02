@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
@@ -193,6 +192,7 @@ export function DreamCareerCta() {
             <button
               type="button"
               className="group cursor-pointer mt-8 lg:mt-10 inline-flex h-12 items-center gap-2 rounded-md bg-(--primary-700) px-6  sg-p-small lg:sg-p-default font-semibold text-(--text-white) transition-all duration-300 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.99]"
+              suppressHydrationWarning
             >
               Explore Our Courses
               <ArrowRight

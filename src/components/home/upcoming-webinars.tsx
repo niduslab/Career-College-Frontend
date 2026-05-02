@@ -68,7 +68,7 @@ export function UpcomingWebinars() {
               start: "top 80%",
               toggleActions: "play none none none",
             },
-          }
+          },
         );
       }
 
@@ -89,7 +89,7 @@ export function UpcomingWebinars() {
             start: "top 70%",
             toggleActions: "play none none none",
           },
-        }
+        },
       );
 
       // Button animation
@@ -108,7 +108,7 @@ export function UpcomingWebinars() {
               start: "top 85%",
               toggleActions: "play none none none",
             },
-          }
+          },
         );
       }
     }, sectionRef);
@@ -119,7 +119,10 @@ export function UpcomingWebinars() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="w-full  mt-10 lg:mt-25 bg-(--gray-50) py-12 md:py-16 lg:py-20">
+    <section
+      ref={sectionRef}
+      className="w-full  mt-10 lg:mt-25 bg-(--gray-50) py-12 md:py-16 lg:py-20"
+    >
       <div className="mx-auto w-full max-w-310 px-4 md:px-6 lg:px-8">
         <h2
           ref={headingRef}
@@ -130,7 +133,10 @@ export function UpcomingWebinars() {
           In Career College
         </h2>
 
-        <div ref={cardsRef} className="mt-10 grid lg:gap-5 gap-4 md:mt-12 lg:mt-15 md:grid-cols-2 lg:grid-cols-3">
+        <div
+          ref={cardsRef}
+          className="mt-10 grid lg:gap-5 gap-4 md:mt-12 lg:mt-15 md:grid-cols-2 lg:grid-cols-3"
+        >
           {WEBINARS.map((webinar, index) => (
             <article
               key={`${webinar.title}-${index}`}
@@ -187,7 +193,7 @@ export function UpcomingWebinars() {
 
                 <button
                   type="button"
-                  className="mt-4 h-10 w-full rounded-md border border-(--primary-700) bg-(--text-white) sg-p-default font-semibold text-(--text-title) cursor-pointer transition-all duration-300 ease-out hover:-translate-y-px hover:bg-(--primary-700) hover:text-(--text-white) active:translate-y-0 active:scale-[0.99]"
+                  className="mt-4  h-10 w-full rounded-md border border-(--primary-700) bg-(--text-white) sg-p-default font-semibold text-(--text-title) cursor-pointer transition-all duration-300 ease-out hover:-translate-y-px hover:bg-(--primary-700) hover:text-(--text-white) active:translate-y-0 active:scale-[0.99]"
                 >
                   View Details
                 </button>
