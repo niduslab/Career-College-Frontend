@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { User, Globe, Users, Star } from "lucide-react";
+import gsap from "gsap";
 import { Breadcrumb } from "@/components/common/breadcrumb";
 import CourseInformation from "@/components/course-details/course-information";
 import CourseTabs from "@/components/course-details/course-tabs";
@@ -26,11 +27,36 @@ export default function CourseDetailsPage() {
   const [activeTab, setActiveTab] = useState(TABS[0].label);
 
   const [tabsVisible, setTabsVisible] = useState(false);
+  const [stickyCardVisible, setStickyCardVisible] = useState(false);
 
   const inlineTabsRef = useRef<HTMLDivElement>(null);
+  const exploreMoreRef = useRef<HTMLDivElement>(null);
+  const stickyCardRef = useRef<HTMLDivElement>(null);
   const isClickScrolling = useRef(false);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
+  // Animate sticky card with GSAP
+  useEffect(() => {
+    if (!stickyCardRef.current) return;
+
+    if (stickyCardVisible) {
+      gsap.to(stickyCardRef.current, {
+        y: 0,
+        opacity: 1,
+        duration: 0.5,
+        ease: "power2.out",
+      });
+    } else {
+      gsap.to(stickyCardRef.current, {
+        y: -50,
+        opacity: 0,
+        duration: 0.4,
+        ease: "power2.in",
+      });
+    }
+  }, [stickyCardVisible]);
+
+  // Observe inline tabs to toggle sticky tabs bar
   useEffect(() => {
     const el = inlineTabsRef.current;
     if (!el) return;
@@ -42,6 +68,47 @@ export default function CourseDetailsPage() {
     return () => obs.disconnect();
   }, []);
 
+  // Show/hide sticky card based on tabs visibility, footer, and ExploreMoreCourses
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!tabsVisible) {
+        setStickyCardVisible(false);
+        return;
+      }
+
+      // Hide when footer is visible in viewport
+      const footer = document.querySelector("footer");
+      if (footer) {
+        const footerRect = footer.getBoundingClientRect();
+        if (footerRect.top <= window.innerHeight) {
+          setStickyCardVisible(false);
+          return;
+        }
+      }
+
+      // Hide when ExploreMoreCourses enters viewport
+      const exploreEl = exploreMoreRef.current;
+      if (exploreEl) {
+        const rect = exploreEl.getBoundingClientRect();
+        if (rect.top < window.innerHeight) {
+          setStickyCardVisible(false);
+          return;
+        }
+      }
+
+      setStickyCardVisible(true);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [tabsVisible]);
+
+  // Active tab detection via IntersectionObserver
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -166,6 +233,7 @@ export default function CourseDetailsPage() {
         </div>
       </div>
 
+      {/* Sticky tabs bar */}
       <div
         className="fixed left-0 right-0 z-40 shadow-sm bg-white
                    transition-transform duration-300 ease-in-out"
@@ -184,6 +252,20 @@ export default function CourseDetailsPage() {
             />
           </div>
         </div>
+      </div>
+
+      {/* Sticky CourseInformation - appears when tabs are sticky, hides at footer */}
+      <div
+        ref={stickyCardRef}
+        className="hidden lg:block fixed right-4 md:right-6   lg:right-8 xl:right-[calc((100vw-1280px)/2+2rem)] z-40 w-85"
+        style={{
+          top: NAVBAR_H + 34,
+          opacity: 0,
+          transform: "translateY(-50px)",
+          pointerEvents: stickyCardVisible ? "auto" : "none",
+        }}
+      >
+        <CourseInformation hideImage={true} />
       </div>
 
       {/* ── Content ── */}
@@ -211,7 +293,7 @@ export default function CourseDetailsPage() {
           <LearnersReviews />
         </div>
 
-        <div className="mt-12">
+        <div className="lg:mt-25 mt-10   lg:pb-25 pb-10" ref={exploreMoreRef}>
           <ExploreMoreCourses />
         </div>
 

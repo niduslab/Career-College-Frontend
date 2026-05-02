@@ -94,74 +94,93 @@ const VISIBLE_LG = 3;
 const VISIBLE_MD = 2;
 const VISIBLE_SM = 1;
 const AUTO_INTERVAL = 4000;
+const GAP = 20;
+
+function getVisibleCount(): number {
+  if (typeof window === "undefined") return VISIBLE_LG;
+  if (window.innerWidth >= 1024) return VISIBLE_LG;
+  if (window.innerWidth >= 768) return VISIBLE_MD;
+  return VISIBLE_SM;
+}
 
 export default function ExploreMoreCourses() {
   const [current, setCurrent] = useState(0);
   const [activeArrow, setActiveArrow] = useState<"prev" | "next" | null>(null);
   const [visibleCount, setVisibleCount] = useState(VISIBLE_LG);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const arrowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const maxIndex = COURSES.length - visibleCount;
-
-  // Handle responsive visible count
+  // Responsive: update visibleCount AND clamp current in the same handler
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setVisibleCount(VISIBLE_LG);
-      } else if (window.innerWidth >= 768) {
-        setVisibleCount(VISIBLE_MD);
-      } else {
-        setVisibleCount(VISIBLE_SM);
-      }
+      const count = getVisibleCount();
+      const max = COURSES.length - count;
+      setVisibleCount(count);
+      setCurrent((c) => (c > max ? max : c));
     };
-
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const stopAuto = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-  };
-
+  // Auto-play using a ref for the interval so it never triggers re-renders
   const startAuto = useCallback(() => {
-    stopAuto();
+    if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
-      setCurrent((c) => (c >= maxIndex ? 0 : c + 1));
+      setCurrent((c) => {
+        const max = COURSES.length - getVisibleCount();
+        return c >= max ? 0 : c + 1;
+      });
     }, AUTO_INTERVAL);
-  }, [maxIndex]);
+  }, []);
 
   useEffect(() => {
     startAuto();
-    return stopAuto;
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [startAuto]);
 
-  const goTo = (idx: number) => {
-    setCurrent(Math.max(0, Math.min(idx, maxIndex)));
+  const flashArrow = (direction: "prev" | "next") => {
+    setActiveArrow(direction);
+    if (arrowTimerRef.current) clearTimeout(arrowTimerRef.current);
+    arrowTimerRef.current = setTimeout(() => setActiveArrow(null), 300);
+  };
+
+  const prev = () => {
+    const max = COURSES.length - getVisibleCount();
+    setCurrent((c) => (c <= 0 ? max : c - 1));
+    flashArrow("prev");
     startAuto();
   };
 
-  const prev = () => goTo(current <= 0 ? maxIndex : current - 1);
-  const next = () => goTo(current >= maxIndex ? 0 : current + 1);
+  const next = () => {
+    const max = COURSES.length - getVisibleCount();
+    setCurrent((c) => (c >= max ? 0 : c + 1));
+    flashArrow("next");
+    startAuto();
+  };
+
+  // Calculate card width as percentage
+  const cardWidth = 100 / visibleCount;
+  // Calculate gap contribution per card
+  const gapPerCard = (GAP * (visibleCount - 1)) / visibleCount;
 
   return (
-    <div className="mt-6 lg:mt-8  p-5">
+    <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="sg-h5 font-semibold --title-text mb-4">
+        <h2 className="sg-h5 md:sg-h4 font-semibold --title-text mb-0">
           Explore More Courses
         </h2>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => {
-              setActiveArrow("prev");
-              prev();
-            }}
+            onClick={prev}
             aria-label="Previous"
-            className={`w-9 h-9 cursor-pointer rounded-lg flex items-center justify-center transition-colors ${
+            className={`w-9 h-9 md:w-10 md:h-10 cursor-pointer rounded-lg flex items-center justify-center transition-colors ${
               activeArrow === "prev"
                 ? "bg-(--primary-700) border border-(--primary-700)"
-                : "bg-white border border-gray-200"
+                : "bg-white border border-gray-200 hover:bg-gray-50"
             }`}
           >
             <ChevronLeft
@@ -170,15 +189,12 @@ export default function ExploreMoreCourses() {
             />
           </button>
           <button
-            onClick={() => {
-              setActiveArrow("next");
-              next();
-            }}
+            onClick={next}
             aria-label="Next"
-            className={`w-9 h-9 cursor-pointer rounded-lg flex items-center justify-center transition-colors ${
+            className={`w-9 h-9 md:w-10 md:h-10 cursor-pointer rounded-lg flex items-center justify-center transition-colors ${
               activeArrow === "next"
                 ? "bg-(--primary-700) border border-(--primary-700)"
-                : "bg-white border border-gray-200"
+                : "bg-white border border-gray-200 hover:bg-gray-50"
             }`}
           >
             <ChevronRight
@@ -192,31 +208,29 @@ export default function ExploreMoreCourses() {
       {/* Carousel viewport */}
       <div className="overflow-hidden">
         <div
-          className="flex gap-5 transition-transform duration-500 ease-in-out"
+          className="flex transition-transform duration-500 ease-in-out"
           style={{
-            transform: `translateX(calc(-${current} * (100% / ${visibleCount} + 20px / ${visibleCount} * (${visibleCount} - 1) / ${visibleCount})))`,
+            gap: `${GAP}px`,
+            transform: `translateX(calc(-${current * cardWidth}% - ${current * GAP}px))`,
           }}
         >
           {COURSES.map((course, i) => (
             <div
               key={i}
-              className="shrink-0 p-4 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col"
+              className="shrink-0 p-3 md:p-4 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col"
               style={{
-                width: `calc((100% - ${(visibleCount - 1) * 20}px) / ${visibleCount})`,
+                width: `calc(${cardWidth}% - ${gapPerCard}px)`,
               }}
             >
-              {/* Course image */}
               <Image
                 src={course.image}
                 alt={course.title}
-                className="object-cover rounded-lg w-full h-65.5"
+                className="object-cover rounded-lg w-full h-48 md:h-65.5"
               />
 
-              {/* Card body */}
-              <div className="p-4 flex flex-col gap-2 flex-1">
-                {/* Title + Rating */}
+              <div className="p-3 md:p-4 flex flex-col gap-2 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="sg-p-h6 font-semibold text-gray-900 leading-snug line-clamp-2 flex-1">
+                  <h3 className="sg-p-default md:sg-p-h6 font-semibold text-gray-900 leading-snug line-clamp-2 flex-1">
                     {course.title}
                   </h3>
                   <div className="flex items-center gap-1 shrink-0">
@@ -227,10 +241,9 @@ export default function ExploreMoreCourses() {
                   </div>
                 </div>
 
-                {/* Instructor */}
                 <p className="text-xs text-gray-500">By {course.instructor}</p>
 
-                <div className="mt-3 flex flex-wrap gap-2 border-b border-dashed border-gray-200 pb-4">
+                <div className="mt-2 md:mt-3 flex flex-wrap gap-1.5 md:gap-2 border-b border-dashed border-gray-200 pb-3 md:pb-4">
                   <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-2 py-1 sg-caption text-gray-500">
                     <MonitorPlay size={12} className="text-gray-400" />
                     {course.lessons} Lessons
@@ -245,12 +258,11 @@ export default function ExploreMoreCourses() {
                   </span>
                 </div>
 
-                {/* Price + CTA */}
-                <div className="flex items-center justify-between mt-auto pt-3">
-                  <span className="text-base font-bold text-gray-900">
+                <div className="flex items-center justify-between mt-auto pt-2 md:pt-3">
+                  <span className="text-sm md:text-base font-bold text-gray-900">
                     {course.price}
                   </span>
-                  <button className="px-4 py-1.5 rounded-md h-10 cursor-pointer text-sm font-semibold transition-colors border border-gray-300 text-gray-700 hover:bg-gray-50">
+                  <button className="px-3 md:px-4 py-1.5 rounded-md h-9 md:h-10 cursor-pointer text-xs md:text-sm font-semibold transition-colors border border-gray-300 text-gray-700 hover:bg-gray-50">
                     View Details
                   </button>
                 </div>

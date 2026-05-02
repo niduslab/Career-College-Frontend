@@ -19,6 +19,10 @@ const SUBSCRIPTIONS = [
 
 type Plan = "one-time" | "subscription";
 
+interface CourseInformationProps {
+  hideImage?: boolean;
+}
+
 function Radio({ checked }: { checked: boolean }) {
   return (
     <span
@@ -33,20 +37,24 @@ function Radio({ checked }: { checked: boolean }) {
   );
 }
 
-export default function CourseInformation() {
+export default function CourseInformation({
+  hideImage = false,
+}: CourseInformationProps) {
   const [plan, setPlan] = React.useState<Plan>("one-time");
   const [subPlan, setSubPlan] = React.useState("starter");
 
   const isSubscription = plan === "subscription";
 
   return (
-    <div className="sticky top-24 rounded-2xl pb-4 w-100 bg-white shadow-lg overflow-hidden">
+    <div className="sticky top-24 rounded-2xl w-full lg:w-90 xl:w-90 bg-white shadow-md overflow-hidden">
       {/* Cover image */}
-      <div className=" w-100 h-75 relative rounded-full">
-        <Image src={image} alt="Course Cover" fill className="object-cover" />
-      </div>
+      {!hideImage && (
+        <div className="w-full h-75 relative rounded-t-2xl overflow-hidden">
+          <Image src={image} alt="Course Cover" fill className="object-cover" />
+        </div>
+      )}
 
-      <div className="p-5">
+      <div className="p-5 pb-6">
         {/* Course info list */}
         <h3 className="font-semibold lg:sg-h5 sg-p-big mb-6 mt-3 --title-text">
           Course Information
