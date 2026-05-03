@@ -17,7 +17,11 @@ const INSTITUTION_TYPES = [
   "Online Academy",
 ];
 
-export function SignUpForm() {
+interface SignUpFormProps {
+  onUserTypeChange?: (type: UserType) => void;
+}
+
+export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
   const [formData, setFormData] = useState<SignUpFormData>({
     email: "",
     full_name: "",
@@ -67,6 +71,7 @@ export function SignUpForm() {
   const updateField = (field: keyof SignUpFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
+    if (field === "user_type") onUserTypeChange?.(value as UserType);
   };
 
   const handleInstitutionSelect = (type: string) => {

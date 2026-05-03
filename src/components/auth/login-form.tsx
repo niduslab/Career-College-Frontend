@@ -10,7 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { LoginFormData, UserType } from "@/types/auth";
 
-export function LoginForm() {
+interface LoginFormProps {
+  onUserTypeChange?: (type: UserType) => void;
+}
+
+export function LoginForm({ onUserTypeChange }: LoginFormProps = {}) {
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: "",
@@ -43,6 +47,7 @@ export function LoginForm() {
   const updateField = (field: keyof LoginFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
+    if (field === "user_type") onUserTypeChange?.(value as UserType);
   };
 
   return (
