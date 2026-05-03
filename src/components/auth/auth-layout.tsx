@@ -1,12 +1,14 @@
 "use client";
 
 import { LottieAnimation } from "./lottie-animation";
+import type { UserType } from "@/types/auth";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
+  userType?: UserType;
 }
 
-export function AuthLayout({ children }: AuthLayoutProps) {
+export function AuthLayout({ children, userType }: AuthLayoutProps) {
   return (
     <div className="w-full bg-(--gray-50)">
       <div className="mx-auto w-full max-w-310 px-4 md:px-6 lg:px-8 py-8 md:py-12 lg:py-16">
@@ -16,7 +18,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           {/* Left Side - Animation Only */}
           <div className="hidden lg:flex relative h-150 rounded-2xl overflow-hidden items-center justify-center">
             <div className="relative z-10">
-              <LottieAnimation width={600} height={600} />
+              <LottieAnimation width={600} height={600} userType={userType} />
             </div>
           </div>
         </div>

@@ -17,7 +17,11 @@ const INSTITUTION_TYPES = [
   "Online Academy",
 ];
 
-export function SignUpForm() {
+interface SignUpFormProps {
+  onUserTypeChange?: (type: UserType) => void;
+}
+
+export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
   const [formData, setFormData] = useState<SignUpFormData>({
     email: "",
     full_name: "",
@@ -67,6 +71,7 @@ export function SignUpForm() {
   const updateField = (field: keyof SignUpFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
+    if (field === "user_type") onUserTypeChange?.(value as UserType);
   };
 
   const handleInstitutionSelect = (type: string) => {
@@ -86,7 +91,7 @@ export function SignUpForm() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* User Type Selection */}
         <div>
-          <div className="grid grid-cols-3 gap-2 mt-2">
+          <div className="grid grid-cols-3 gap-4 mt-2">
             {(
               ["learner", "instructor", "partner_institution"] as UserType[]
             ).map((type) => (
@@ -109,7 +114,7 @@ export function SignUpForm() {
         </div>
 
         {/* Full Name & Email - Two Columns */}
-        <div className="  grid lg:grid-cols-2 md:grid-cols-2 grid-cols-1 gap-4">
+        <div className=" grid lg:grid-cols-2 md:grid-cols-2 grid-cols-1 gap-4">
           <div>
             <Label
               htmlFor="full_name"
@@ -235,7 +240,10 @@ export function SignUpForm() {
         {/* Password & Confirm Password - Two Columns */}
         <div className="grid lg:grid-cols-2 md:grid-cols-2 grid-cols-1 gap-4">
           <div>
-            <Label htmlFor="password" className="sg-p-default">
+            <Label
+              htmlFor="password"
+              className="sg-p-default font-semibold  text-(--text-title) mb-2"
+            >
               Password <span className="text-red-500">*</span>
             </Label>
             <div className="relative mt-2">
@@ -250,7 +258,7 @@ export function SignUpForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-(--gray-500) hover:text-(--text-title) transition-colors"
+                className="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 text-(--gray-500) hover:text-(--text-title) transition-colors"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
@@ -268,7 +276,10 @@ export function SignUpForm() {
           </div>
 
           <div>
-            <Label htmlFor="confirm_password" className="sg-p-default">
+            <Label
+              htmlFor="confirm_password"
+              className="sg-p-default font-semibold  text-(--text-title) mb-2"
+            >
               Confirm Password <span className="text-red-500">*</span>
             </Label>
             <div className="relative mt-2">
@@ -285,7 +296,7 @@ export function SignUpForm() {
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-(--gray-500) hover:text-(--text-title) transition-colors"
+                className="absolute cursor-pointer right-3 top-1/2 -translate-y-1/2 text-(--gray-500) hover:text-(--text-title) transition-colors"
                 aria-label={
                   showConfirmPassword ? "Hide password" : "Show password"
                 }
@@ -314,7 +325,20 @@ export function SignUpForm() {
               }}
             />
             <span className="text-(--gray-600)">
-              I am agree with the terms and conditions & privacy policy
+              I am agree with the{" "}
+              <Link
+                href="/terms"
+                className="text-(--primary-700) hover:underline"
+              >
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/privacy"
+                className="text-(--primary-700) hover:underline"
+              >
+                Privacy Policy
+              </Link>
             </span>
           </label>
         </div>
