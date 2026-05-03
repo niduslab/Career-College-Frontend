@@ -10,12 +10,15 @@ interface LottieAnimationProps {
   height?: number;
 }
 
-export function LottieAnimation({ width = 400, height = 400 }: LottieAnimationProps) {
+export function LottieAnimation({
+  width = 400,
+  height = 400,
+}: LottieAnimationProps) {
   return (
     <div className="flex items-center justify-center">
-      <Lottie 
-        animationData={educationAnimation} 
-        loop 
+      <Lottie
+        animationData={educationAnimation}
+        loop
         autoplay
         style={{ width, height }}
       />
