@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { User, Globe, Users, Star } from "lucide-react";
 import gsap from "gsap";
-import { Breadcrumb } from "@/components/common/breadcrumb";
+import { BreadcrumbHero } from "@/components/common/breadcrumb-hero";
 import CourseInformation from "@/components/course-details/course-information";
 import CourseTabs from "@/components/course-details/course-tabs";
 import CourseInstructor from "@/components/course-details/course-instructor";
@@ -174,52 +174,47 @@ export default function CourseDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="relative bg-(--gray-950) overflow-visible">
-        <div className="relative z-10 mx-auto max-w-7xl px-4 md:px-6 lg:px-8 py-10 md:py-12 lg:py-16">
-          <div className="lg:pr-96">
-            <Breadcrumb
-              title="Complete UI/UX Design Course 2026: Figma + Real Project"
-              subtitle="Use Figma to get a job in UI Design, User Interface, User Experience design, UX Design & Web Design"
-              items={[
-                { label: "Home", href: "/" },
-                { label: "Design", href: "/design" },
-                { label: "User Experience Design", href: "/design/ux" },
-                { label: "Figma UI/UX Design", active: true },
-              ]}
-            >
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sg-p-small font-normal text-white mt-6">
-                <div className="flex items-center gap-2">
-                  <User size={16} />
-                  <span>Instructor</span>
-                  <a
-                    href="#"
-                    className="text-(--primary-500) hover:underline font-medium"
-                  >
-                    Daniel Walter Scott
-                  </a>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Globe size={16} />
-                  <span>English</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users size={16} />
-                  <span>Enrolled 87,398</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Star size={16} />
-                  <span>4.7 (46,245 Reviews)</span>
-                </div>
-              </div>
-            </Breadcrumb>
-          </div>
-
-          {/* Card: absolute — starts in hero, bleeds below into white section */}
+      <BreadcrumbHero
+        title="Complete UI/UX Design Course 2026: Figma + Real Project"
+        subtitle="Use Figma to get a job in UI Design, User Interface, User Experience design, UX Design & Web Design"
+        items={[
+          { label: "Home", href: "/" },
+          { label: "Design", href: "/design" },
+          { label: "User Experience Design", href: "/design/ux" },
+          { label: "Figma UI/UX Design", active: true },
+        ]}
+        overflow="visible"
+        cardSlot={
           <div className="hidden lg:block absolute top-10 md:top-12 lg:top-16 right-4 md:right-6 lg:right-8 w-85 z-20">
             <CourseInformation />
           </div>
+        }
+      >
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sg-p-small font-normal text-white mt-6">
+          <div className="flex items-center gap-2">
+            <User size={16} />
+            <span>Instructor</span>
+            <a
+              href="#"
+              className="text-(--primary-500) hover:underline font-medium"
+            >
+              Daniel Walter Scott
+            </a>
+          </div>
+          <div className="flex items-center gap-2">
+            <Globe size={16} />
+            <span>English</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users size={16} />
+            <span>Enrolled 87,398</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Star size={16} />
+            <span>4.7 (46,245 Reviews)</span>
+          </div>
         </div>
-      </div>
+      </BreadcrumbHero>
 
       <div ref={inlineTabsRef}>
         <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8 ">
@@ -259,7 +254,7 @@ export default function CourseDetailsPage() {
         ref={stickyCardRef}
         className="hidden lg:block fixed right-4 md:right-6   lg:right-8 xl:right-[calc((100vw-1280px)/2+2rem)] z-40 w-85"
         style={{
-          top: NAVBAR_H + 34,
+          top: NAVBAR_H + 100,
           opacity: 0,
           transform: "translateY(-50px)",
           pointerEvents: stickyCardVisible ? "auto" : "none",

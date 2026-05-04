@@ -325,7 +325,7 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
               }}
             />
             <span className="text-(--gray-600)">
-              I am agree with the{" "}
+              I agree with the{" "}
               <Link
                 href="/terms"
                 className="text-(--primary-700) hover:underline"
