@@ -20,7 +20,7 @@ export default function AddToCartPage() {
   const total = items.reduce((sum, item) => sum + item.price, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6 lg:py-10">
         {/* Breadcrumb */}
         <nav className="flex flex-wrap items-center gap-2 sg-p-small text-(--text-paragraph) mb-6">
@@ -32,7 +32,7 @@ export default function AddToCartPage() {
             Home
           </Link>
 
-          <Slash size={12} className="#6a7282" stroke-width="1.5" />
+          <ChevronRight size={14} className="text-gray-500" />
           <span className="text-(--text-title) sg-p-small font-medium ">
             Add to Cart
           </span>
