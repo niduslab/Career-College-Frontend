@@ -1,20 +1,22 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 import { User, Globe, Users, Star } from "lucide-react";
+import instructor1 from "@/assets/images/instructors/instructor1.webp";
+import instructor2 from "@/assets/images/instructors/instructor2.webp";
+import instructor3 from "@/assets/images/instructors/instructor3.webp";
 import gsap from "gsap";
 import { BreadcrumbHero } from "@/components/common/breadcrumb-hero";
-import CourseInformation from "@/components/course-details/course-information";
-import CourseTabs from "@/components/course-details/course-tabs";
-import CourseInstructor from "@/components/course-details/course-instructor";
-import WhatYouWillLearn from "@/components/course-details/what-you-will-learn";
-import CourseContent from "@/components/course-details/course-content";
 import LearnersReviews from "@/components/common/learners-reviews";
-import CourseRequirements from "@/components/course-details/course-requirements";
-import CourseDescription from "@/components/course-details/course-description";
 import ExploreMoreCourses from "@/components/common/explore-more-courses";
+import PartnerCourseDetailsTabs from "@/components/partner-course-details/partner-course-details-tabs";
+import PartnerCourseDetailsContent from "@/components/partner-course-details/partner-course-details-content";
+import PartnerCourseDetailsRequirements from "@/components/partner-course-details/partner-course-details-requirements";
+import PartnerCourseDetailsWhatYouWillLearn from "@/components/partner-course-details/partner-course-details-what-you-will-learn";
+import PartnerCourseDetailsDescription from "@/components/partner-course-details/partner-course-details-description";
+import PartnerCourseDetailsInformation from "@/components/partner-course-details/partner-course-details-information";
 
 const TABS = [
-  { label: "Course Instructor" },
   { label: "What You Will Learn" },
   { label: "Course Content" },
   { label: "Requirements" },
@@ -186,7 +188,7 @@ export default function CourseDetailsPage() {
         overflow="visible"
         cardSlot={
           <div className="hidden lg:block absolute top-10 md:top-12 lg:top-16 right-4 md:right-6 lg:right-8 w-85 z-20">
-            <CourseInformation />
+            <PartnerCourseDetailsInformation />
           </div>
         }
       >
@@ -194,12 +196,27 @@ export default function CourseDetailsPage() {
           <div className="flex items-center gap-2">
             <User size={16} />
             <span>Instructor</span>
-            <a
-              href="#"
-              className="text-(--primary-500) hover:underline font-medium"
-            >
-              Daniel Walter Scott
-            </a>
+            <div className="flex items-center">
+              <div className="flex -space-x-2">
+                {[instructor1, instructor2, instructor3].map((src, i) => (
+                  <div
+                    key={i}
+                    className="w-7 h-7 rounded-full overflow-hidden border-2 border-white"
+                  >
+                    <Image
+                      src={src}
+                      alt={`Instructor ${i + 1}`}
+                      width={24}
+                      height={24}
+                      className="w-full h-full object-cover object-top"
+                    />
+                  </div>
+                ))}
+              </div>
+              <span className="ml-2 sg-caption cursor-pointer text-(--primary-700) font-semibold">
+                + 1 more
+              </span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Globe size={16} />
@@ -219,7 +236,7 @@ export default function CourseDetailsPage() {
       <div ref={inlineTabsRef}>
         <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8 ">
           <div className="lg:pr-96">
-            <CourseTabs
+            <PartnerCourseDetailsTabs
               activeTab={activeTab}
               setActiveTab={handleTabClick}
               tabs={TABS}
@@ -240,7 +257,7 @@ export default function CourseDetailsPage() {
       >
         <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8">
           <div className="lg:pr-96">
-            <CourseTabs
+            <PartnerCourseDetailsTabs
               activeTab={activeTab}
               setActiveTab={handleTabClick}
               tabs={TABS}
@@ -260,7 +277,7 @@ export default function CourseDetailsPage() {
           pointerEvents: stickyCardVisible ? "auto" : "none",
         }}
       >
-        <CourseInformation hideImage={true} />
+        <PartnerCourseDetailsInformation hideImage={true} />
       </div>
 
       {/* ── Content ── */}
@@ -274,11 +291,15 @@ export default function CourseDetailsPage() {
                 data-tab={label}
                 className="scroll-mt-32"
               >
-                {label === "Course Instructor" && <CourseInstructor />}
-                {label === "What You Will Learn" && <WhatYouWillLearn />}
-                {label === "Course Content" && <CourseContent />}
-                {label === "Requirements" && <CourseRequirements />}
-                {label === "Description" && <CourseDescription />}
+                {/* {label === "Course Instructor" && <CourseInstructor />} */}
+                {label === "What You Will Learn" && (
+                  <PartnerCourseDetailsWhatYouWillLearn />
+                )}
+                {label === "Course Content" && <PartnerCourseDetailsContent />}
+                {label === "Requirements" && (
+                  <PartnerCourseDetailsRequirements />
+                )}
+                {label === "Description" && <PartnerCourseDetailsDescription />}
               </section>
             ))}
           </div>
@@ -293,8 +314,8 @@ export default function CourseDetailsPage() {
         </div>
 
         {/* Mobile: card in normal flow */}
-        <div className="lg:hidden mt-8">
-          <CourseInformation />
+        <div className="lg:hidden mt-0 mb-4">
+          <PartnerCourseDetailsInformation />
         </div>
       </div>
     </div>

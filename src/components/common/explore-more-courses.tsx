@@ -2,12 +2,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image, { StaticImageData } from "next/image";
 import {
-  ChevronLeft,
-  ChevronRight,
   Star,
   MonitorPlay,
   Clock,
   Users,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import img1 from "@/assets/images/popular-courses/image1.webp";
 import img2 from "@/assets/images/popular-courses/image2.webp";
@@ -108,7 +108,6 @@ export default function ExploreMoreCourses() {
   const [activeArrow, setActiveArrow] = useState<"prev" | "next" | null>(null);
   const [visibleCount, setVisibleCount] = useState(VISIBLE_LG);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const arrowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Responsive: update visibleCount AND clamp current in the same handler
   useEffect(() => {
@@ -141,23 +140,17 @@ export default function ExploreMoreCourses() {
     };
   }, [startAuto]);
 
-  const flashArrow = (direction: "prev" | "next") => {
-    setActiveArrow(direction);
-    if (arrowTimerRef.current) clearTimeout(arrowTimerRef.current);
-    arrowTimerRef.current = setTimeout(() => setActiveArrow(null), 300);
-  };
-
   const prev = () => {
     const max = COURSES.length - getVisibleCount();
     setCurrent((c) => (c <= 0 ? max : c - 1));
-    flashArrow("prev");
+    setActiveArrow("prev");
     startAuto();
   };
 
   const next = () => {
     const max = COURSES.length - getVisibleCount();
     setCurrent((c) => (c >= max ? 0 : c + 1));
-    flashArrow("next");
+    setActiveArrow("next");
     startAuto();
   };
 
@@ -177,30 +170,24 @@ export default function ExploreMoreCourses() {
           <button
             onClick={prev}
             aria-label="Previous"
-            className={`w-9 h-9 md:w-10 md:h-10 cursor-pointer rounded-lg flex items-center justify-center transition-colors ${
+            className={`w-9 h-9   cursor-pointer rounded-lg flex items-center justify-center transition-colors ${
               activeArrow === "prev"
-                ? "bg-(--primary-700) border border-(--primary-700)"
+                ? "bg-(--primary-700) border border-(--primary-700) text-white"
                 : "bg-white border border-gray-200 hover:bg-gray-50"
             }`}
           >
-            <ChevronLeft
-              size={20}
-              color={activeArrow === "prev" ? "#ffffff" : "#100d14"}
-            />
+            <ArrowLeft size={18} />
           </button>
           <button
             onClick={next}
             aria-label="Next"
-            className={`w-9 h-9 md:w-10 md:h-10 cursor-pointer rounded-lg flex items-center justify-center transition-colors ${
+            className={`w-9 h-9  cursor-pointer rounded-lg flex items-center justify-center transition-colors ${
               activeArrow === "next"
-                ? "bg-(--primary-700) border border-(--primary-700)"
+                ? "bg-(--primary-700) border border-(--primary-700) text-white"
                 : "bg-white border border-gray-200 hover:bg-gray-50"
             }`}
           >
-            <ChevronRight
-              size={20}
-              color={activeArrow === "next" ? "#ffffff" : "#100d14"}
-            />
+            <ArrowRight size={18} />
           </button>
         </div>
       </div>
@@ -230,12 +217,12 @@ export default function ExploreMoreCourses() {
 
               <div className="p-3 md:p-4 flex flex-col gap-2 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="sg-p-default md:sg-p-h6 font-semibold text-gray-900 leading-snug line-clamp-2 flex-1">
+                  <h3 className="sg-p-default md:sg-h6 lg:sg-h6 font-semibold text-gray-900 leading-snug line-clamp-2 flex-1">
                     {course.title}
                   </h3>
                   <div className="flex items-center gap-1 shrink-0">
                     <Star size={13} className="fill-amber-400 text-amber-400" />
-                    <span className="text-xs font-semibold text-gray-700">
+                    <span className="sg-p-small font-normal text-(--text-paragraph)">
                       {course.rating}
                     </span>
                   </div>

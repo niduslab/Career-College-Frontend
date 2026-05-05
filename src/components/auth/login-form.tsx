@@ -56,7 +56,7 @@ export function LoginForm({ onUserTypeChange }: LoginFormProps = {}) {
         Welcome Back
       </h2>
       <p className="sg-p-default text-(--gray-600) mb-6">
-        Log in to continue your learning journey!!!!!!
+        Log in to continue your learning journey
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">

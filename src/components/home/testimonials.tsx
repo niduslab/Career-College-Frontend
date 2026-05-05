@@ -142,7 +142,7 @@ export function Testimonials() {
               start: "top 80%",
               toggleActions: "play none none none",
             },
-          }
+          },
         );
       }
 
@@ -162,7 +162,7 @@ export function Testimonials() {
             start: "top 75%",
             toggleActions: "play none none none",
           },
-        }
+        },
       );
     }, sectionRef);
 
@@ -183,7 +183,10 @@ export function Testimonials() {
   }, [slideNext]);
 
   return (
-    <section ref={sectionRef} className="w-full mt-10 lg:mt-25 py-12 md:py-16 lg:py-20">
+    <section
+      ref={sectionRef}
+      className="w-full mt-10 lg:mt-25 py-12 md:py-16 lg:py-20"
+    >
       <div className="mx-auto w-full max-w-310 px-4 md:px-6 lg:px-8">
         <div className="flex items-start justify-between gap-4 md:items-center">
           <h2
@@ -203,7 +206,7 @@ export function Testimonials() {
                 slidePrev();
               }}
               aria-label="Previous testimonials"
-              className={`inline-flex lg:h-11 h-10 lg:w-11 w-10 items-center justify-center cursor-pointer rounded-lg border transition-colors ${
+              className={`inline-flex h-9 w-9 items-center justify-center cursor-pointer rounded-lg border transition-colors ${
                 activeArrow === "left"
                   ? "border-(--primary-700) bg-(--primary-700) text-(--text-white)"
                   : "border-(--gray-300) bg-(--text-white) text-(--text-title) hover:border-(--primary-300)"
@@ -218,7 +221,7 @@ export function Testimonials() {
                 slideNext();
               }}
               aria-label="Next testimonials"
-              className={`inline-flex lg:h-11 h-10 lg:w-11 w-10 items-center justify-center cursor-pointer rounded-lg border transition-colors ${
+              className={`inline-flex h-9 w-9 items-center justify-center cursor-pointer rounded-lg border transition-colors ${
                 activeArrow === "right"
                   ? "border-(--primary-700) bg-(--primary-700) text-(--text-white)"
                   : "border-(--gray-300) bg-(--text-white) text-(--text-title) hover:border-(--primary-300)"

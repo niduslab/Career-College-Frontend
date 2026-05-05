@@ -18,11 +18,11 @@ export function Breadcrumb({
     <>
       {/* Breadcrumb */}
       <nav
-        className="mb-6 flex items-center gap-2 text-sm text-(--gray-200)"
+        className="mb-6 flex flex-wrap items-center gap-2 text-sm text-(--gray-200)"
         aria-label="Breadcrumb"
       >
         {items.map((item, idx) => (
-          <span key={item.label} className="flex items-center gap-2">
+          <span key={item.label} className="flex items-center gap-2 whitespace-nowrap">
             {item.href && !item.active ? (
               <a
                 href={item.href}
