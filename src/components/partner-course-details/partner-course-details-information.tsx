@@ -18,7 +18,7 @@ export default function PartnerCourseDetailsInformation({
   hideImage = false,
 }: CourseInformationProps) {
   return (
-    <div className="sticky top-24 rounded-2xl w-full lg:w-90 xl:w-90 bg-white shadow-md overflow-hidden">
+    <div className="sticky top-24  rounded-2xl w-full lg:w-90 xl:w-90 bg-white shadow-md overflow-hidden">
       {/* Cover image */}
       {!hideImage && (
         <div className="w-full h-75 relative rounded-t-2xl overflow-hidden">

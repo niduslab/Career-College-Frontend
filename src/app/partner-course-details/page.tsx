@@ -314,7 +314,7 @@ export default function CourseDetailsPage() {
         </div>
 
         {/* Mobile: card in normal flow */}
-        <div className="lg:hidden mt-8">
+        <div className="lg:hidden mt-0 mb-4">
           <PartnerCourseDetailsInformation />
         </div>
       </div>
