@@ -108,7 +108,6 @@ export default function ExploreMoreCourses() {
   const [activeArrow, setActiveArrow] = useState<"prev" | "next" | null>(null);
   const [visibleCount, setVisibleCount] = useState(VISIBLE_LG);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const arrowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Responsive: update visibleCount AND clamp current in the same handler
   useEffect(() => {
@@ -141,23 +140,17 @@ export default function ExploreMoreCourses() {
     };
   }, [startAuto]);
 
-  const flashArrow = (direction: "prev" | "next") => {
-    setActiveArrow(direction);
-    if (arrowTimerRef.current) clearTimeout(arrowTimerRef.current);
-    arrowTimerRef.current = setTimeout(() => setActiveArrow(null), 300);
-  };
-
   const prev = () => {
     const max = COURSES.length - getVisibleCount();
     setCurrent((c) => (c <= 0 ? max : c - 1));
-    flashArrow("prev");
+    setActiveArrow("prev");
     startAuto();
   };
 
   const next = () => {
     const max = COURSES.length - getVisibleCount();
     setCurrent((c) => (c >= max ? 0 : c + 1));
-    flashArrow("next");
+    setActiveArrow("next");
     startAuto();
   };
 
