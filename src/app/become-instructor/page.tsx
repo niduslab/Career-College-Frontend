@@ -1,5 +1,6 @@
 import { BreadcrumbHero } from "@/components/common/breadcrumb-hero";
 import { HowToBecomeSection } from "@/components/become-instructor/how-to-become-section";
+import { WhyJoinSection } from "@/components/become-instructor/why-join-section";
 
 export default function BecomeInstructorPage() {
   return (
@@ -13,6 +14,7 @@ export default function BecomeInstructorPage() {
         ]}
       />
       <HowToBecomeSection />
+      <WhyJoinSection />
     </div>
   );
 }
