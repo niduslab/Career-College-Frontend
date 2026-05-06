@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { House, ChevronRight, Slash } from "lucide-react";
+import { House, ChevronRight } from "lucide-react";
 import CartItems, {
   CartItem,
   INITIAL_ITEMS,
@@ -62,8 +62,8 @@ export default function AddToCartPage() {
         <div className="mt-10 lg:mt-25 mb-10 lg:mb-25">
           <ExploreMoreCourses />
         </div>
+        <DreamCareerCta />
       </div>
-      <DreamCareerCta />
     </div>
   );
 }
