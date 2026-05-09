@@ -115,7 +115,7 @@ export function WhyJoinSection() {
   return (
     <section
       ref={sectionRef}
-      className="w-full bg-gray-50 lg:mb-25 mb-10  lg:mt-25 mt-10 py-10  md:py-16 lg:py-20"
+      className="w-full  lg:mb-25 mb-10  lg:mt-25 mt-10 py-10  md:py-16 lg:py-20"
     >
       <div className="mx-auto w-full max-w-310 px-4 md:px-6 lg:px-8">
         {/* Heading */}

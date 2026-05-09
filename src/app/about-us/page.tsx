@@ -1,6 +1,10 @@
 import { BreadcrumbHero } from "@/components/common/breadcrumb-hero";
 import { AboutIntro } from "@/components/about-us/about-intro";
 import { AboutPrinciples } from "@/components/about-us/about-principles";
+import { CareerJourney } from "@/components/common/career-journey";
+import { WhyJoinSection } from "@/components/common/why-join-section";
+import { FaqSection } from "@/components/common/faq-section";
+import { DreamCareerCta } from "@/components/common/dream-career-cta";
 
 export default function AboutUsPage() {
   return (
@@ -19,6 +23,18 @@ export default function AboutUsPage() {
       </div>
       <div className="bg-white">
         <AboutPrinciples />
+      </div>
+      <div className="bg-gray-50">
+        <CareerJourney />
+      </div>
+      <div className="bg-white">
+        <WhyJoinSection />
+      </div>
+      <div>
+        <FaqSection />
+      </div>
+      <div>
+        <DreamCareerCta />
       </div>
     </div>
   );

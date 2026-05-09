@@ -1,6 +1,6 @@
 import { BreadcrumbHero } from "@/components/common/breadcrumb-hero";
 import { HowToBecomeSection } from "@/components/become-instructor/how-to-become-section";
-import { WhyJoinSection } from "@/components/become-instructor/why-join-section";
+import { WhyJoinSection } from "@/components/common/why-join-section";
 import { InstructorTestimonialSection } from "@/components/become-instructor/instructor-testimonial-section";
 import { DreamCareerCta } from "@/components/common/dream-career-cta";
 
