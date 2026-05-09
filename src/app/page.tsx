@@ -1,5 +1,5 @@
 import { Hero } from "@/components/home/hero";
-import { CareerJourney } from "@/components/home/career-journey";
+import { CareerJourney } from "@/components/common/career-journey";
 import { IndustryStrip } from "@/components/home/industry-strip";
 import { PopularCourses } from "@/components/home/popular-courses";
 import { TrendingCourses } from "@/components/home/trending-courses";
