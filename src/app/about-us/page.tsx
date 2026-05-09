@@ -1,5 +1,6 @@
 import { BreadcrumbHero } from "@/components/common/breadcrumb-hero";
 import { AboutIntro } from "@/components/about-us/about-intro";
+import { AboutPrinciples } from "@/components/about-us/about-principles";
 
 export default function AboutUsPage() {
   return (
@@ -13,8 +14,11 @@ export default function AboutUsPage() {
         ]}
       />
 
-      <div className="bg-gray">
+      <div className="bg-gray-50">
         <AboutIntro />
+      </div>
+      <div className="bg-white">
+        <AboutPrinciples />
       </div>
     </div>
   );
