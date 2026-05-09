@@ -2,12 +2,12 @@ import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 
 const COMPANY_LINKS = [
-  "About Us",
-  "Become an Instructor",
-  "Courses",
-  "Blog",
-  "Contact Us",
-  "Faq",
+  { label: "About Us", href: "/about-us" },
+  { label: "Become an Instructor", href: "/become-instructor" },
+  { label: "Courses", href: "/courses" },
+  { label: "Blog", href: "/blog" },
+  { label: "Contact Us", href: "/contact-us" },
+  { label: "Faq", href: "/faq" },
 ];
 
 const CATEGORY_LINKS = [
@@ -79,13 +79,13 @@ export function Footer() {
                   Company
                 </h3>
                 <ul className="mt-3 lg:mt-6 space-y-4">
-                  {COMPANY_LINKS.map((item) => (
-                    <li key={item}>
+                  {COMPANY_LINKS.map(({ label, href }) => (
+                    <li key={label}>
                       <Link
-                        href="#"
+                        href={href}
                         className="sg-p-small lg:sg-p-default text-white transition-colors hover:text-white/90"
                       >
-                        {item}
+                        {label}
                       </Link>
                     </li>
                   ))}
