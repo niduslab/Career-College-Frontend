@@ -1,5 +1,5 @@
 import { Hero } from "@/components/home/hero";
-import { CareerJourney } from "@/components/home/career-journey";
+import { CareerJourney } from "@/components/common/career-journey";
 import { IndustryStrip } from "@/components/home/industry-strip";
 import { PopularCourses } from "@/components/home/popular-courses";
 import { TrendingCourses } from "@/components/home/trending-courses";
@@ -7,7 +7,7 @@ import { LearningJourneySteps } from "@/components/home/learning-journey-steps";
 import { Testimonials } from "@/components/home/testimonials";
 import { InstructorsSection } from "@/components/home/instructors-section";
 import { UpcomingWebinars } from "@/components/home/upcoming-webinars";
-import { FaqSection } from "@/components/home/faq-section";
+import { FaqSection } from "@/components/common/faq-section";
 import { InsightsResources } from "@/components/home/insights-resources";
 import { DreamCareerCta } from "@/components/common/dream-career-cta";
 

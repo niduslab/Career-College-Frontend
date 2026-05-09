@@ -7,7 +7,7 @@ import { gsap } from "@/lib/gsap";
 const NAV_LINKS = [
   { label: "Categories", href: "#" },
   { label: "Courses", href: "#" },
-  { label: "Become an Instructor", href: "#" },
+  { label: "Become an Instructor", href: "/become-instructor" },
 ];
 
 const CATEGORY_DROPDOWN = [
