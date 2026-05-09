@@ -2,68 +2,10 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight, CalendarDays, Heart } from "lucide-react";
 import { gsap, prepareGsap } from "@/lib/gsap";
-import image1 from "@/assets/images/insights-resources/image1.webp";
-import image2 from "@/assets/images/insights-resources/image2.webp";
-import image3 from "@/assets/images/insights-resources/image3.webp";
-
-const BLOGS = [
-  {
-    title: "Top 10 In-Demand Skills You Should Learn in 2026",
-    author: "Maria Lopez",
-    date: "22 March 2026",
-    image: image1,
-  },
-  {
-    title: "How to Build a Job-Winning Portfolio in 30 Days",
-    author: "Maria Lopez",
-    date: "22 March 2026",
-    image: image2,
-  },
-  {
-    title: "A Complete Guide to Starting Your Career in AI",
-    author: "Maria Lopez",
-    date: "22 March 2026",
-    image: image3,
-  },
-  {
-    title: "A Complete Guide to Starting Your Career in AI",
-    author: "Maria Lopez",
-    date: "22 March 2026",
-    image: image3,
-  },
-  {
-    title: "Top 10 In-Demand Skills You Should Learn in 2026",
-    author: "Maria Lopez",
-    date: "22 March 2026",
-    image: image1,
-  },
-  {
-    title: "How to Build a Job-Winning Portfolio in 30 Days",
-    author: "Maria Lopez",
-    date: "22 March 2026",
-    image: image2,
-  },
-  {
-    title: "How to Build a Job-Winning Portfolio in 30 Days",
-    author: "Maria Lopez",
-    date: "22 March 2026",
-    image: image2,
-  },
-  {
-    title: "A Complete Guide to Starting Your Career in AI",
-    author: "Maria Lopez",
-    date: "22 March 2026",
-    image: image3,
-  },
-  {
-    title: "Top 10 In-Demand Skills You Should Learn in 2026",
-    author: "Maria Lopez",
-    date: "22 March 2026",
-    image: image1,
-  },
-];
+import { BLOGS } from "@/data/blogs";
 
 export function AllBlogsGrid() {
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -140,10 +82,7 @@ export function AllBlogsGrid() {
   }, []);
 
   return (
-    <section
-      ref={sectionRef}
-      className="mt-10 w-full bg-(--gray-50) py-12 md:py-16 lg:mt-25 lg:py-20"
-    >
+    <section ref={sectionRef} className=" w-full py-12 md:py-16 lg:py-25">
       <div className="mx-auto w-full max-w-310 px-4 md:px-6 lg:px-8">
         <h2
           ref={headingRef}
@@ -196,8 +135,8 @@ export function AllBlogsGrid() {
                   {blog.title}
                 </h3>
 
-                <button
-                  type="button"
+                <Link
+                  href={`/blog-details/${blog.slug}`}
                   className="group mt-4 lg:mt-6 inline-flex items-center gap-2 sg-p-small lg:sg-p-default font-semibold text-(--primary-700) transition-colors hover:text-(--primary-900)"
                 >
                   Read More
@@ -206,7 +145,7 @@ export function AllBlogsGrid() {
                     strokeWidth={1.5}
                     className="transition-transform duration-300 ease-out group-hover:translate-x-0.5"
                   />
-                </button>
+                </Link>
               </div>
             </article>
           ))}

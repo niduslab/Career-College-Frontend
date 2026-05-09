@@ -1,6 +1,5 @@
 import { BreadcrumbHero } from "@/components/common/breadcrumb-hero";
 import { AllBlogsGrid } from "@/components/all-blogs/all-blogs-grid";
-import { CareerJourney } from "@/components/common/career-journey";
 import { DreamCareerCta } from "@/components/common/dream-career-cta";
 
 export default function AboutUsPage() {
@@ -14,7 +13,9 @@ export default function AboutUsPage() {
           { label: "All Blogs", active: true },
         ]}
       />
-      <AllBlogsGrid />
+      <div className="bg-gray-50">
+        <AllBlogsGrid />
+      </div>
       <DreamCareerCta />
     </div>
   );
