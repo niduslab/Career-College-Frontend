@@ -168,6 +168,7 @@ export function DreamCareerCta() {
                 src={item.image}
                 alt="Learner avatar"
                 fill
+                sizes="88px"
                 className="h-full w-full object-cover"
               />
             </span>

@@ -127,7 +127,7 @@ export function InsightsResources() {
           ref={cardsRef}
           className="mt-10 grid lg:gap-5 gap-4 md:mt-12 lg:mt-15 md:grid-cols-2 lg:grid-cols-3"
         >
-          {BLOGS.map((blog) => (
+          {BLOGS.map((blog, index) => (
             <article
               key={blog.title}
               data-blog-card
@@ -142,6 +142,9 @@ export function InsightsResources() {
                   width={368}
                   height={262}
                   className="h-65.5 w-full object-cover"
+                  style={{ height: "auto" }}
+                  loading={index === 0 ? "eager" : "lazy"}
+                  priority={index === 0}
                 />
                 <button
                   type="button"

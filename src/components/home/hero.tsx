@@ -117,7 +117,7 @@ export function Hero() {
         />
 
         <div data-hero-left className="max-w-xl">
-          <h1 className="text-[42px] leading-[1.06] font-semibold tracking-[-0.028em] text-[--text-title] md:text-[56px] lg:text-[72px]">
+          <h1 className="text-[42px] leading-[1.06] font-semibold tracking-[-0.028em] text-[--text-title] md:text-[56px] lg:text-[50px] xl:text-[72px] ">
             Start Your Dream
             <br />
             Career with the

@@ -35,7 +35,7 @@ export function FaqSection() {
   const [activeIndex, setActiveIndex] = useState(0);
 
   return (
-    <section className="relative mt-10 w-full overflow-hidden bg-(--text-white) py-12 md:py-16 lg:mt-25 lg:py-20">
+    <section className="relative mt-10 w-full overflow-hidden bg-white py-12 md:py-16 lg:mt-25 lg:py-20">
       <div
         className="pointer-events-none absolute"
         style={{

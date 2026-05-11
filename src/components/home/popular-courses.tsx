@@ -149,7 +149,7 @@ export function PopularCourses() {
               start: "top 80%",
               toggleActions: "play none none none",
             },
-          }
+          },
         );
       }
 
@@ -169,7 +169,7 @@ export function PopularCourses() {
               start: "top 80%",
               toggleActions: "play none none none",
             },
-          }
+          },
         );
       }
 
@@ -190,7 +190,7 @@ export function PopularCourses() {
             start: "top 75%",
             toggleActions: "play none none none",
           },
-        }
+        },
       );
 
       // View All button fade-in
@@ -208,7 +208,7 @@ export function PopularCourses() {
             start: "top 85%",
             toggleActions: "play none none none",
           },
-        }
+        },
       );
     }, sectionRef);
 
@@ -264,15 +264,13 @@ export function PopularCourses() {
               data-course-card
               className="rounded-2xl  border border-(--gray-200) bg-(--text-white) p-4"
             >
-              <div
-                className={`relative overflow-hidden rounded-lg   before:absolute before:inset-0 before:z-10`}
-              >
+              <div className="relative h-55 overflow-hidden rounded-lg before:absolute before:inset-0 before:z-10">
                 <Image
                   src={course.image}
                   alt={course.title}
-                  width={368}
-                  height={262}
-                  className="h-65.5 w-full object-cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
                 />
                 <button
                   type="button"

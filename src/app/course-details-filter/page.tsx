@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BreadcrumbHero } from "@/components/common/breadcrumb-hero";
 import { CoursesFilterSidebar } from "@/components/course-details-filter/courses-filter-sidebar";
 import { CoursesFilterGrid } from "@/components/course-details-filter/courses-filter-grid";
+import { DreamCareerCta } from "@/components/common/dream-career-cta";
 
 export default function CourseDetailsFilterPage() {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -37,6 +38,7 @@ export default function CourseDetailsFilterPage() {
           </div>
         </div>
       </section>
+      <DreamCareerCta />
     </div>
   );
 }

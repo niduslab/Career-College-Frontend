@@ -78,7 +78,7 @@ export function TrendingCourses() {
               start: "top 80%",
               toggleActions: "play none none none",
             },
-          }
+          },
         );
       }
 
@@ -99,7 +99,7 @@ export function TrendingCourses() {
             start: "top 70%",
             toggleActions: "play none none none",
           },
-        }
+        },
       );
 
       // Button animation - scale + fade
@@ -118,14 +118,14 @@ export function TrendingCourses() {
               start: "top 85%",
               toggleActions: "play none none none",
             },
-          }
+          },
         );
       }
 
       // Hover animation for cards
       gsap.utils.toArray("[data-trending-card]").forEach((card: any) => {
-        card.addEventListener("mouseenter", function (this: HTMLElement) {
-          gsap.to(this, {
+        card.addEventListener("mouseenter", (e: MouseEvent) => {
+          gsap.to(e.currentTarget, {
             y: -8,
             boxShadow: "0 20px 40px rgba(16, 24, 40, 0.2)",
             duration: 0.4,
@@ -134,8 +134,8 @@ export function TrendingCourses() {
           });
         });
 
-        card.addEventListener("mouseleave", function (this: HTMLElement) {
-          gsap.to(this, {
+        card.addEventListener("mouseleave", (e: MouseEvent) => {
+          gsap.to(e.currentTarget, {
             y: 0,
             boxShadow: "0 0px 0px rgba(16, 24, 40, 0)",
             duration: 0.4,
@@ -176,15 +176,15 @@ export function TrendingCourses() {
               data-trending-card
               className="rounded-2xl  border border-(--gray-200) bg-(--text-white) p-4 transition-shadow duration-300"
             >
-              <div
-                className={`relative overflow-hidden rounded-lg   before:absolute before:inset-0 before:z-10`}
-              >
+              <div className="relative h-55 overflow-hidden rounded-lg before:absolute before:inset-0 before:z-10">
                 <Image
                   src={course.image}
                   alt={course.title}
-                  width={368}
-                  height={262}
-                  className="h-65.5 w-full object-cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  loading={index === 0 ? "eager" : "lazy"}
+                  priority={index === 0}
+                  className="object-cover"
                 />
                 <button
                   type="button"

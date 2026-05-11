@@ -66,7 +66,7 @@ export function LearningJourneySteps() {
               start: "top 80%",
               toggleActions: "play none none none",
             },
-          }
+          },
         );
       }
 
@@ -87,7 +87,7 @@ export function LearningJourneySteps() {
             start: "top 70%",
             toggleActions: "play none none none",
           },
-        }
+        },
       );
 
       // Image fade-in + slide-up
@@ -105,7 +105,7 @@ export function LearningJourneySteps() {
             start: "top 75%",
             toggleActions: "play none none none",
           },
-        }
+        },
       );
     }, sectionRef);
 
@@ -115,7 +115,10 @@ export function LearningJourneySteps() {
   }, []);
 
   return (
-    <section ref={sectionRef} className=" w-full  mt-10 lg:mt-25  py-12 md:py-16 lg:py-20">
+    <section
+      ref={sectionRef}
+      className=" w-full  mt-10 lg:mt-25  py-12 md:py-16 lg:py-20"
+    >
       <div className="mx-auto grid w-full max-w-310 items-stretch gap-8 px-4 md:gap-10 md:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
         <div ref={headingRef} className="flex h-full flex-col justify-between">
           <div>
@@ -131,18 +134,26 @@ export function LearningJourneySteps() {
             </p>
           </div>
 
-          <div data-journey-image className="mt-7 overflow-hidden rounded-2xl md:mt-8 lg:mt-12">
+          <div
+            data-journey-image
+            className="relative mt-7 h-58 overflow-hidden rounded-2xl md:mt-8 md:h-72.5 lg:mt-12 lg:h-72.5"
+          >
             <Image
               src={image}
               alt="Learner sitting with laptop"
-              width={505}
-              height={290}
-              className="h-58 w-full object-cover md:h-72.5 lg:h-72.5"
+              fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              loading="eager"
+              priority
+              className="object-cover"
             />
           </div>
         </div>
 
-        <div ref={stepsRef} className="grid content-start gap-4 md:gap-6 lg:gap-6">
+        <div
+          ref={stepsRef}
+          className="grid content-start gap-4 md:gap-6 lg:gap-6"
+        >
           {JOURNEY_STEPS.map(({ title, description, badge, Icon }) => (
             <article
               key={badge}
