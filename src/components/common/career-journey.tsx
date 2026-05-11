@@ -136,17 +136,6 @@ export function CareerJourney() {
   return (
     <section ref={sectionRef} className="mt-0 w-full py-10 md:py-16 lg:py-25">
       <div className="mx-auto grid w-full max-w-310 items-stretch gap-8 rounded-[28px] p-4 md:gap-10 md:p-6 lg:grid-cols-[1fr_1.02fr] lg:gap-10 lg:p-8">
-        {/* <div
-          ref={imageRef}
-          className="relative h-full overflow-hidden rounded-2xl"
-        >
-          <Image
-            src={image}
-            alt="Student focused on online learning"
-            width={610}
-            height={625}
-            className="h-90 w-full  fill rounded-2xl object-cover md:h-137.5 lg:h-full lg:min-h-156.2"
-          /> */}
         <div
           ref={imageRef}
           className="relative h-90 w-full rounded-2xl md:h-137.5 lg:h-full lg:min-h-156.2"
@@ -155,6 +144,7 @@ export function CareerJourney() {
             src={image}
             alt="Student focused on online learning"
             fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
             className="rounded-2xl object-cover"
           />
 

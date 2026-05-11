@@ -61,7 +61,7 @@ export function InstructorsSection() {
               start: "top 80%",
               toggleActions: "play none none none",
             },
-          }
+          },
         );
       }
 
@@ -82,7 +82,7 @@ export function InstructorsSection() {
             start: "top 70%",
             toggleActions: "play none none none",
           },
-        }
+        },
       );
 
       // Button animation
@@ -101,7 +101,7 @@ export function InstructorsSection() {
               start: "top 85%",
               toggleActions: "play none none none",
             },
-          }
+          },
         );
       }
     }, sectionRef);
@@ -112,7 +112,10 @@ export function InstructorsSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="relative mt-10 w-full overflow-hidden bg-[#2E076E] py-12 md:py-16 lg:mt-25 lg:py-20">
+    <section
+      ref={sectionRef}
+      className="relative mt-10 w-full overflow-hidden bg-[#2E076E] py-12 md:py-16 lg:mt-25 lg:py-20"
+    >
       <div
         className="pointer-events-none absolute"
         style={{
@@ -149,16 +152,25 @@ export function InstructorsSection() {
           Behind Real-World Success
         </h2>
 
-        <div ref={cardsRef} className="mt-8 grid gap-4 md:mt-10 md:grid-cols-2 lg:mt-12 lg:grid-cols-4 lg:gap-5">
+        <div
+          ref={cardsRef}
+          className="mt-8 grid gap-4 md:mt-10 md:grid-cols-2 lg:mt-12 lg:grid-cols-3 xl:grid-cols-4 lg:gap-5"
+        >
           {INSTRUCTORS.map((instructor) => (
-            <article key={instructor.name} data-instructor-card className="group">
-              <div className="aspect-4/5 overflow-hidden rounded-2xl md:aspect-auto transition-transform duration-300 group-hover:scale-[1.02]">
+            <article
+              key={instructor.name}
+              data-instructor-card
+              className="group"
+            >
+              <div className="relative h-64 overflow-hidden rounded-2xl sm:h-72 md:h-80 lg:h-87.5 transition-transform duration-300 group-hover:scale-[1.02]">
                 <Image
                   src={instructor.image}
                   alt={instructor.name}
-                  width={288}
-                  height={350}
-                  className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.03] md:h-full md:object-center lg:h-87.5"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  loading="eager"
+                  priority
+                  className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
                 />
               </div>
               <h3 className="mt-4 lg:sg-h5 sg-p-big font-semibold text-(--text-white)">

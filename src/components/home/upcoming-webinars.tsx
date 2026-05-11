@@ -143,15 +143,15 @@ export function UpcomingWebinars() {
               data-webinar-card
               className="rounded-2xl  border border-(--gray-200) bg-(--text-white) p-4 transition-all duration-300 hover:shadow-[0_12px_24px_rgba(16,24,40,0.12)]"
             >
-              <div
-                className={`relative overflow-hidden rounded-lg   before:absolute before:inset-0 before:z-10`}
-              >
+              <div className="relative h-55 overflow-hidden rounded-lg before:absolute before:inset-0 before:z-10">
                 <Image
                   src={image1}
                   alt={webinar.title}
-                  width={368}
-                  height={262}
-                  className="h-65.5 w-full object-cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover"
+                  loading={index === 0 ? "eager" : "lazy"}
+                  priority={index === 0}
                 />
                 <button
                   type="button"
