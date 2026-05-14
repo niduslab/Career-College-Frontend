@@ -103,13 +103,14 @@ export function AllBlogsGrid() {
               data-all-blog-card
               className="rounded-2xl border border-(--gray-200) bg-(--gray-50) p-3 md:p-4 transition-all duration-300 hover:shadow-[0_12px_24px_rgba(16,24,40,0.12)]"
             >
-              <div className="relative overflow-hidden rounded-lg before:absolute before:inset-0 before:z-10">
+              <div className="relative h-65.5 overflow-hidden rounded-lg before:absolute before:inset-0 before:z-10">
                 <Image
                   src={blog.image}
                   alt={blog.title}
-                  width={368}
-                  height={262}
-                  className="h-65.5 w-full object-cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 368px"
+                  priority={index < 2}
+                  className="object-cover"
                 />
                 <button
                   type="button"

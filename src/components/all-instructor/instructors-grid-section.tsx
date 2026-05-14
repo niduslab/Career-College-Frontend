@@ -105,13 +105,14 @@ export function InstructorsGridSection() {
               className="group"
             >
               <Link href={`/all-instructor-details/${instructor.slug}`}>
-                <div className="overflow-hidden rounded-2xl aspect-4/5">
+                <div className="relative overflow-hidden rounded-2xl aspect-4/5">
                   <Image
                     src={instructor.image}
                     alt={instructor.name}
-                    width={295}
-                    height={350}
-                    className="h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.03]"
+                    fill
+                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 295px"
+                    priority={i < 4}
+                    className="object-cover object-top transition-transform duration-300 group-hover:scale-[1.03]"
                   />
                 </div>
                 <h3 className="mt-4 text-[18px] lg:text-[24px] font-semibold text-(--text-title) group-hover:underline">

@@ -72,9 +72,9 @@ export default function PartnerSearch({
   }, [showCountryDropdown]);
 
   return (
-    <div className="bg-gray-100 rounded-2xl border border-gray-200 px-6  py-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+    <div className="bg-gray-100 rounded-2xl border border-gray-200 px-6 py-6 flex flex-col md:flex-row items-stretch md:items-center gap-4">
       {/* Search input */}
-      <div className="flex items-center bg-white gap-6 flex-1 lg:flex-none lg:w-115.75 border border-gray-200 rounded-lg px-4 py-3.5">
+      <div className="flex items-center bg-white gap-6 flex-1 md:flex-none md:w-60 lg:w-115.75 border border-gray-200 rounded-lg px-4 py-3.5">
         <Search size={20} className="text-gray-400 shrink-0 " />
         <input
           type="text"
@@ -98,7 +98,7 @@ export default function PartnerSearch({
             setShowCountryDropdown(false);
             setCountrySearch("");
           }}
-          className="w-full h-full min-w-36 flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-4 py-3.5 bg-white sg-p-default text-gray-700 focus:outline-none focus:ring-2 focus:ring-(--primary-700) cursor-pointer"
+          className="w-full h-full min-w-36 md:min-w-28 lg:min-w-36 flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-4 py-3.5 bg-white sg-p-default text-gray-700 focus:outline-none focus:ring-2 focus:ring-(--primary-700) cursor-pointer"
         >
           <span>{type}</span>
           {showTypeDropdown ? (
@@ -138,7 +138,7 @@ export default function PartnerSearch({
             setShowCountryDropdown((prev) => !prev);
             setShowTypeDropdown(false);
           }}
-          className="w-full h-full min-w-44 flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-4 py-3.5 bg-white sg-p-default text-gray-700 focus:outline-none focus:ring-2 focus:ring-(--primary-700) cursor-pointer"
+          className="w-full h-full min-w-44 md:min-w-32 lg:min-w-38 xl:min-w-44 flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-4 py-3.5 bg-white sg-p-default text-gray-700 focus:outline-none focus:ring-2 focus:ring-(--primary-700) cursor-pointer"
         >
           <span className="flex items-center gap-2 truncate">
             {country !== "All Countries" &&
@@ -208,7 +208,7 @@ export default function PartnerSearch({
       {/* Search button */}
       <button
         onClick={onSubmit}
-        className="bg-(--primary-700) text-white font-semibold sg-p-default px-6 py-3.5 rounded-lg   transition-colors cursor-pointer"
+        className="bg-(--primary-700) text-white font-semibold sg-p-default px-6 md:px-6 lg:px-6 py-3.5 rounded-lg transition-colors cursor-pointer"
       >
         Search
       </button>

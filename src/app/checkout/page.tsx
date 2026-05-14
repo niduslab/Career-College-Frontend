@@ -34,7 +34,7 @@ export default function CheckoutPage() {
 
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* Left column */}
-          <div className="flex-1 min-w-0 space-y-5">
+          <div className="flex-1 md:w-full w-full space-y-5">
             <LoginOrCreateAccount />
             <BillingInformation />
             <PaymentMethod />

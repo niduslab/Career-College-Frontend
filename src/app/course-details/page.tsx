@@ -216,6 +216,10 @@ export default function CourseDetailsPage() {
         </div>
       </BreadcrumbHero>
 
+      {/* Mobile: card in normal flow */}
+      <div className="lg:hidden mt-8 mb-4 px-4">
+        <CourseInformation />
+      </div>
       <div ref={inlineTabsRef}>
         <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8 ">
           <div className="lg:pr-96">
@@ -290,11 +294,6 @@ export default function CourseDetailsPage() {
 
         <div className="lg:mt-25 mt-10   lg:pb-25 pb-10" ref={exploreMoreRef}>
           <ExploreMoreCourses />
-        </div>
-
-        {/* Mobile: card in normal flow */}
-        <div className="lg:hidden mt-8">
-          <CourseInformation />
         </div>
       </div>
     </div>

@@ -207,7 +207,7 @@ export default function PartnersGrid() {
       {/* Grid */}
       {visible.length > 0 ? (
         <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-5">
-          {visible.map((partner) => (
+          {visible.map((partner, index) => (
             <div
               key={partner.id}
               className="flex flex-col items-start border border-gray-100 rounded-xl p-3 bg-white hover:shadow-md transition-shadow cursor-pointer"
@@ -217,7 +217,10 @@ export default function PartnersGrid() {
                   src={partner.image}
                   alt={partner.name}
                   fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 17vw"
                   className="object-contain p-2"
+                  loading={index === 0 ? "eager" : "lazy"}
+                  priority={index === 0}
                 />
               </div>
               <p className="sg-p-default font-semibold text-black leading-snug line-clamp-2">

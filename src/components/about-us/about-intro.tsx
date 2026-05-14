@@ -126,6 +126,8 @@ export function AboutIntro() {
             src={image}
             alt="Career College team collaborating"
             fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 584px"
+            priority
             className="rounded-2xl object-cover"
           />
 

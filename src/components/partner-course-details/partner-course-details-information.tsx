@@ -22,7 +22,15 @@ export default function PartnerCourseDetailsInformation({
       {/* Cover image */}
       {!hideImage && (
         <div className="w-full h-75 relative rounded-t-2xl overflow-hidden">
-          <Image src={image} alt="Course Cover" fill className="object-cover" />
+          <Image
+            src={image}
+            alt="Course Cover"
+            fill
+            sizes="(max-width: 1024px) 100vw, 33vw"
+            className="object-cover"
+            loading="eager"
+            priority
+          />
         </div>
       )}
 

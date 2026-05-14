@@ -5,7 +5,7 @@ export default function LoginOrCreateAccount() {
   const [mode, setMode] = useState<"login" | "create">("login");
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-white rounded-lg  border border-gray-200 p-6">
       <h2 className="sg-p-big lg:sg-h5 font-semibold text-[#12100e] mb-4">
         Login or Create Account
       </h2>

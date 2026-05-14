@@ -233,6 +233,10 @@ export default function CourseDetailsPage() {
         </div>
       </BreadcrumbHero>
 
+      {/* Mobile: card in normal flow */}
+      <div className="lg:hidden mt-6 px-4 mb-4">
+        <PartnerCourseDetailsInformation />
+      </div>
       <div ref={inlineTabsRef}>
         <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-8 ">
           <div className="lg:pr-96">
@@ -291,7 +295,6 @@ export default function CourseDetailsPage() {
                 data-tab={label}
                 className="scroll-mt-32"
               >
-                {/* {label === "Course Instructor" && <CourseInstructor />} */}
                 {label === "What You Will Learn" && (
                   <PartnerCourseDetailsWhatYouWillLearn />
                 )}
@@ -311,11 +314,6 @@ export default function CourseDetailsPage() {
 
         <div className="lg:mt-25 mt-10   lg:pb-25 pb-10" ref={exploreMoreRef}>
           <ExploreMoreCourses />
-        </div>
-
-        {/* Mobile: card in normal flow */}
-        <div className="lg:hidden mt-0 mb-4">
-          <PartnerCourseDetailsInformation />
         </div>
       </div>
     </div>

@@ -127,14 +127,14 @@ export function InstructorTestimonialSection() {
           {/* Left — portrait image */}
           <div
             ref={imageRef}
-            className="w-full overflow-hidden lg:w-70 lg:shrink-0"
+            className="relative w-full h-64 overflow-hidden lg:w-99.75 md:h-150 lg:h-114.75 lg:shrink-0"
           >
             <Image
               src={item.image}
               alt={item.name}
-              width={280}
-              height={360}
-              className="h-64 w-full object-cover object-top lg:h-full"
+              fill
+              sizes="(max-width: 1024px) 100vw, 399px"
+              className="object-cover object-top"
               priority
             />
           </div>
@@ -145,7 +145,13 @@ export function InstructorTestimonialSection() {
             className="flex flex-1 flex-col justify-between"
           >
             <div>
-              <Image src={coma} alt="Quote" width={32} height={32} />
+              <Image
+                src={coma}
+                alt="Quote"
+                width={32}
+                height={32}
+                style={{ width: "auto" }}
+              />
               <p className="mt-6 text-[18px] font-normal leading-7   text-(--text-title) lg:text-[24px]">
                 {item.quote}
               </p>

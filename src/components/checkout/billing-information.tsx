@@ -4,7 +4,10 @@ import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import { Country } from "country-state-city";
 
 const getAllCountries = () =>
-  Country.getAllCountries().map((c: any) => ({ name: c.name, code: c.isoCode }));
+  Country.getAllCountries().map((c: any) => ({
+    name: c.name,
+    code: c.isoCode,
+  }));
 
 export default function BillingInformation() {
   const [form, setForm] = useState({
@@ -22,7 +25,7 @@ export default function BillingInformation() {
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
 
   const filteredCountries = countries.filter((c) =>
-    c.name.toLowerCase().includes(countrySearch.toLowerCase())
+    c.name.toLowerCase().includes(countrySearch.toLowerCase()),
   );
 
   const handleCountrySelect = (name: string) => {
@@ -32,7 +35,7 @@ export default function BillingInformation() {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -123,10 +126,10 @@ export default function BillingInformation() {
                   onChange={(e) => setCountrySearch(e.target.value)}
                   onFocus={() => setShowCountryDropdown(true)}
                   onClick={() => setShowCountryDropdown(true)}
-                  className="w-full h-12 pl-9 pr-10 py-2.5 border border-gray-200 rounded-lg bg-gray-50 sg-p-default text-(--text-paragraph) placeholder:text-gray-400 outline-none focus:border-(--primary-500) transition-colors"
+                  className="w-full h-12 pl-9   pr-10 py-2.5 border border-gray-200 rounded-lg bg-gray-50 sg-p-default text-(--text-paragraph) placeholder:text-gray-400 outline-none focus:border-(--primary-500) transition-colors"
                   autoComplete="off"
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                <div className="absolute right-3 top-1/2  -translate-y-1/2 text-gray-400 pointer-events-none">
                   {showCountryDropdown ? (
                     <ChevronUp size={16} />
                   ) : (

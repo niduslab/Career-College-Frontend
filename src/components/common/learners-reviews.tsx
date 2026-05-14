@@ -57,7 +57,15 @@ export default function LearnersReviews() {
             className="bg-gray-100 rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-4"
           >
             {/* Quote mark */}
-            <Image src={comaSvg} alt="" width={25} height={28} />
+            <span className="relative h-7 w-6.25">
+              <Image
+                src={comaSvg}
+                alt=""
+                fill
+                sizes="25px"
+                className="object-contain"
+              />
+            </span>
 
             {/* Review text */}
             <p className="sg-p-default --title-text font-normal leading-relaxed flex-1">
