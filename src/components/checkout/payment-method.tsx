@@ -57,27 +57,33 @@ export default function PaymentMethod() {
         </div>
         {/* Card brand icons */}
         <div className="flex items-center lg:gap-1.5 gap-1">
-          <Image
-            src={masterCard}
-            alt="Mastercard"
-            width={32}
-            height={22}
-            className="h-5.5 w-auto object-contain"
-          />
-          <Image
-            src={visa}
-            alt="Visa"
-            width={32}
-            height={22}
-            className="h-5.5 w-auto object-contain"
-          />
-          <Image
-            src={discover}
-            alt="Discover"
-            width={40}
-            height={22}
-            className="h-5.5  w-auto object-contain"
-          />
+          <span className="relative h-5.5 w-8">
+            <Image
+              src={masterCard}
+              alt="Mastercard"
+              fill
+              sizes="32px"
+              className="object-contain"
+            />
+          </span>
+          <span className="relative h-5.5 w-8">
+            <Image
+              src={visa}
+              alt="Visa"
+              fill
+              sizes="32px"
+              className="object-contain"
+            />
+          </span>
+          <span className="relative h-5.5 w-10">
+            <Image
+              src={discover}
+              alt="Discover"
+              fill
+              sizes="40px"
+              className="object-contain"
+            />
+          </span>
         </div>
       </div>
 

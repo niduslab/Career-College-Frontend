@@ -112,7 +112,7 @@ function SidebarContent() {
           <button
             type="button"
             onClick={() => setShowAllCategories((v) => !v)}
-            className="mt-2 text-[14px] font-semibold text-(--primary-700) cursor-pointer hover:underline"
+            className="mt-2 lg:mb-6 mb-4 text-[14px] font-semibold text-(--primary-700) cursor-pointer hover:underline"
           >
             {showAllCategories ? "Show less" : "Show more"}
           </button>
@@ -198,7 +198,11 @@ export function CoursesFilterSidebar({
   onDesktopToggle,
 }: CoursesFilterSidebarProps) {
   const sidebarRef = useRef<HTMLElement>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
+  // Desktop sidebar entrance animation
   useEffect(() => {
     if (!desktopVisible || !sidebarRef.current) return;
 
@@ -220,6 +224,52 @@ export function CoursesFilterSidebar({
 
     return () => ctx.revert();
   }, [desktopVisible]);
+
+  // Mobile drawer open / close animation
+  useEffect(() => {
+    const drawer = drawerRef.current;
+    const backdrop = backdropRef.current;
+    const panel = panelRef.current;
+    if (!drawer || !backdrop || !panel) return;
+
+    prepareGsap();
+
+    if (mobileOpen) {
+      // Open: show drawer, then animate backdrop + panel
+      gsap.set(drawer, { visibility: "visible" });
+      gsap.fromTo(
+        backdrop,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.25, ease: "power2.out" },
+      );
+      gsap.fromTo(
+        panel,
+        { x: "-100%" },
+        { x: 0, duration: 0.35, ease: "power2.out" },
+      );
+    } else {
+      // Close: animate panel + backdrop, then hide drawer
+      const tl = gsap.timeline({
+        onComplete: () => {
+          gsap.set(drawer, { visibility: "hidden" });
+        },
+      });
+      tl.to(panel, {
+        x: "-100%",
+        duration: 0.3,
+        ease: "power2.in",
+      }).to(backdrop, { opacity: 0, duration: 0.2 }, "-=0.15");
+    }
+
+    return () => {
+      gsap.killTweensOf([drawer, backdrop, panel]);
+    };
+  }, [mobileOpen]);
+
+  const handleClose = () => {
+    if (!mobileOpen) return;
+    onMobileClose?.();
+  };
 
   return (
     <>
@@ -243,39 +293,45 @@ export function CoursesFilterSidebar({
       )}
 
       {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={onMobileClose}
-            aria-hidden="true"
-          />
+      <div
+        ref={drawerRef}
+        className="fixed inset-0 z-50 lg:hidden"
+        style={{ visibility: mobileOpen ? "visible" : "hidden" }}
+      >
+        {/* Backdrop */}
+        <div
+          ref={backdropRef}
+          className="absolute inset-0 bg-black/40"
+          onClick={handleClose}
+          aria-hidden="true"
+        />
 
-          {/* Drawer panel */}
-          <div className="absolute left-0 top-0 h-full w-80 max-w-[90vw] overflow-y-auto bg-(--gray-50) shadow-xl">
-            {/* Drawer header */}
-            <div className="flex items-center justify-between border-b border-(--gray-200) bg-(--text-white) px-5 py-4">
-              <span className="inline-flex cursor-pointer items-center gap-2 text-[16px] font-medium text-(--text-paragraph)">
-                <ListFilter size={16} />
-                Filter &amp; Sort
-              </span>
-              <button
-                type="button"
-                aria-label="Close filters"
-                onClick={onMobileClose}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-(--gray-500) hover:bg-(--gray-100)"
-              >
-                <X size={16} />
-              </button>
-            </div>
+        {/* Drawer panel */}
+        <div
+          ref={panelRef}
+          className="absolute left-0 top-0 h-full w-80 max-w-[90vw] overflow-y-auto bg-(--gray-50) shadow-xl"
+        >
+          {/* Drawer header */}
+          <div className="flex items-center justify-between border-b border-(--gray-200) bg-(--text-white) px-5 py-4">
+            <span className="inline-flex cursor-pointer items-center gap-2 text-[16px] font-medium text-(--text-paragraph)">
+              <ListFilter size={16} />
+              Filter &amp; Sort
+            </span>
+            <button
+              type="button"
+              aria-label="Close filters"
+              onClick={handleClose}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-(--gray-500) hover:bg-(--gray-100)"
+            >
+              <X size={16} />
+            </button>
+          </div>
 
-            <div className="p-4">
-              <SidebarContent />
-            </div>
+          <div className="p-4">
+            <SidebarContent />
           </div>
         </div>
-      )}
+      </div>
     </>
   );
 }

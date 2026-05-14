@@ -63,13 +63,13 @@ export default function CheckoutOrderSummary() {
       <div className="space-y-3 mb-5">
         {ITEMS.map((item) => (
           <div key={item.id} className="flex items-center gap-3">
-            <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden">
+            <div className="shrink-0 relative w-12 h-12 rounded-lg overflow-hidden">
               <Image
                 src={item.image}
                 alt={item.title}
-                width={48}
-                height={48}
-                className="w-full h-full object-cover"
+                fill
+                sizes="48px"
+                className="object-cover"
               />
             </div>
             <p className="flex-1 sg-p-small text-[#12100E] font-medium leading-snug line-clamp-2">

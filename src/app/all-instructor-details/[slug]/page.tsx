@@ -31,10 +31,10 @@ export default async function InstructorDetailsPage({
         ]}
       />
       <InstructorProfileSection instructor={instructor} />
-      <div className="mb-10 lg:px-8 md:px-8 lg:mb-25 max-w-7xl mx-auto">
+      {/* <div className="mb-10 lg:px-8 md:px-8 lg:mb-25 max-w-7xl mx-auto">
         <ExploreMoreCourses />
-      </div>
-      <DreamCareerCta />
+      </div> */}
+      {/* <DreamCareerCta /> */}
     </div>
   );
 }

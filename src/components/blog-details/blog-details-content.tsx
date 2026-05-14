@@ -63,13 +63,13 @@ export function BlogDetailsContent({ data }: BlogDetailsContentProps) {
           {/* ── Main Content ── */}
           <div data-blog-content className="min-w-0 flex-1">
             {/* Hero image */}
-            <div className="overflow-hidden rounded-2xl">
+            <div className="relative h-65 overflow-hidden rounded-2xl md:h-85 lg:h-102.5">
               <Image
                 src={data.heroImage}
                 alt={data.heroImageAlt}
-                width={780}
-                height={410}
-                className="h-65 w-full object-cover md:h-85 lg:h-102.5"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 100vw, 780px"
+                className="object-cover"
                 priority
               />
             </div>

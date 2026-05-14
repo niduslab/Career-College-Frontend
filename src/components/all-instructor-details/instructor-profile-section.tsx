@@ -75,13 +75,14 @@ export function InstructorProfileSection({ instructor }: Props) {
           ref={cardRef}
           className="w-full lg:w-100 rounded-2xl bg-gray-100 p-6 lg:shrink-0"
         >
-          <div className="overflow-hidden rounded-xl aspect-4/5">
+          <div className="relative overflow-hidden rounded-xl aspect-4/5">
             <Image
               src={instructor.image}
               alt={instructor.name}
-              width={352}
-              height={343}
-              className="h-full w-full object-cover object-top"
+              fill
+              sizes="(max-width: 1024px) 100vw, 400px"
+              className="object-cover object-top"
+              loading="eager"
               priority
             />
           </div>
@@ -103,7 +104,11 @@ export function InstructorProfileSection({ instructor }: Props) {
                   key={text}
                   className="flex items-center gap-2 font-normal text-[14px] text-(--text-paragraph)"
                 >
-                  <Icon size={16} strokeWidth={1.5} className="shrink-0 text-gray-500" />
+                  <Icon
+                    size={16}
+                    strokeWidth={1.5}
+                    className="shrink-0 text-gray-500"
+                  />
                   {text}
                 </li>
               ))}

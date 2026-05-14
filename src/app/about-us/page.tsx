@@ -30,6 +30,7 @@ export default function AboutUsPage() {
       <div className="bg-white">
         <WhyJoinSection />
       </div>
+
       <div>
         <FaqSection />
       </div>

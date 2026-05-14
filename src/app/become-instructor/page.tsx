@@ -18,7 +18,8 @@ export default function BecomeInstructorPage() {
       <HowToBecomeSection />
       <WhyJoinSection />
       <InstructorTestimonialSection />
-      <DreamCareerCta />
+      {/* 
+      <DreamCareerCta /> */}
     </div>
   );
 }
