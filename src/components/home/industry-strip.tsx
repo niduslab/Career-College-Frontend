@@ -1,45 +1,50 @@
-import {
-  Building2,
-  Gem,
-  Cloud,
-  TrendingUp,
-  Boxes,
-  ArrowRight,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import Image from "next/image";
+import google from "@/assets/images/become-partner/logo-google.svg";
+import meta from "@/assets/images/become-partner/meta-logo.svg";
+import university from "@/assets/images/become-partner/university-of-michigan-logo.svg";
+import penn from "@/assets/images/become-partner/penn.svg";
+import imperialCollege from "@/assets/images/become-partner/imperial-college-london.svg";
+import ibm from "@/assets/images/become-partner/ibm-svgrepo-com.svg";
+import amazon from "@/assets/images/become-partner/layer.svg";
+import university2 from "@/assets/images/become-partner/university2.webp";
 
-const INDUSTRY_ITEMS = [
-  { label: "company", Icon: Building2 },
-  { label: "business", Icon: Gem },
-  { label: "application", Icon: Cloud },
-  { label: "startup", Icon: TrendingUp },
-  { label: "application", Icon: Cloud },
-  { label: "venture", Icon: Boxes },
+const LOGOS = [
+  { name: "Google", logo: google },
+  { name: "Meta", logo: meta },
+  { name: "University of Michigan", logo: university },
+  { name: "Penn", logo: penn },
+  { name: "Imperial College London", logo: imperialCollege },
+  { name: "IBM", logo: ibm },
+  { name: "Amazon", logo: amazon },
+  { name: "University2", logo: university2 },
 ];
 
 export function IndustryStrip() {
-  const loopItems = [...INDUSTRY_ITEMS, ...INDUSTRY_ITEMS];
+  const loopItems = [...LOGOS, ...LOGOS];
 
   return (
     <section className="w-full lg:mt-25 mt-10">
-      <div className=" px-4 md:px-6 lg:px-8">
-        <h2 className=" text-center text-[24px] lg:leading-12 font-semibold tracking-[-0.4px] text-(--text-title) md:text-[40px] lg:text-[40px]">
+      <div className="px-4 md:px-6 lg:px-8">
+        <h2 className="text-center text-[24px] lg:leading-12 font-semibold tracking-[-0.4px] text-(--text-title) md:text-[40px] lg:text-[40px]">
           Meet Our Partners
         </h2>
 
         <div className="relative mt-10 overflow-hidden md:mt-12">
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-14  md:w-24" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-14  md:w-24" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-14 md:w-24" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-14 md:w-24" />
 
           <div className="industry-marquee">
             {loopItems.map((item, index) => (
               <div
-                key={`${item.label}-${index}`}
-                className="flex items-center gap-3 text-[#a5abb5]"
+                key={`${item.name}-${index}`}
+                className="flex items-center justify-center shrink-0 px-6 md:px-10"
               >
-                <item.Icon size={30} strokeWidth={2.2} />
-                <span className="text-[30px] leading-none font-semibold tracking-[-0.012em]">
-                  {item.label}
-                </span>
+                <Image
+                  src={item.logo}
+                  alt={item.name}
+                  className="w-auto h-auto max-h-10 md:max-h-12 lg:max-h-14 object-contain"
+                />
               </div>
             ))}
           </div>
