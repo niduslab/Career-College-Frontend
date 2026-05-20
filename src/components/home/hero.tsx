@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight, Video, UserRoundCheck } from "lucide-react";
 import { gsap, prepareGsap } from "@/lib/gsap";
 import image from "@/assets/images/hero/image.webp";
@@ -132,13 +133,13 @@ export function Hero() {
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-4">
-            <button
-              type="button"
+            <Link
+              href="/course-details-filter"
               className="inline-flex h-12 cursor-pointer items-center gap-2 sg-p-default   rounded-md bg-(--primary-700) px-6   font-semibold text-(--text-white)   transition-transform duration-300"
             >
               Explore Our Courses
               <ArrowRight size={16} strokeWidth={2.3} />
-            </button>
+            </Link>
 
             <div className="flex items-center gap-2.5">
               <div className="flex -space-x-2">

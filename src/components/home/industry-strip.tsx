@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import google from "@/assets/images/become-partner/logo-google.svg";
 import meta from "@/assets/images/become-partner/meta-logo.svg";
 import university from "@/assets/images/become-partner/university-of-michigan-logo.svg";
@@ -51,14 +52,13 @@ export function IndustryStrip() {
         </div>
       </div>
       <div className="mt-8 flex justify-center md:mt-10">
-        <button
-          type="button"
-          data-view-all-btn
+        <Link
+          href="/our-partners"
           className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-md bg-(--primary-700) px-6 sg-p-default font-semibold text-(--text-white)"
         >
           View All Partners
           <ArrowRight size={20} strokeWidth={2.4} />
-        </button>
+        </Link>
       </div>
     </section>
   );
