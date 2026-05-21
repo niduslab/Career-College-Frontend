@@ -7,7 +7,6 @@ const COMPANY_LINKS = [
   { label: "Courses", href: "/courses" },
   { label: "Blog", href: "/all-blogs" },
   { label: "Contact Us", href: "/contact" },
-  { label: "Faq", href: "/faq" },
 ];
 
 const CATEGORY_LINKS = [
@@ -16,15 +15,12 @@ const CATEGORY_LINKS = [
   "Marketing",
   "IT & Software",
   "Business",
-  "Business",
 ];
 
 const RESOURCE_LINKS = [
-  "FAQ",
-  "Support",
-  "Privacy Policy",
-  "Terms Conditions",
-  "Privacy & Policy Us",
+  { label: "Support", href: "/contact" },
+  { label: "Privacy Policy", href: "/privacy-policy" },
+  { label: "Terms & Conditions", href: "/terms-conditions" },
 ];
 
 export function Footer() {
@@ -46,7 +42,7 @@ export function Footer() {
             </h3>
             <div className="lg:mt-6 mt-3 flex items-center lg:gap-4 gap-2">
               <Link
-                href="#"
+                href="https://www.facebook.com/niduslab"
                 aria-label="Facebook"
                 target="_blank"
                 className="inline-flex  h-8 w-8 items-center justify-center rounded-md border border-white text-white transition-colors hover:bg-(--primary-700)"
@@ -54,7 +50,7 @@ export function Footer() {
                 <span className="text-[20px] font-semibold">f</span>
               </Link>
               <Link
-                href="#"
+                href="https://www.linkedin.com/company/niduslab-usa"
                 aria-label="Twitter"
                 target="_blank"
                 className="inline-flex  h-8 w-8 items-center justify-center rounded-md border border-white text-white transition-colors hover:bg-(--primary-700)"
@@ -62,7 +58,7 @@ export function Footer() {
                 <span className="text-[20px] font-bold">X</span>
               </Link>
               <Link
-                href="#"
+                href="https://www.linkedin.com/company/niduslab-usa"
                 target="_blank"
                 aria-label="LinkedIn"
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white text-white transition-colors hover:bg-(--primary-700)"
@@ -159,12 +155,12 @@ export function Footer() {
               </h3>
               <ul className="mt-3 lg:mt-6 grid gap-4">
                 {RESOURCE_LINKS.map((item) => (
-                  <li key={item}>
+                  <li key={item.label}>
                     <Link
-                      href="#"
+                      href={item.href}
                       className="sg-p-small lg:sg-p-default text-white transition-colors hover:text-white/90"
                     >
-                      {item}
+                      {item.label}
                     </Link>
                   </li>
                 ))}
