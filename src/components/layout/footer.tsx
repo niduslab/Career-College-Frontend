@@ -6,7 +6,7 @@ const COMPANY_LINKS = [
   { label: "Become an Instructor", href: "/become-instructor" },
   { label: "Courses", href: "/courses" },
   { label: "Blog", href: "/all-blogs" },
-  { label: "Contact Us", href: "/contact-us" },
+  { label: "Contact Us", href: "/contact" },
   { label: "Faq", href: "/faq" },
 ];
 

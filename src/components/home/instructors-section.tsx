@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { gsap, prepareGsap } from "@/lib/gsap";
 import image1 from "@/assets/images/instructors/image1.webp";
@@ -36,7 +37,7 @@ export function InstructorsSection() {
   const sectionRef = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const cardsRef = useRef<HTMLDivElement | null>(null);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const buttonRef = useRef<HTMLAnchorElement | null>(null);
 
   useEffect(() => {
     if (!sectionRef.current) {
@@ -184,14 +185,14 @@ export function InstructorsSection() {
         </div>
 
         <div className="mt-8 flex justify-center md:mt-10">
-          <button
+          <Link
             ref={buttonRef}
-            type="button"
+            href="/all-instructor"
             className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-md bg-(--text-white) px-6 sg-p-default font-semibold text-(--primary-700) transition-transform duration-300 hover:-translate-y-px"
           >
             View All Instructors
             <ArrowRight size={20} strokeWidth={1.5} />
-          </button>
+          </Link>
         </div>
       </div>
     </section>

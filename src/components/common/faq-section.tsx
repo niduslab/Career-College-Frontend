@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ArrowRight, Minus, Plus } from "lucide-react";
 
 const FAQ_ITEMS = [
@@ -62,13 +63,13 @@ export function FaqSection() {
             guiding users through features and functionalities effortlessly.
           </p>
 
-          <button
-            type="button"
+          <Link
+            href="/contact"
             className="mt-8 lg:mt-10 inline-flex h-12 items-center gap-2 rounded-md bg-(--primary-700) px-6 sg-p-default font-semibold text-(--text-white) transition-all duration-300 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.99]"
           >
             Contact Us
             <ArrowRight size={20} strokeWidth={1.5} />
-          </button>
+          </Link>
         </div>
 
         <div className="grid content-start gap-4">
