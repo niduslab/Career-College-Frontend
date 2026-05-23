@@ -50,7 +50,7 @@ export function Footer() {
                 <span className="text-[20px] font-semibold">f</span>
               </Link>
               <Link
-                href="https://www.linkedin.com/company/niduslab-usa"
+                href="https://x.com/niduslab"
                 aria-label="Twitter"
                 target="_blank"
                 className="inline-flex  h-8 w-8 items-center justify-center rounded-md border border-white text-white transition-colors hover:bg-(--primary-700)"

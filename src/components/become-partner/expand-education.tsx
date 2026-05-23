@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight, CheckCircle } from "lucide-react";
 import image from "@/assets/images/become-partner/image.webp";
 const BENEFITS = [
@@ -42,13 +43,16 @@ export default function ExpandEducation() {
 
             {/* CTA Button */}
             <div className="mt-8 lg:mt-10">
-              <button className="group cursor-pointer inline-flex sg-p-default  items-center gap-2 bg-(--primary-700)  h-12 text-white px-6 py-3 rounded-md font-semibold transition-all duration-300  hover:-translate-y-0.5 active:translate-y-0">
+              <Link
+                href="/university-partnership-form"
+                className="group cursor-pointer inline-flex sg-p-default items-center gap-2 bg-(--primary-700) h-12 text-white px-6 py-3 rounded-md font-semibold transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
+              >
                 Become an University Partner
                 <ArrowRight
                   size={20}
                   className="transition-transform duration-300 group-hover:translate-x-0.5"
                 />
-              </button>
+              </Link>
             </div>
           </div>
 

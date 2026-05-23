@@ -10,6 +10,7 @@ import {
   Rocket,
   type LucideIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { gsap, prepareGsap } from "@/lib/gsap";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -154,14 +155,14 @@ export function WhyJoinSection() {
 
         {/* CTA */}
         <div className="mt-10 flex justify-center">
-          <button
+          <Link
             data-cta-btn
-            type="button"
-            className="inline-flex  cursor-pointer items-center gap-2 rounded-md bg-(--primary-700) px-6 py-3 sg-p-default font-semibold text-white transition-transform duration-300 hover:-translate-y-px"
+            href="/become-instructor-form"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-(--primary-700) px-6 py-3 sg-p-default font-semibold text-white transition-transform duration-300 hover:-translate-y-px"
           >
             Become an Instructor
             <ArrowRight size={20} strokeWidth={1.5} />
-          </button>
+          </Link>
         </div>
       </div>
     </section>
