@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { gsap, prepareGsap } from "@/lib/gsap";
 import avatar1 from "@/assets/images/dream-career/image1.webp";
@@ -190,10 +191,9 @@ export function DreamCareerCta() {
               your goals faster.
             </p>
 
-            <button
-              type="button"
+            <Link
+              href="/course-details-filter"
               className="group cursor-pointer mt-8 lg:mt-10 inline-flex h-12 items-center gap-2 rounded-md bg-(--primary-700) px-6  sg-p-small lg:sg-p-default font-semibold text-(--text-white) transition-all duration-300 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.99]"
-              suppressHydrationWarning
             >
               Explore Our Courses
               <ArrowRight
@@ -201,7 +201,7 @@ export function DreamCareerCta() {
                 strokeWidth={1.5}
                 className="transition-transform duration-300 ease-out group-hover:translate-x-0.5"
               />
-            </button>
+            </Link>
           </div>
         </div>
       </div>

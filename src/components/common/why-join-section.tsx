@@ -3,49 +3,59 @@
 import { useEffect, useRef } from "react";
 import {
   Globe,
-  BadgeDollarSign,
   Target,
-  Wrench,
-  ChartColumnDecreasing,
   ArrowRight,
+  Handshake,
+  Lightbulb,
+  Rocket,
+  type LucideIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { gsap, prepareGsap } from "@/lib/gsap";
+
+const ICONS: Record<string, LucideIcon> = {
+  Handshake,
+  Lightbulb,
+  Target,
+  Globe,
+  Rocket,
+};
 
 const REASONS = [
   {
     id: "01",
-    icon: Globe,
-    title: "Reach a Global Audience",
+    icon: "Handshake",
+    title: "Community & Support",
     description:
-      "Teach students worldwide and expand your influence beyond borders. Share your expertise with eager learners ready to grow and succeed.",
+      "We believe that learning is stronger when it’s shared. Our platform fosters a collaborative environment where learners, instructors, and professionals can connect, support, and inspire each other.",
   },
   {
     id: "02",
-    icon: BadgeDollarSign,
-    title: "Earn from Your Knowledge",
+    icon: "Lightbulb",
+    title: "Innovation & Relevance",
     description:
-      "Monetize your knowledge and earn income from your courses as they reach more students worldwide.",
+      "In a fast-changing world, staying ahead means staying relevant. We continuously evolve our content and methodologies by integrating the latest technologies, industry trends, and innovative ideas.",
   },
   {
     id: "03",
-    icon: Target,
-    title: "Build Your Personal Brand",
+    icon: "Target",
+    title: "Purpose-Driven Learning",
     description:
-      "Establish yourself as an industry expert by sharing valuable knowledge. Grow your reputation and open doors to new professional opportunities.",
+      "Education is a right, not a privilege. We provide flexible, affordable, and inclusive learning so anyone can gain the skills to succeed.",
   },
   {
     id: "04",
-    icon: Wrench,
-    title: "Easy Course Creation Tools",
+    icon: "Globe",
+    title: "Accessibility for All",
     description:
-      "Create, upload, and manage your courses effortlessly with our intuitive platform. Focus more on teaching while we handle the technical side.",
+      "Education is a right, not a privilege making quality learning accessible, flexible, and affordable for everyone, everywhere.",
   },
   {
     id: "05",
-    icon: ChartColumnDecreasing,
-    title: "Grow with Data Insights",
+    icon: "Rocket",
+    title: "Continuous Growth",
     description:
-      "Track your course performance and understand student engagement with real-time analytics. Improve your content using actionable insights.",
+      "We foster curiosity, adaptability, and continuous growth helping learners stay relevant and confidently embrace new challenges.",
   },
 ];
 
@@ -128,16 +138,16 @@ export function WhyJoinSection() {
 
         {/* Cards grid — 3 cols top row, 2 cols bottom row centred */}
         <div ref={gridRef} className="mt-10 md:mt-12">
-          {/* Row 1 — 3 cards */}
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {REASONS.slice(0, 3).map((item) => (
+          {/* Row 1 — 2 cards centred */}
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2">
+            {REASONS.slice(0, 2).map((item) => (
               <ReasonCard key={item.id} item={item} />
             ))}
           </div>
 
-          {/* Row 2 — 2 cards centred */}
-          <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-2 lg:mx-auto lg:max-w-[calc(66.666%+10px)]">
-            {REASONS.slice(3).map((item) => (
+          {/* Row 2 — 3 cards */}
+          <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {REASONS.slice(2).map((item) => (
               <ReasonCard key={item.id} item={item} />
             ))}
           </div>
@@ -145,14 +155,14 @@ export function WhyJoinSection() {
 
         {/* CTA */}
         <div className="mt-10 flex justify-center">
-          <button
+          <Link
             data-cta-btn
-            type="button"
-            className="inline-flex  cursor-pointer items-center gap-2 rounded-md bg-(--primary-700) px-6 py-3 sg-p-default font-semibold text-white transition-transform duration-300 hover:-translate-y-px"
+            href="/become-instructor-form"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-(--primary-700) px-6 py-3 sg-p-default font-semibold text-white transition-transform duration-300 hover:-translate-y-px"
           >
             Become an Instructor
             <ArrowRight size={20} strokeWidth={1.5} />
-          </button>
+          </Link>
         </div>
       </div>
     </section>
@@ -160,7 +170,7 @@ export function WhyJoinSection() {
 }
 
 function ReasonCard({ item }: { item: (typeof REASONS)[number] }) {
-  const Icon = item.icon;
+  const Icon = ICONS[item.icon];
   return (
     <div
       data-reason-card
@@ -169,7 +179,7 @@ function ReasonCard({ item }: { item: (typeof REASONS)[number] }) {
       {/* Top row — icon left, number right */}
       <div className="flex items-start justify-between">
         <span className="flex h-10 w-10 items-center justify-center rounded-full  text-(--primary-700)">
-          <Icon />
+          {Icon && <Icon size={24} strokeWidth={1.5} aria-hidden="true" />}
         </span>
         <span className="sg-h4 lg:sg-h3 font-semibold text-gray-300">
           {item.id}

@@ -98,7 +98,7 @@ export default function PartnerSearch({
             setShowCountryDropdown(false);
             setCountrySearch("");
           }}
-          className="w-full h-full min-w-36 md:min-w-28 lg:min-w-36 flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-4 py-3.5 bg-white sg-p-default text-gray-700 focus:outline-none focus:ring-2 focus:ring-(--primary-700) cursor-pointer"
+          className="w-full h-full min-w-36 md:min-w-28 lg:min-w-36 flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-4 py-3.5 bg-white sg-p-default text-gray-700 focus:outline-none cursor-pointer"
         >
           <span>{type}</span>
           {showTypeDropdown ? (
@@ -108,7 +108,7 @@ export default function PartnerSearch({
           )}
         </button>
         {showTypeDropdown && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
+          <div className="absolute top-full  left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
             {TYPES.map((t) => (
               <button
                 key={t}
@@ -117,7 +117,7 @@ export default function PartnerSearch({
                   onType(t);
                   setShowTypeDropdown(false);
                 }}
-                className={`w-full px-4 py-3 text-left sg-p-default transition-colors border-b border-gray-100 last:border-b-0 hover:bg-purple-50 ${
+                className={`w-full px-4 py-3 text-left sg-p-default cursor-pointer transition-colors border-b border-gray-100 last:border-b-0 hover:bg-purple-50 ${
                   type === t
                     ? "text-(--primary-700) font-semibold"
                     : "text-gray-600"
@@ -138,7 +138,7 @@ export default function PartnerSearch({
             setShowCountryDropdown((prev) => !prev);
             setShowTypeDropdown(false);
           }}
-          className="w-full h-full min-w-44 md:min-w-32 lg:min-w-38 xl:min-w-44 flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-4 py-3.5 bg-white sg-p-default text-gray-700 focus:outline-none focus:ring-2 focus:ring-(--primary-700) cursor-pointer"
+          className="w-full h-full min-w-44 md:min-w-32 lg:min-w-38 cursor-pointer xl:min-w-44 flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-4 py-3.5 bg-white sg-p-default text-gray-700 focus:outline-none"
         >
           <span className="flex items-center gap-2 truncate">
             {country !== "All Countries" &&
@@ -185,7 +185,7 @@ export default function PartnerSearch({
                       setShowCountryDropdown(false);
                       setCountrySearch("");
                     }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 text-left sg-p-default transition-colors border-b border-gray-100 last:border-b-0 hover:bg-purple-50 ${
+                    className={`w-full flex items-center cursor-pointer gap-3 px-4 py-3 text-left sg-p-default transition-colors border-b border-gray-100 last:border-b-0 hover:bg-purple-50 ${
                       country === c.name
                         ? "text-(--primary-700) font-semibold"
                         : "text-gray-600"

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   ArrowRight,
   CalendarDays,
@@ -43,7 +44,7 @@ export function UpcomingWebinars() {
   const sectionRef = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const cardsRef = useRef<HTMLDivElement | null>(null);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const buttonRef = useRef<HTMLAnchorElement | null>(null);
 
   useEffect(() => {
     if (!sectionRef.current) {
@@ -191,21 +192,21 @@ export function UpcomingWebinars() {
                   </span>
                 </div>
 
-                <button
-                  type="button"
-                  className="mt-4  h-10 w-full rounded-md border border-(--primary-700) bg-(--text-white) sg-p-default font-semibold text-(--text-title) cursor-pointer transition-all duration-300 ease-out hover:-translate-y-px hover:bg-(--primary-700) hover:text-(--text-white) active:translate-y-0 active:scale-[0.99]"
+                <Link
+                  href="/course-details"
+                  className="mt-4 h-10 w-full rounded-md border border-(--primary-700) bg-(--text-white) sg-p-default font-semibold text-(--text-title) cursor-pointer transition-all duration-300 ease-out hover:-translate-y-px hover:bg-(--primary-700) hover:text-(--text-white) active:translate-y-0 active:scale-[0.99] inline-flex items-center justify-center"
                 >
                   View Details
-                </button>
+                </Link>
               </div>
             </article>
           ))}
         </div>
 
         <div className="mt-8 flex justify-center md:mt-10">
-          <button
+          <Link
             ref={buttonRef}
-            type="button"
+            href="/course-details-filter"
             className="group inline-flex h-12 cursor-pointer items-center gap-2 rounded-md bg-(--primary-700) px-6 sg-p-default font-semibold text-(--text-white) transition-all duration-300 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.99]"
           >
             View All Webinars
@@ -214,7 +215,7 @@ export function UpcomingWebinars() {
               strokeWidth={1.5}
               className="transition-transform duration-300 ease-out group-hover:translate-x-0.5"
             />
-          </button>
+          </Link>
         </div>
       </div>
     </section>

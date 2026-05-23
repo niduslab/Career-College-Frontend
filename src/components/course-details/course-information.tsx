@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Clock, BarChart3, CirclePlay, Medal } from "lucide-react";
 import image from "@/assets/images/courses-details/image.webp";
 
@@ -130,12 +131,18 @@ export default function CourseInformation({
 
         {/* Action buttons */}
         <div className="space-y-3">
-          <button className="w-full  bg-(--primary-700) cursor-pointer text-white font-semibold py-3 rounded-lg  transition-colors sg-p-default">
+          <Link
+            href="/add-to-cart"
+            className="w-full inline-flex items-center justify-center bg-(--primary-700) cursor-pointer text-white font-semibold py-3 rounded-lg transition-colors sg-p-default"
+          >
             {isSubscription ? "Subscribe Now" : "Add to Cart"}
-          </button>
-          <button className="w-full bg-gray-100 --text-title cursor-pointer font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors sg-p-default">
+          </Link>
+          <Link
+            href="/become-partner"
+            className="w-full inline-flex items-center justify-center bg-gray-100 --text-title cursor-pointer font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors sg-p-default"
+          >
             Membership
-          </button>
+          </Link>
         </div>
       </div>
     </div>

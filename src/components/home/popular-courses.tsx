@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import type { StaticImageData } from "next/image";
 import {
   ArrowRight,
@@ -316,12 +317,12 @@ export function PopularCourses() {
                   <p className="text-[24px] leading-none font-semibold tracking-[-0.02em] text-(--text-title)">
                     {course.price}
                   </p>
-                  <button
-                    type="button"
-                    className="h-10 rounded-md border bg-(--primary-700) sg-p-default  px-3  font-semibold text-(--text-white) transition-colors cursor-pointer"
+                  <Link
+                    href="/course-details"
+                    className="h-10 rounded-md border bg-(--primary-700) sg-p-default  px-3  font-semibold text-(--text-white) transition-colors cursor-pointer inline-flex items-center"
                   >
                     View Details
-                  </button>
+                  </Link>
                 </div>
               </div>
             </article>
@@ -329,14 +330,14 @@ export function PopularCourses() {
         </div>
 
         <div className="mt-8 flex justify-center md:mt-10">
-          <button
-            type="button"
+          <Link
+            href="/course-details-filter"
             data-view-all-btn
             className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-md bg-(--primary-700) px-6 sg-p-default font-semibold text-(--text-white)"
           >
             View All Courses
             <ArrowRight size={20} strokeWidth={2.4} />
-          </button>
+          </Link>
         </div>
       </div>
     </section>

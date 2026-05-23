@@ -14,6 +14,7 @@ import { gsap, prepareGsap } from "@/lib/gsap";
 import image1 from "@/assets/images/popular-courses/image1.webp";
 import image2 from "@/assets/images/popular-courses/image2.webp";
 import image3 from "@/assets/images/popular-courses/image3.webp";
+import Link from "next/link";
 
 const TRENDING_COURSES = [
   {
@@ -52,7 +53,7 @@ export function TrendingCourses() {
   const sectionRef = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const cardsContainerRef = useRef<HTMLDivElement | null>(null);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const buttonRef = useRef<HTMLAnchorElement | null>(null);
 
   useEffect(() => {
     if (!sectionRef.current) {
@@ -231,12 +232,13 @@ export function TrendingCourses() {
                   <p className="text-[24px] leading-none font-semibold tracking-[-0.02em] text-(--text-title)">
                     {course.price}
                   </p>
-                  <button
-                    type="button"
-                    className="h-10 rounded-md border bg-(--primary-700) sg-p-default  px-3  font-semibold text-(--text-white) transition-colors cursor-pointer"
+
+                  <Link
+                    href="/course-details"
+                    className="h-10 rounded-md border bg-(--primary-700) sg-p-default  px-3  font-semibold text-(--text-white) transition-colors cursor-pointer inline-flex items-center"
                   >
                     View Details
-                  </button>
+                  </Link>
                 </div>
               </div>
             </article>
@@ -244,14 +246,14 @@ export function TrendingCourses() {
         </div>
 
         <div className="mt-8 flex justify-center md:mt-10">
-          <button
+          <Link
             ref={buttonRef}
-            type="button"
+            href="/course-details-filter"
             className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-md bg-(--primary-700) px-6 sg-p-default font-semibold text-(--text-white) transition-transform duration-300 hover:scale-105"
           >
             View All Courses
             <ArrowRight size={20} strokeWidth={2.4} />
-          </button>
+          </Link>
         </div>
       </div>
     </section>

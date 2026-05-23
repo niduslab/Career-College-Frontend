@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   ArrowRight,
   BadgeCheck,
@@ -203,13 +204,13 @@ export function CareerJourney() {
             </div>
           </div>
 
-          <button
-            type="button"
+          <Link
+            href="/course-details-filter"
             className="mt-8 inline-flex cursor-pointer h-11.75 w-fit items-center gap-2 rounded-md bg-(--primary-700) px-5 lg:sg-p-default sg-p-small font-semibold text-(--text-white) transition-transform duration-300 hover:-translate-y-px"
           >
             Explore Our Courses
             <ArrowRight size={20} strokeWidth={1.5} />
-          </button>
+          </Link>
         </div>
       </div>
     </section>
