@@ -15,7 +15,7 @@ const activities = [
 
 export default function AiActivityPanel() {
   return (
-    <div className="w-full lg:w-75 shrink-0 flex flex-col gap-4">
+    <div className="w-full xl:w-110 lg:w-75 shrink-0 flex flex-col gap-4">
       {/* AI Assist card */}
       <div className="bg-(--gray-900) rounded-xl p-5 text-white flex flex-col gap-4">
         <div className="flex items-center gap-2">
