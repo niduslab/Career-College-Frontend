@@ -7,14 +7,9 @@ import {
   X,
   BookOpenText,
   LayoutDashboard,
-  Hammer,
-  ClipboardList,
   Radio,
   Users,
-  BarChart2,
-  MessageSquare,
   DollarSign,
-  Megaphone,
   Award,
   Settings,
   BookOpen,
@@ -165,7 +160,7 @@ export default function InstructorSidebar() {
                       <Link
                         href={href}
                         onClick={close}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[14px]  transition-colors ${
+                        className={`flex items-center gap-3 h-11 px-3 py-2 rounded-lg text-[14px]  transition-colors ${
                           active
                             ? "bg-(--primary-600) font-medium text-white hover:bg-(--primary-700)"
                             : "text-(--gray-600) font-normal hover:bg-(--gray-100) hover:text-(--text-title)"
