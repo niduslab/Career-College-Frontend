@@ -2,6 +2,7 @@ import StatsCards from "@/components/dashboard/instructor/stats-cards";
 import RevenueChart from "@/components/dashboard/instructor/revenue-chart";
 import AiActivityPanel from "@/components/dashboard/instructor/ai-activity-panel";
 import TopCoursesTable from "@/components/dashboard/instructor/top-courses-table";
+import { Plus } from "lucide-react";
 
 export default function InstructorDashboardPage() {
   return (
@@ -9,28 +10,17 @@ export default function InstructorDashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h1 className="text-[20px] lg:text-[22px] font-bold text-(--text-title)">
+          <h1 className="text-[20px] lg:text-[24px] font-semibold text-(--text-title)">
             Welcome back, Al Amin.
           </h1>
-          <p className="text-[13px] lg:text-[14px] text-(--gray-500) mt-0.5">
-            Your courses generated 12% more engagement this week. Three students
+          <p className="text-[13px] lg:text-[14px] text-[#4a5565] mt-0.5">
+            Your courses generated 12% more engagement this week. Three students{" "}
+            <br />
             need a check-in.
           </p>
         </div>
-        <button className="self-start flex items-center gap-2 bg-(--primary-600) hover:bg-(--primary-700) text-white text-[13px] font-semibold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap">
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
+        <button className="self-start h-12 flex items-center gap-2 bg-(--primary-700) hover:bg-(--primary-600) text-white text-[14px] lg:text-[16px] font-semibold px-4 py-2.5 rounded-md transition-colors whitespace-nowrap">
+          <Plus size={16} color="white" />
           Create New Course
         </button>
       </div>

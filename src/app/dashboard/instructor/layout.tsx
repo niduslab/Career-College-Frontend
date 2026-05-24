@@ -7,7 +7,7 @@ export default function InstructorDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-[#f7f7fa]">
+    <div className="flex min-h-screen bg-(--gray-100)">
       <InstructorSidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <InstructorTopbar />

@@ -1,32 +1,35 @@
-import { DollarSign, Users, BookOpen, Star } from "lucide-react";
+import { Wallet, Users, BookOpen, Star, TrendingUp } from "lucide-react";
 
 const stats = [
   {
     label: "Total Revenue",
     value: "$24,802",
     change: "+12.5% vs last month",
-    changeType: "up",
-    icon: DollarSign,
+    changeType: "TrendingUp",
+    icon: Wallet,
     iconBg: "bg-[var(--primary-50)]",
     iconColor: "text-[var(--primary-600)]",
+    iconFill: false,
   },
   {
     label: "Total Students",
     value: "1,420",
     change: "+4.2% new enrollments vs last month",
-    changeType: "up",
+    changeType: "TrendingUp",
     icon: Users,
-    iconBg: "bg-[#eaf7f0]",
-    iconColor: "text-[var(--success-500)]",
+    iconBg: "bg-[var(--primary-50)]",
+    iconColor: "text-[var(--primary-600)]",
+    iconFill: false,
   },
   {
     label: "Active Course",
     value: "06",
-    change: "+2 this month · 4 published · 2 drafts",
-    changeType: "up",
+    change: "+2 this month . 4 published . 2 drafts",
+    changeType: "TrendingUp",
     icon: BookOpen,
-    iconBg: "bg-[#e8f4ff]",
-    iconColor: "text-[#3b82f6]",
+    iconBg: "bg-[var(--primary-50)]",
+    iconColor: "text-[var(--primary-600)]",
+    iconFill: false,
   },
   {
     label: "Avg. Rating",
@@ -34,8 +37,9 @@ const stats = [
     change: "(204 reviews)",
     changeType: "neutral",
     icon: Star,
-    iconBg: "bg-[#fff8e6]",
-    iconColor: "text-[var(--warning-500)]",
+    iconBg: "bg-[var(--primary-50)]",
+    iconColor: "text-[var(--primary-600)]",
+    iconFill: true,
     stars: true,
   },
 ];
@@ -48,34 +52,34 @@ export default function StatsCards() {
         return (
           <div
             key={stat.label}
-            className="bg-white rounded-xl p-5 border border-(--gray-200) flex flex-col gap-3"
+            className="bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3"
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[12px] text-(--gray-500) font-medium mb-1">
+                <p className="text-[12px] text-[#4a5565] font-regular mb-2">
                   {stat.label}
                 </p>
-                <p className="text-[26px] font-bold text-(--text-title) leading-none">
+                <p className="lg:text-[24px] text-[20px] font-semibold text-(--text-title) leading-none">
                   {stat.value}
                 </p>
               </div>
               <div
-                className={`w-10 h-10 rounded-lg ${stat.iconBg} flex items-center justify-center shrink-0`}
+                className={`w-10 h-10 rounded-[6px_4px_6px_6px] ${stat.iconBg} flex items-center justify-center shrink-0`}
               >
-                <Icon className={`w-5 h-5 ${stat.iconColor}`} />
+                <Icon
+                  className={`w-6 h-6 ${stat.iconColor}`}
+                  fill={stat.iconFill ? "currentColor" : "none"}
+                />
               </div>
             </div>
-
+            <div className="border border-dashed border-gray-200 mt-4 mb-4"></div>
             {stat.stars ? (
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <svg
+                  <Star
                     key={i}
                     className="w-3.5 h-3.5 text-(--warning-500) fill-current"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
+                  />
                 ))}
                 <span className="text-[12px] text-(--gray-500) ml-1">
                   {stat.change}
@@ -83,13 +87,15 @@ export default function StatsCards() {
               </div>
             ) : (
               <p
-                className={`text-[12px] font-medium ${
-                  stat.changeType === "up"
+                className={`text-[12px] font-medium flex items-center gap-1 ${
+                  stat.changeType === "TrendingUp"
                     ? "text-(--success-500)"
-                    : "text-(--gray-500)"
+                    : "text-[#4a5565]"
                 }`}
               >
-                {stat.changeType === "up" && "↑ "}
+                {stat.changeType === "TrendingUp" && (
+                  <TrendingUp className="w-4 h-4 shrink-0" />
+                )}
                 {stat.change}
               </p>
             )}
