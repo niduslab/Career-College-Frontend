@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useId } from "react";
+import { useState, useId, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 
 const allData: Record<string, { months: string[]; values: number[] }> = {
@@ -33,7 +33,6 @@ const PAD = { l: 56, r: 16, t: 20, b: 32 };
 const chartW = W - PAD.l - PAD.r;
 const chartH = H - PAD.t - PAD.b;
 
-// Catmull-Rom to cubic bezier — produces a natural flowing curve matching figma
 function buildCurvePath(pts: { x: number; y: number }[]): string {
   if (pts.length < 2) return "";
   const tension = 0.4;
@@ -55,8 +54,14 @@ function buildCurvePath(pts: { x: number; y: number }[]): string {
 export default function RevenueChart() {
   const [active, setActive] = useState<Filter>("6 months");
   const [open, setOpen] = useState(false);
+  const [tooltip, setTooltip] = useState<{
+    x: number;
+    y: number;
+    month: string;
+    value: number;
+  } | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const gradId = useId().replace(/:/g, "");
-  const clipId = useId().replace(/:/g, "");
 
   const { months, values } = allData[active];
 
@@ -70,6 +75,33 @@ export default function RevenueChart() {
     linePath +
     ` L ${points[points.length - 1].x} ${PAD.t + chartH} L ${points[0].x} ${PAD.t + chartH} Z`;
 
+  // Find closest data point to mouse X position
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const scaleX = W / rect.width;
+    const mouseX = (e.clientX - rect.left) * scaleX;
+
+    // Find nearest point
+    let closest = 0;
+    let minDist = Infinity;
+    points.forEach((p, i) => {
+      const dist = Math.abs(p.x - mouseX);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = i;
+      }
+    });
+
+    setTooltip({
+      x: points[closest].x,
+      y: points[closest].y,
+      month: months[closest],
+      value: values[closest],
+    });
+  };
+
   return (
     <div className="bg-white rounded-xl border border-(--gray-200) p-5 flex-1 relative">
       {/* Header */}
@@ -78,7 +110,6 @@ export default function RevenueChart() {
           Revenue Growth
         </h3>
 
-        {/* Filter dropdown */}
         <div className="relative">
           <button
             onClick={() => setOpen((v) => !v)}
@@ -95,10 +126,7 @@ export default function RevenueChart() {
               {filters.map((f) => (
                 <button
                   key={f}
-                  onClick={() => {
-                    setActive(f);
-                    setOpen(false);
-                  }}
+                  onClick={() => { setActive(f); setOpen(false); }}
                   className={`w-full text-left px-3 py-2 text-[12px] transition-colors ${
                     f === active
                       ? "bg-(--primary-50) text-(--primary-600) font-semibold"
@@ -115,28 +143,19 @@ export default function RevenueChart() {
 
       {/* Chart */}
       <svg
+        ref={svgRef}
         width="100%"
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMidYMid meet"
-        className="overflow-visible"
+        className="overflow-visible cursor-crosshair"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setTooltip(null)}
       >
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.18" />
             <stop offset="100%" stopColor="#7c3aed" stopOpacity="0.02" />
           </linearGradient>
-          {/* Clip that reveals left-to-right for line draw animation */}
-          <clipPath id={clipId}>
-            <rect
-              x={PAD.l}
-              y="0"
-              width={chartW}
-              height={H}
-              style={{
-                animation: `clipReveal 1s cubic-bezier(0.4,0,0.2,1) forwards`,
-              }}
-            />
-          </clipPath>
         </defs>
 
         {/* Y grid lines + labels */}
@@ -167,23 +186,21 @@ export default function RevenueChart() {
           );
         })}
 
-        {/* Area fill — fades in */}
+        {/* Area fill */}
         <path
           key={`area-${active}`}
           d={areaPath}
           fill={`url(#${gradId})`}
-          style={{
-            animation: "areaFade 1s cubic-bezier(0.4,0,0.2,1) forwards",
-          }}
+          style={{ animation: "areaFade 1s cubic-bezier(0.4,0,0.2,1) forwards" }}
         />
 
-        {/* Line — draws left to right via strokeDashoffset */}
+        {/* Line */}
         <path
           key={`line-${active}`}
           d={linePath}
           fill="none"
           stroke="#7c3aed"
-          strokeWidth="1.5"
+          strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
           pathLength="1"
@@ -208,6 +225,64 @@ export default function RevenueChart() {
             {m}
           </text>
         ))}
+
+        {/* Hover indicator */}
+        {tooltip && (
+          <g>
+            {/* Vertical dashed line */}
+            <line
+              x1={tooltip.x}
+              y1={PAD.t}
+              x2={tooltip.x}
+              y2={PAD.t + chartH}
+              stroke="#7c3aed"
+              strokeWidth="1"
+              strokeDasharray="3 3"
+              opacity="0.5"
+            />
+            {/* Dot on line */}
+            <circle
+              cx={tooltip.x}
+              cy={tooltip.y}
+              r="5"
+              fill="white"
+              stroke="#7c3aed"
+              strokeWidth="2"
+            />
+            {/* Tooltip box */}
+            <g transform={`translate(${
+              tooltip.x > W - 100 ? tooltip.x - 90 : tooltip.x + 10
+            }, ${tooltip.y > 60 ? tooltip.y - 52 : tooltip.y + 10})`}>
+              <rect
+                x="0"
+                y="0"
+                width="80"
+                height="42"
+                rx="8"
+                fill="#1e1b4b"
+              />
+              <text
+                x="10"
+                y="16"
+                fontSize="10"
+                fill="#c4b5fd"
+                fontFamily="inherit"
+              >
+                {tooltip.month}
+              </text>
+              <text
+                x="10"
+                y="32"
+                fontSize="12"
+                fontWeight="600"
+                fill="white"
+                fontFamily="inherit"
+              >
+                ${tooltip.value.toLocaleString()}
+              </text>
+            </g>
+          </g>
+        )}
       </svg>
 
       <style>{`
@@ -218,10 +293,6 @@ export default function RevenueChart() {
         @keyframes areaFade {
           from { opacity: 0; }
           to   { opacity: 1; }
-        }
-        @keyframes clipReveal {
-          from { width: 0; }
-          to   { width: ${chartW}px; }
         }
       `}</style>
     </div>

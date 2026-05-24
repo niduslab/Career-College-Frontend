@@ -133,7 +133,7 @@ export default function InstructorSidebar() {
         <div className="px-6 mb-8 flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-2 lg:gap-2.5"
+            className="flex items-center gap-1 lg:gap-2.5"
             onClick={close}
           >
             <div className="w-9 h-9   flex items-center justify-center">
@@ -145,7 +145,7 @@ export default function InstructorSidebar() {
           </Link>
           <button
             onClick={close}
-            className="lg:hidden ml-2 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-(--gray-100)"
+            className="lg:hidden ml-6 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-(--gray-100)"
           >
             <X className="w-4 h-4 text-(--gray-500)" />
           </button>
