@@ -4,37 +4,101 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  X, BookOpen, LayoutDashboard, Hammer, ClipboardList,
-  Radio, Users, BarChart2, MessageSquare, DollarSign,
-  Megaphone, Award, Settings,
+  X,
+  BookOpenText,
+  LayoutDashboard,
+  Hammer,
+  ClipboardList,
+  Radio,
+  Users,
+  BarChart2,
+  MessageSquare,
+  DollarSign,
+  Megaphone,
+  Award,
+  Settings,
+  BookOpen,
+  Sparkles,
+  ClipboardCheck,
+  ChartColumn,
+  MessageSquareMore,
+  PenLine,
 } from "lucide-react";
 
 const navSections = [
   {
     label: "Management",
     items: [
-      { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard/instructor" },
-      { icon: BookOpen, label: "My Course", href: "/dashboard/instructor/my-course" },
-      { icon: Hammer, label: "Course Builder", href: "/dashboard/instructor/course-builder" },
-      { icon: ClipboardList, label: "Assessments", href: "/dashboard/instructor/assessments" },
-      { icon: Radio, label: "Live Sessions", href: "/dashboard/instructor/live-sessions" },
+      {
+        icon: LayoutDashboard,
+        label: "Dashboard",
+        href: "/dashboard/instructor",
+      },
+      {
+        icon: BookOpen,
+        label: "My Course",
+        href: "/dashboard/instructor/my-course",
+      },
+      {
+        icon: Sparkles,
+        label: "Course Builder",
+        href: "/dashboard/instructor/course-builder",
+      },
+      {
+        icon: ClipboardCheck,
+        label: "Assessments",
+        href: "/dashboard/instructor/assessments",
+      },
+      {
+        icon: Radio,
+        label: "Live Sessions",
+        href: "/dashboard/instructor/live-sessions",
+      },
     ],
   },
   {
     label: "Community",
     items: [
-      { icon: Users, label: "Students", href: "/dashboard/instructor/students" },
-      { icon: BarChart2, label: "Analytics", href: "/dashboard/instructor/analytics" },
-      { icon: MessageSquare, label: "Messages", href: "/dashboard/instructor/messages" },
+      {
+        icon: Users,
+        label: "Students",
+        href: "/dashboard/instructor/students",
+      },
+      {
+        icon: ChartColumn,
+        label: "Analytics",
+        href: "/dashboard/instructor/analytics",
+      },
+      {
+        icon: MessageSquareMore,
+        label: "Messages",
+        href: "/dashboard/instructor/messages",
+      },
     ],
   },
   {
     label: "Growth",
     items: [
-      { icon: DollarSign, label: "Revenue", href: "/dashboard/instructor/revenue" },
-      { icon: Megaphone, label: "Blog & Marketing", href: "/dashboard/instructor/blog-marketing" },
-      { icon: Award, label: "Certificates", href: "/dashboard/instructor/certificates" },
-      { icon: Settings, label: "Settings", href: "/dashboard/instructor/settings" },
+      {
+        icon: DollarSign,
+        label: "Revenue",
+        href: "/dashboard/instructor/revenue",
+      },
+      {
+        icon: PenLine,
+        label: "Blog & Marketing",
+        href: "/dashboard/instructor/blog-marketing",
+      },
+      {
+        icon: Award,
+        label: "Certificates",
+        href: "/dashboard/instructor/certificates",
+      },
+      {
+        icon: Settings,
+        label: "Settings",
+        href: "/dashboard/instructor/settings",
+      },
     ],
   },
 ];
@@ -54,7 +118,10 @@ export default function InstructorSidebar() {
   return (
     <>
       {open && (
-        <div className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={close} />
+        <div
+          className="fixed inset-0 bg-black/40 z-30 lg:hidden"
+          onClick={close}
+        />
       )}
       <aside
         className={`
@@ -64,13 +131,22 @@ export default function InstructorSidebar() {
         `}
       >
         <div className="px-6 mb-8 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5" onClick={close}>
-            <div className="w-9 h-9 bg-(--primary-600) rounded-lg flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-white" />
+          <Link
+            href="/"
+            className="flex items-center gap-2 lg:gap-2.5"
+            onClick={close}
+          >
+            <div className="w-9 h-9   flex items-center justify-center">
+              <BookOpenText className="w-6 h-6 text-(--primary-600)" />
             </div>
-            <span className="font-bold text-(--primary-600) text-[18px]">CareerCollege</span>
+            <span className="font-medium text-(--primary-600) text-[16px] lg:text-[20px]">
+              CareerCollege
+            </span>
           </Link>
-          <button onClick={close} className="lg:hidden w-7 h-7 flex items-center justify-center rounded-lg hover:bg-(--gray-100)">
+          <button
+            onClick={close}
+            className="lg:hidden ml-2 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-(--gray-100)"
+          >
             <X className="w-4 h-4 text-(--gray-500)" />
           </button>
         </div>
@@ -78,10 +154,10 @@ export default function InstructorSidebar() {
         <nav className="flex-1 px-3 space-y-6 overflow-y-auto">
           {navSections.map((section) => (
             <div key={section.label}>
-              <p className="text-[11px] font-bold text-(--gray-400) uppercase tracking-[0.08em] px-3 mb-2">
+              <p className="text-[12px] font-medium text-(--gray-600)  tracking-[0.08em] px-3 mb-2">
                 {section.label}
               </p>
-              <ul className="space-y-0.5">
+              <ul className="space-y-3">
                 {section.items.map(({ icon: Icon, label, href }) => {
                   const active = pathname === href;
                   return (
@@ -89,13 +165,15 @@ export default function InstructorSidebar() {
                       <Link
                         href={href}
                         onClick={close}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[14px]  transition-colors ${
                           active
-                            ? "bg-(--primary-600) text-white hover:bg-(--primary-700)"
-                            : "text-(--gray-600) hover:bg-(--gray-100) hover:text-(--text-title)"
+                            ? "bg-(--primary-600) font-medium text-white hover:bg-(--primary-700)"
+                            : "text-(--gray-600) font-normal hover:bg-(--gray-100) hover:text-(--text-title)"
                         }`}
                       >
-                        <Icon className={`w-4 h-4 shrink-0 ${active ? "text-white" : "text-(--gray-400)"}`} />
+                        <Icon
+                          className={`w-4 h-4 shrink-0 ${active ? "text-white" : "text-(--gray-500)"}`}
+                        />
                         {label}
                       </Link>
                     </li>

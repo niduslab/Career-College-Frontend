@@ -11,7 +11,7 @@ export default function InstructorTopbar() {
   };
 
   return (
-    <header className="h-14 lg:h-16 bg-white border-b border-(--gray-200) px-4 lg:px-6 flex items-center justify-between gap-4 shrink-0">
+    <header className="sticky top-0 z-20 h-14 lg:h-16 bg-white border-b border-(--gray-200) px-4 lg:px-6 flex items-center justify-between gap-4 shrink-0">
       <div className="flex items-center gap-3">
         <button
           onClick={handleMenuClick}
