@@ -39,11 +39,7 @@ const navSections = [
         label: "Course Builder",
         href: "/dashboard/instructor/course-builder",
       },
-      {
-        icon: ClipboardCheck,
-        label: "Assessments",
-        href: "/dashboard/instructor/assessments",
-      },
+
       {
         icon: Radio,
         label: "Live Sessions",
