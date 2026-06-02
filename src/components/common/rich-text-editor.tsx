@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { useEditor, EditorContent, Extension } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
-import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import { TextStyle } from "@tiptap/extension-text-style";
 import {
@@ -19,8 +17,6 @@ import {
   AlignCenter,
   AlignRight,
   Link as LinkIcon,
-  Undo,
-  Redo,
   Heading2,
   Heading3,
   RemoveFormatting,
@@ -123,12 +119,13 @@ export default function RichTextEditor({
   const [currentSpacing, setCurrentSpacing] = useState("1.5");
 
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
-      StarterKit,
-      Underline,
+      StarterKit.configure({
+        link: { openOnClick: false },
+      }),
       TextStyle,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
-      Link.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder }),
       LineHeight,
     ],
