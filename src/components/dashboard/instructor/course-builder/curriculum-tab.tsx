@@ -464,7 +464,6 @@ export default function CurriculumTab() {
         </div>
       </div>
 
-      {/* Footer */}
       <div className="flex justify-start gap-3">
         <button className="px-5 h-12 text-[14px] cursor-pointer font-medium border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
           Save Draft
