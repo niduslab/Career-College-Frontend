@@ -34,16 +34,15 @@ import LessonModal from "./lesson-modal";
 
 function SortableLesson({
   lesson,
-  isFirst,
-  isLast,
-  onMoveUp,
-  onMoveDown,
+
+  onEdit,
 }: {
   lesson: Lesson;
   isFirst: boolean;
   isLast: boolean;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onEdit: () => void;
 }) {
   const {
     attributes,
@@ -62,7 +61,7 @@ function SortableLesson({
         transition,
         opacity: isDragging ? 0.5 : 1,
       }}
-      className="flex cursor-pointer items-center gap-2 px-3 py-3 border border-(--gray-200) rounded-lg bg-white hover:bg-(--gray-50) transition-colors"
+      className="flex   items-center gap-2 px-3 py-3 border border-(--gray-200) rounded-lg bg-white hover:bg-(--gray-50) transition-colors"
     >
       <button
         {...attributes}
@@ -85,7 +84,10 @@ function SortableLesson({
       <span className="text-[14px] text-(--text-paragraph) font-normal shrink-0 whitespace-nowrap">
         {lesson.duration} min
       </span>
-      <button className="p-1 shrink-0 cursor-pointer transition-colors">
+      <button
+        onClick={onEdit}
+        className="p-1 shrink-0 cursor-pointer transition-colors"
+      >
         <Pencil className="w-4 h-4 text-(--gray-500)" />
       </button>
     </div>
@@ -106,6 +108,7 @@ function SortableModule({
   onReorderLessons,
   onMoveLessonUp,
   onMoveLessonDown,
+  onEditLesson,
 }: {
   mod: Module;
   modIndex: number;
@@ -118,6 +121,7 @@ function SortableModule({
   onReorderLessons: (lessons: Lesson[]) => void;
   onMoveLessonUp: (lessonId: string) => void;
   onMoveLessonDown: (lessonId: string) => void;
+  onEditLesson: (lesson: Lesson) => void;
 }) {
   const {
     attributes,
@@ -220,6 +224,7 @@ function SortableModule({
                     isLast={lIdx === mod.lessons.length - 1}
                     onMoveUp={() => onMoveLessonUp(lesson.id)}
                     onMoveDown={() => onMoveLessonDown(lesson.id)}
+                    onEdit={() => onEditLesson(lesson)}
                   />
                 ))}
               </SortableContext>
@@ -254,6 +259,10 @@ export default function CurriculumTab() {
   const [lessonModalModuleId, setLessonModalModuleId] = useState<string | null>(
     null,
   );
+  const [editingLesson, setEditingLesson] = useState<{
+    moduleId: string;
+    lesson: Lesson;
+  } | null>(null);
 
   const moduleSensors = useSensors(useSensor(PointerSensor));
 
@@ -338,6 +347,26 @@ export default function CurriculumTab() {
     );
   };
 
+  const updateLesson = (
+    moduleId: string,
+    lessonId: string,
+    updated: Omit<Lesson, "id">,
+  ) => {
+    setModules((prev) =>
+      prev.map((m) =>
+        m.id !== moduleId
+          ? m
+          : {
+              ...m,
+              lessons: m.lessons.map((l) =>
+                l.id === lessonId ? { ...updated, id: lessonId } : l,
+              ),
+            },
+      ),
+    );
+    setEditingLesson(null);
+  };
+
   const editingModule =
     moduleModal?.mode === "edit"
       ? modules.find((m) => m.id === moduleModal.moduleId)
@@ -345,7 +374,7 @@ export default function CurriculumTab() {
 
   return (
     <>
-      <div className="flex flex-col lg:flex-row gap-5">
+      <div className="flex flex-col lg:flex-col xl:flex-row gap-5">
         {/* Left — Curriculum list */}
         <div className="flex-1 bg-white border border-(--gray-200) rounded-2xl p-6 space-y-4">
           <div>
@@ -390,6 +419,9 @@ export default function CurriculumTab() {
                     onMoveLessonDown={(lessonId) =>
                       moveLesson(mod.id, lessonId, 1)
                     }
+                    onEditLesson={(lesson) =>
+                      setEditingLesson({ moduleId: mod.id, lesson })
+                    }
                   />
                 ))}
               </div>
@@ -405,55 +437,70 @@ export default function CurriculumTab() {
           </button>
         </div>
 
-        {/* Right — AI Outline Generator + How It Works */}
-        <div className="w-full lg:w-72 shrink-0 space-y-5">
-          <div className="bg-(--text-title) rounded-xl p-5 space-y-3">
+        {/* Right — footer (mobile/md) + AI Outline Generator + How It Works */}
+        <div className="w-full xl:w-82.5 shrink-0 space-y-5">
+          {/* Footer buttons — shown above AI panel on mobile/md, hidden on lg (rendered below instead) */}
+          <div className="flex justify-start gap-3 xl:hidden">
+            <button className="px-5 h-12 text-[14px] cursor-pointer font-normal border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
+              Save Draft
+            </button>
+            <button className="px-5 h-12 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors flex items-center gap-2">
+              Continue
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="bg-(--gray-950) rounded-2xl p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-purple-300" />
-              <h3 className="text-[14px] font-semibold text-white">
+              <Sparkles className="w-4 h-4 text-(--primary-600)" />
+              <h3 className="text-[12px] font-normal text-(--primary-100)">
                 AI Outline Generator
               </h3>
             </div>
-            <p className="text-[12px] text-gray-400 leading-relaxed">
+            <p className="text-[12px] text-[#f7f5f2] font-normal leading-relaxed">
               Generate a starter curriculum from a topic. Editable results.
             </p>
             <input
               type="text"
               placeholder="e.g. UX Research"
-              className="w-full h-10 px-3 text-[13px] rounded-lg bg-white/10 text-white placeholder:text-gray-500 border border-white/10 outline-none focus:ring-2 focus:ring-purple-400 transition-shadow"
+              className="w-full h-9 px-3 text-[12px] rounded-md bg-(--gray-700)   placeholder:text-gray-500 border border-(--gray-700) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
             />
-            <button className="w-full h-10 bg-(--primary-600) hover:bg-(--primary-700) text-white text-[13px] font-semibold rounded-lg cursor-pointer transition-colors">
+            <button className="w-full h-9 bg-(--primary-700) hover:bg-(--primary-950) text-[#f7f5f2] text-[14px] font-semibold rounded-md cursor-pointer transition-colors">
               Generate Outline
             </button>
           </div>
 
-          <div className="bg-white border border-(--gray-200) rounded-xl p-5 space-y-3">
-            <h3 className="text-[14px] font-semibold text-(--text-title)">
+          <div className="bg-white border border-(--gray-200) rounded-2xl p-4 space-y-3">
+            <h3 className="text-[16px] lg:text-[20px] font-semibold text-(--text-title)">
               How It Works
             </h3>
             <ol className="space-y-2.5 list-none">
               {[
                 <>
-                  <strong>Add New Module</strong> to create a section.
+                  {/*  to create a section. */}
+                  Click{" "}
+                  <strong className="text-(--text-title)">
+                    Add New Module
+                  </strong>{" "}
+                  to create a section.
                 </>,
                 <>
-                  Inside each module, click <strong>Add Lesson</strong> to
+                  Inside each module, click{" "}
+                  <strong className="text-(--text-title)">Add Lesson</strong> to
                   upload a video, document, or quiz.
                 </>,
                 <>
-                  Use the <strong>pencil</strong> icon to rename or describe a
-                  module or lesson.
+                  Use the{" "}
+                  <strong className="text-(--text-title)">pencil</strong> icon
+                  to rename or describe a module or lesson.
                 </>,
-                <>
-                  Drag the <strong>grip handle</strong> or use arrows to
-                  reorder.
-                </>,
+                <>Drag handles or use the up/down arrows to reorder.</>,
               ].map((item, i) => (
                 <li
                   key={i}
                   className="flex gap-2 text-[12px] text-(--gray-600) leading-relaxed"
                 >
-                  <span className="shrink-0 font-semibold text-(--gray-400)">
+                  <span className="shrink-0 font-semibold text-(--text-title)">
                     {i + 1}.
                   </span>
                   <span>{item}</span>
@@ -464,8 +511,9 @@ export default function CurriculumTab() {
         </div>
       </div>
 
-      <div className="flex justify-start gap-3">
-        <button className="px-5 h-12 text-[14px] cursor-pointer font-medium border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
+      {/* Footer buttons — only on lg and above */}
+      <div className="hidden xl:flex justify-start gap-3">
+        <button className="px-5 h-12 text-[14px] cursor-pointer font-normal border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
           Save Draft
         </button>
         <button className="px-5 h-12 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors flex items-center gap-2">
@@ -494,6 +542,20 @@ export default function CurriculumTab() {
         <LessonModal
           onSave={(lesson) => addLesson(lessonModalModuleId, lesson)}
           onClose={() => setLessonModalModuleId(null)}
+        />
+      )}
+
+      {editingLesson && (
+        <LessonModal
+          initialLesson={editingLesson.lesson}
+          onSave={(updated) =>
+            updateLesson(
+              editingLesson.moduleId,
+              editingLesson.lesson.id,
+              updated,
+            )
+          }
+          onClose={() => setEditingLesson(null)}
         />
       )}
     </>

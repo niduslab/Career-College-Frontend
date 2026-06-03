@@ -29,9 +29,11 @@ export default function CourseBuilderPage() {
           <h1 className="text-[20px] lg:text-[24px] font-semibold text-(--text-title)">
             Course Builder
           </h1>
-          <p className="text-[13px] text-[#4a5565] mt-1">Advanced — Working Draft</p>
+          <p className="text-[14px] font-normal text-[#4a5565] mt-1">
+            Advanced — Working Draft
+          </p>
         </div>
-        <button className="flex items-center gap-2 bg-(--primary-600) hover:bg-(--primary-700) text-white text-[13px] font-semibold px-4 h-10 rounded-lg transition-colors">
+        <button className="flex items-center gap-2 bg-(--primary-700) hover:bg-(--primary-900) text-white text-[13px] font-semibold px-4 h-12 rounded-md transition-colors">
           <Eye className="w-4 h-4" />
           Preview
         </button>
@@ -54,7 +56,7 @@ export default function CourseBuilderPage() {
                       : "text-(--gray-400) hover:bg-(--gray-50)"
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-4 h-4" />
                 {key}
               </button>
               {i < steps.length - 1 && (
@@ -78,7 +80,9 @@ export default function CourseBuilderPage() {
 
       {activeStep !== "Setup" && activeStep !== "Curriculum" && (
         <div className="bg-white border border-(--gray-200) rounded-xl p-10 flex items-center justify-center">
-          <p className="text-[14px] text-(--gray-400)">{activeStep} section — coming soon</p>
+          <p className="text-[14px] text-(--gray-400)">
+            {activeStep} section — coming soon
+          </p>
         </div>
       )}
     </div>
