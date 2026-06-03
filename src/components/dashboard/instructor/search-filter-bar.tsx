@@ -42,10 +42,10 @@ export default function SearchFilterBar({
           onClick={() => setDropOpen((v) => !v)}
           className="flex items-center cursor-pointer gap-2 px-4 h-12 w-41.5 border border-(--gray-200) rounded-xl bg-white text-[13px] text-(--gray-600) hover:bg-(--gray-50) transition-colors"
         >
-          <SlidersHorizontal className="w-4 h-4 text-(--gray-400)" />
+          <SlidersHorizontal className="w-4 h-4 text-(--gray-500)" />
           <span className="flex-1 text-left">{filterValue}</span>
           <ChevronDown
-            className={`w-3.5 h-3.5 ml-auto transition-transform duration-200 ${dropOpen ? "rotate-180" : ""}`}
+            className={`w-4 h-4 ml-auto transition-transform duration-200 ${dropOpen ? "rotate-180" : ""}`}
           />
         </button>
 
