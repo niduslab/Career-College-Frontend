@@ -27,9 +27,19 @@ const PRICING_MODELS: {
   label: string;
   sub: string;
 }[] = [
-  { key: "One-time",     icon: DollarSign, label: "One-time",     sub: "Single payment, full access" },
-  { key: "Subscription", icon: Repeat2,    label: "Subscription", sub: "Recurring monthly billing" },
-  { key: "Free",         icon: Globe,      label: "Free",         sub: "No payment required" },
+  {
+    key: "One-time",
+    icon: DollarSign,
+    label: "One-time",
+    sub: "Single payment, full access",
+  },
+  {
+    key: "Subscription",
+    icon: Repeat2,
+    label: "Subscription",
+    sub: "Recurring monthly billing",
+  },
+  { key: "Free", icon: Globe, label: "Free", sub: "No payment required" },
 ];
 
 const ACCESS_TYPES: {
@@ -38,14 +48,36 @@ const ACCESS_TYPES: {
   label: string;
   sub: string;
 }[] = [
-  { key: "Lifetime",     icon: Lock,         label: "Lifetime access",  sub: "Students own the course forever" },
-  { key: "Time-limited", icon: CalendarClock, label: "Time-limited",    sub: "Access expires after N days" },
+  {
+    key: "Lifetime",
+    icon: Lock,
+    label: "Lifetime access",
+    sub: "Students own the course forever",
+  },
+  {
+    key: "Time-limited",
+    icon: CalendarClock,
+    label: "Time-limited",
+    sub: "Access expires after N days",
+  },
 ];
 
 const TIPS = [
-  { icon: Sparkles, color: "text-yellow-500", text: "Use a compare-at price to communicate value." },
-  { icon: Sparkles, color: "text-blue-500",   text: "Launch coupons convert 2× in week 1." },
-  { icon: Sparkles, color: "text-green-500",  text: "Drip content increases completion by 38%." },
+  {
+    icon: Sparkles,
+    color: "text-yellow-500",
+    text: "Use a compare-at price to communicate value.",
+  },
+  {
+    icon: Sparkles,
+    color: "text-blue-500",
+    text: "Launch coupons convert 2× in week 1.",
+  },
+  {
+    icon: Sparkles,
+    color: "text-green-500",
+    text: "Drip content increases completion by 38%.",
+  },
 ];
 
 const PLATFORM_FEE = 0.15;
@@ -57,28 +89,30 @@ export default function PricingTab({
   onBack: () => void;
   onContinue: () => void;
 }) {
-  const [model, setModel]           = useState<PricingModel>("One-time");
-  const [access, setAccess]         = useState<AccessType>("Lifetime");
-  const [price, setPrice]           = useState("49");
-  const [compareAt, setCompareAt]   = useState("99");
-  const [currency, setCurrency]     = useState<Currency>("USD");
+  const [model, setModel] = useState<PricingModel>("One-time");
+  const [access, setAccess] = useState<AccessType>("Lifetime");
+  const [price, setPrice] = useState("49");
+  const [compareAt, setCompareAt] = useState("99");
+  const [currency, setCurrency] = useState<Currency>("USD");
   const [couponCode, setCouponCode] = useState("LAUNCH20");
-  const [discount, setDiscount]     = useState("20");
-  const [drip, setDrip]             = useState(false);
+  const [discount, setDiscount] = useState("20");
+  const [drip, setDrip] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
 
-  const listPrice   = model === "Free" ? 0 : parseFloat(price) || 0;
+  const listPrice = model === "Free" ? 0 : parseFloat(price) || 0;
   const platformFee = listPrice * PLATFORM_FEE;
   const earnPerSale = listPrice - platformFee;
   const discountAmt = (listPrice * (parseFloat(discount) || 0)) / 100;
-  const finalPrice  = Math.max(0, listPrice - discountAmt);
+  const finalPrice = Math.max(0, listPrice - discountAmt);
 
   const fmt = (n: number) =>
-    n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    n.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
 
   return (
     <div className="flex flex-col lg:flex-row gap-5">
-
       {/* ── Left — Main form ── */}
       <div className="flex-1 space-y-5">
         <div className="bg-white border border-(--gray-200) rounded-xl p-6 space-y-6">
@@ -106,10 +140,14 @@ export default function PricingTab({
                   <Icon
                     className={`w-5 h-5 ${model === key ? "text-(--primary-600)" : "text-(--gray-400)"}`}
                   />
-                  <p className={`text-[13px] font-semibold ${model === key ? "text-(--primary-700)" : "text-(--text-title)"}`}>
+                  <p
+                    className={`text-[13px] font-semibold ${model === key ? "text-(--primary-700)" : "text-(--text-title)"}`}
+                  >
                     {label}
                   </p>
-                  <p className="text-[11px] text-(--gray-400) leading-snug">{sub}</p>
+                  <p className="text-[11px] text-(--gray-400) leading-snug">
+                    {sub}
+                  </p>
                 </button>
               ))}
             </div>
@@ -123,7 +161,9 @@ export default function PricingTab({
                   Price
                 </label>
                 <div className="relative mt-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--gray-400) text-[14px]">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--gray-400) text-[14px]">
+                    $
+                  </span>
                   <input
                     type="number"
                     value={price}
@@ -139,7 +179,9 @@ export default function PricingTab({
                   Compare-at (Strike)
                 </label>
                 <div className="relative mt-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--gray-400) text-[14px]">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--gray-400) text-[14px]">
+                    $
+                  </span>
                   <input
                     type="number"
                     value={compareAt}
@@ -174,7 +216,10 @@ export default function PricingTab({
                         <button
                           key={c}
                           type="button"
-                          onClick={() => { setCurrency(c); setCurrencyOpen(false); }}
+                          onClick={() => {
+                            setCurrency(c);
+                            setCurrencyOpen(false);
+                          }}
                           className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${
                             c === currency
                               ? "bg-(--primary-50) text-(--primary-600) font-semibold"
@@ -212,10 +257,14 @@ export default function PricingTab({
                     className={`w-5 h-5 mt-0.5 shrink-0 ${access === key ? "text-(--primary-600)" : "text-(--gray-400)"}`}
                   />
                   <div>
-                    <p className={`text-[13px] font-semibold ${access === key ? "text-(--primary-700)" : "text-(--text-title)"}`}>
+                    <p
+                      className={`text-[13px] font-semibold ${access === key ? "text-(--primary-700)" : "text-(--text-title)"}`}
+                    >
                       {label}
                     </p>
-                    <p className="text-[11px] text-(--gray-400) mt-0.5 leading-snug">{sub}</p>
+                    <p className="text-[11px] text-(--gray-400) mt-0.5 leading-snug">
+                      {sub}
+                    </p>
                   </div>
                 </button>
               ))}
@@ -239,7 +288,9 @@ export default function PricingTab({
                   <input
                     type="text"
                     value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    onChange={(e) =>
+                      setCouponCode(e.target.value.toUpperCase())
+                    }
                     placeholder="e.g. LAUNCH20"
                     className="w-full h-12 px-3 mt-1 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
                   />
@@ -254,7 +305,11 @@ export default function PricingTab({
                       type="number"
                       value={discount}
                       onChange={(e) =>
-                        setDiscount(String(Math.min(100, Math.max(0, Number(e.target.value)))))
+                        setDiscount(
+                          String(
+                            Math.min(100, Math.max(0, Number(e.target.value))),
+                          ),
+                        )
                       }
                       min={0}
                       max={100}
@@ -285,7 +340,9 @@ export default function PricingTab({
             <div>
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-(--gray-400)" />
-                <p className="text-[14px] font-semibold text-(--text-title)">Drip content</p>
+                <p className="text-[14px] font-semibold text-(--text-title)">
+                  Drip content
+                </p>
               </div>
               <p className="text-[12px] text-(--gray-400) mt-0.5">
                 Release modules weekly instead of all at once
@@ -295,21 +352,21 @@ export default function PricingTab({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 px-5 h-12 text-[14px] cursor-pointer font-medium border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors"
+            className="flex items-center justify-center gap-2 px-5 h-12 text-[14px] cursor-pointer font-medium border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             Curriculum
           </button>
           <div className="flex items-center gap-3">
-            <button className="px-5 h-12 text-[14px] cursor-pointer font-medium border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
+            <button className="flex-1 sm:flex-none px-5 h-12 text-[14px] cursor-pointer font-medium border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
               Save Draft
             </button>
             <button
               onClick={onContinue}
-              className="flex items-center gap-2 px-5 h-12 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 h-12 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors"
             >
               Continue to Review
               <ChevronRight className="w-4 h-4" />
@@ -320,7 +377,6 @@ export default function PricingTab({
 
       {/* ── Right — Sidebar ── */}
       <div className="w-full lg:w-72 shrink-0 space-y-4">
-
         {/* Earnings Preview */}
         {model !== "Free" && (
           <div className="bg-white border border-(--gray-200) rounded-xl p-5 space-y-3">
@@ -330,23 +386,35 @@ export default function PricingTab({
             <div className="space-y-2 text-[13px]">
               <div className="flex items-center justify-between">
                 <span className="text-(--gray-500)">List price</span>
-                <span className="font-medium text-(--text-title)">${fmt(listPrice)}</span>
+                <span className="font-medium text-(--text-title)">
+                  ${fmt(listPrice)}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-(--gray-500)">Platform fee (15%)</span>
-                <span className="font-medium text-red-500">−${fmt(platformFee)}</span>
+                <span className="font-medium text-red-500">
+                  −${fmt(platformFee)}
+                </span>
               </div>
               <div className="border-t border-(--gray-100) pt-2 flex items-center justify-between">
-                <span className="font-semibold text-(--text-title)">You earn / sale</span>
-                <span className="font-bold text-(--primary-600) text-[15px]">${fmt(earnPerSale)}</span>
+                <span className="font-semibold text-(--text-title)">
+                  You earn / sale
+                </span>
+                <span className="font-bold text-(--primary-600) text-[15px]">
+                  ${fmt(earnPerSale)}
+                </span>
               </div>
               <div className="flex items-center justify-between text-(--gray-400)">
                 <span>100 sales</span>
-                <span className="text-(--primary-600) font-medium">${fmt(earnPerSale * 100)}</span>
+                <span className="text-(--primary-600) font-medium">
+                  ${fmt(earnPerSale * 100)}
+                </span>
               </div>
               <div className="flex items-center justify-between text-(--gray-400)">
                 <span>1,000 sales</span>
-                <span className="text-(--primary-600) font-medium">${fmt(earnPerSale * 1000)}</span>
+                <span className="text-(--primary-600) font-medium">
+                  ${fmt(earnPerSale * 1000)}
+                </span>
               </div>
             </div>
           </div>
@@ -361,7 +429,9 @@ export default function PricingTab({
             {TIPS.map(({ icon: Icon, color, text }) => (
               <div key={text} className="flex items-start gap-2">
                 <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${color}`} />
-                <p className="text-[12px] text-(--gray-500) leading-snug">{text}</p>
+                <p className="text-[12px] text-(--gray-500) leading-snug">
+                  {text}
+                </p>
               </div>
             ))}
           </div>

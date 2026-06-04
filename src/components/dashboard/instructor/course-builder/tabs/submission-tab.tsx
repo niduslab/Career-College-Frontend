@@ -119,7 +119,7 @@ export default function SubmissionTab({
                           Question {qi + 1}. {q.points}pt
                         </span>
                       </p>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {q.options.map((opt, oi) => {
                           const isCorrect = opt.correct;
                           const isChosen =

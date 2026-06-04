@@ -248,7 +248,7 @@ function SortableModule({
 
 // Curriculum Tab
 
-export default function CurriculumTab() {
+export default function CurriculumTab({ onContinue }: { onContinue?: () => void }) {
   const [modules, setModules] = useState<Module[]>(SEED_MODULES);
 
   const [moduleModal, setModuleModal] = useState<{
@@ -444,7 +444,7 @@ export default function CurriculumTab() {
             <button className="px-5 h-12 text-[14px] cursor-pointer font-normal border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
               Save Draft
             </button>
-            <button className="px-5 h-12 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors flex items-center gap-2">
+            <button onClick={onContinue} className="px-5 h-12 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors flex items-center gap-2">
               Continue
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -516,7 +516,7 @@ export default function CurriculumTab() {
         <button className="px-5 h-12 text-[14px] cursor-pointer font-normal border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
           Save Draft
         </button>
-        <button className="px-5 h-12 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors flex items-center gap-2">
+        <button onClick={onContinue} className="px-5 h-12 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors flex items-center gap-2">
           Continue
           <ChevronRight className="w-4 h-4" />
         </button>

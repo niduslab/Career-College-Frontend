@@ -7,6 +7,9 @@ import { steps } from "@/components/dashboard/instructor/course-builder/constant
 import SetupTab from "@/components/dashboard/instructor/course-builder/setup-tab";
 import CurriculumTab from "@/components/dashboard/instructor/course-builder/curriculum-tab";
 import PricingTab from "@/components/dashboard/instructor/course-builder/pricing-tab";
+import ReviewTab from "@/components/dashboard/instructor/course-builder/review-tab";
+import PreviewDrawer from "@/components/dashboard/instructor/course-builder/preview-drawer";
+import { SEED_MODULES } from "@/components/dashboard/instructor/course-builder/constants";
 
 const INITIAL_FORM = {
   title: "Advanced UI/UX Course",
@@ -21,6 +24,7 @@ const INITIAL_FORM = {
 export default function CourseBuilderPage() {
   const [activeStep, setActiveStep] = useState<Step>("Setup");
   const [form, setForm] = useState(INITIAL_FORM);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   return (
     <div className="space-y-5">
@@ -34,7 +38,10 @@ export default function CourseBuilderPage() {
             Advanced — Working Draft
           </p>
         </div>
-        <button className="flex items-center gap-2 bg-(--primary-700) hover:bg-(--primary-900) text-white text-[13px] font-semibold px-4 h-12 rounded-md transition-colors">
+        <button
+          onClick={() => setPreviewOpen(true)}
+          className="flex items-center cursor-pointer gap-2 bg-(--primary-700) hover:bg-(--primary-900) text-white text-[13px] font-semibold px-4 h-12 rounded-md transition-colors"
+        >
           <Eye className="w-4 h-4" />
           Preview
         </button>
@@ -77,7 +84,9 @@ export default function CourseBuilderPage() {
         />
       )}
 
-      {activeStep === "Curriculum" && <CurriculumTab />}
+      {activeStep === "Curriculum" && (
+        <CurriculumTab onContinue={() => setActiveStep("Pricing")} />
+      )}
 
       {activeStep === "Pricing" && (
         <PricingTab
@@ -86,12 +95,39 @@ export default function CourseBuilderPage() {
         />
       )}
 
-      {activeStep !== "Setup" && activeStep !== "Curriculum" && activeStep !== "Pricing" && (
-        <div className="bg-white border border-(--gray-200) rounded-xl p-10 flex items-center justify-center">
-          <p className="text-[14px] text-(--gray-400)">
-            {activeStep} section — coming soon
-          </p>
-        </div>
+      <PreviewDrawer
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        form={form}
+        modules={SEED_MODULES}
+      />
+
+      {activeStep === "Review" && (
+        <ReviewTab
+          data={{
+            category: form.category,
+            level: form.level,
+            language: form.language,
+            title: form.title,
+            tagline: form.tagline,
+            description: form.description,
+            modules: SEED_MODULES.map((m) => ({
+              title: m.title,
+              lessons: m.lessons.length,
+              videos: m.lessons.filter((l) => l.type === "Video").length,
+            })),
+            totalLessons: SEED_MODULES.reduce(
+              (s, m) => s + m.lessons.length,
+              0,
+            ),
+            totalVideos: SEED_MODULES.reduce(
+              (s, m) => s + m.lessons.filter((l) => l.type === "Video").length,
+              0,
+            ),
+            price: "149",
+          }}
+          onBack={() => setActiveStep("Pricing")}
+        />
       )}
     </div>
   );

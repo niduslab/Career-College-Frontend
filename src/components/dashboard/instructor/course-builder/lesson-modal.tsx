@@ -112,25 +112,25 @@ export default function LessonModal({
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto px-6 py-5 pb-36 space-y-5 flex-1">
+        <div className="overflow-y-auto px-6 py-5 pb-6 space-y-5 flex-1">
           {/* Lesson Type */}
           <div className="space-y-2">
             <label className="text-[14px] lg:text-[16px] font-medium text-(--text-title)">
               Lesson Type
             </label>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex gap-2 mt-1 overflow-x-auto pb-1 scrollbar-none">
               {LESSON_TYPES.map(({ key, icon: Icon }) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => setLessonType(key)}
-                  className={`flex items-center gap-2 mt-2 px-3 h-10 rounded-md text-[14px] cursor-pointer border transition-colors ${
+                  className={`flex items-center gap-2 px-4 h-10 rounded-md text-[14px] cursor-pointer border transition-colors shrink-0 ${
                     lessonType === key
                       ? "bg-(--primary-700) text-white border-(--primary-700) font-semibold"
                       : "border-(--gray-200) text-(--text-paragraph) hover:border-(--primary-300) hover:bg-(--primary-50) font-normal"
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-4 h-4 shrink-0" />
                   {key}
                 </button>
               ))}
