@@ -6,6 +6,7 @@ import type { Step } from "@/components/dashboard/instructor/course-builder/type
 import { steps } from "@/components/dashboard/instructor/course-builder/constants";
 import SetupTab from "@/components/dashboard/instructor/course-builder/setup-tab";
 import CurriculumTab from "@/components/dashboard/instructor/course-builder/curriculum-tab";
+import PricingTab from "@/components/dashboard/instructor/course-builder/pricing-tab";
 
 const INITIAL_FORM = {
   title: "Advanced UI/UX Course",
@@ -78,7 +79,14 @@ export default function CourseBuilderPage() {
 
       {activeStep === "Curriculum" && <CurriculumTab />}
 
-      {activeStep !== "Setup" && activeStep !== "Curriculum" && (
+      {activeStep === "Pricing" && (
+        <PricingTab
+          onBack={() => setActiveStep("Curriculum")}
+          onContinue={() => setActiveStep("Review")}
+        />
+      )}
+
+      {activeStep !== "Setup" && activeStep !== "Curriculum" && activeStep !== "Pricing" && (
         <div className="bg-white border border-(--gray-200) rounded-xl p-10 flex items-center justify-center">
           <p className="text-[14px] text-(--gray-400)">
             {activeStep} section — coming soon
