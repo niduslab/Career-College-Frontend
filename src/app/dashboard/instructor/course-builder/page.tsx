@@ -48,7 +48,7 @@ export default function CourseBuilderPage() {
             <div key={key} className="flex items-center gap-2">
               <button
                 onClick={() => setActiveStep(key)}
-                className={`flex items-center gap-2 px-4 py-1.5 cursor-pointer rounded-lg text-[13px] font-medium transition-colors ${
+                className={`flex items-center gap-2 px-4 py-1.5 cursor-pointer rounded-md text-[13px] font-medium transition-colors ${
                   isActive
                     ? "bg-(--primary-600) text-white"
                     : isPast
