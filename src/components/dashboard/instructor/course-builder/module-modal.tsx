@@ -71,6 +71,17 @@ export default function ModuleModal({
         </div>
 
         <div className="flex items-center justify-between  px-6 py-4">
+          {module && onDelete ? (
+            <button
+              onClick={onDelete}
+              className="text-[14px] text-red-500 font-normal hover:text-red-600 cursor-pointer transition-colors flex items-center gap-1.5"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete module
+            </button>
+          ) : (
+            <span />
+          )}
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
@@ -87,17 +98,6 @@ export default function ModuleModal({
               Save module
             </button>
           </div>
-          {module && onDelete ? (
-            <button
-              onClick={onDelete}
-              className="text-[14px] text-red-500 font-normal hover:text-red-600 cursor-pointer transition-colors flex items-center gap-1.5"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete module
-            </button>
-          ) : (
-            <span />
-          )}
         </div>
       </div>
     </div>
