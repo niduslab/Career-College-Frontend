@@ -112,9 +112,6 @@
   --radius: 0.75rem;
 }
 
-* {
-  border-color: var(--border);
-}
 
 body {
   font-family: var(--font-outfit), sans-serif;
