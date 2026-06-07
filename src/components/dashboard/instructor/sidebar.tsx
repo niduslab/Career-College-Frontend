@@ -14,7 +14,6 @@ import {
   Settings,
   BookOpen,
   Sparkles,
-  ClipboardCheck,
   ChartColumn,
   MessageSquareMore,
   PenLine,
