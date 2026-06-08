@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { BreadcrumbHero } from "@/components/common/breadcrumb-hero";
 import { BlogDetailsContent } from "@/components/blog-details/blog-details-content";
-import { BLOG_DETAILS, BLOGS } from "@/data/blogs";
+import { BLOG_DETAILS, BLOGS } from "@/data/blogs-page";
 import { DreamCareerCta } from "@/components/common/dream-career-cta";
 
 interface BlogDetailsPageProps {

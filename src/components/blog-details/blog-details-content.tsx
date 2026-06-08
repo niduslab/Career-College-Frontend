@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import { gsap, prepareGsap } from "@/lib/gsap";
-import type { BlogDetailsData } from "@/types/blog";
+import type { BlogDetailsData } from "@/types/blogs";
 
 interface BlogDetailsContentProps {
   data: BlogDetailsData;
