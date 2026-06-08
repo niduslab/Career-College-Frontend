@@ -150,34 +150,26 @@ const STATS = [
   {
     label: "Total Students",
     value: "1,420",
+    change: "+4.2% new enrollments vs last month",
     icon: Users,
-    bg: "bg-blue-50",
-    iconColor: "text-blue-600",
-    valueColor: "text-blue-600",
   },
   {
     label: "Active This Week",
     value: "892",
+    change: "+6.1% vs last week",
     icon: Activity,
-    bg: "bg-green-50",
-    iconColor: "text-green-600",
-    valueColor: "text-green-600",
   },
   {
     label: "Avg. Progress",
     value: "67%",
+    change: "+2.4% vs last month",
     icon: TrendingUp,
-    bg: "bg-purple-50",
-    iconColor: "text-purple-600",
-    valueColor: "text-purple-600",
   },
   {
     label: "New This Month",
     value: "124",
+    change: "+18 vs last month",
     icon: UserPlus,
-    bg: "bg-orange-50",
-    iconColor: "text-orange-500",
-    valueColor: "text-orange-500",
   },
 ];
 
@@ -375,20 +367,25 @@ export default function StudentsPage() {
                 ref={(el) => {
                   cardsRef.current[i] = el;
                 }}
-                className="opacity-0 flex flex-col gap-2 bg-white border border-(--gray-200) rounded-2xl px-4 py-4"
+                className="opacity-0 bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3"
               >
-                <div
-                  className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center`}
-                >
-                  <Icon className={`w-6 h-6 ${s.iconColor}`} />
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-[12px] text-(--gray-500) font-normal mb-2">
+                      {s.label}
+                    </p>
+                    <p className="lg:text-[24px] text-[20px] font-semibold text-(--text-title) leading-none">
+                      {s.value}
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 rounded-[6px_4px_6px_6px] bg-(--primary-50) flex items-center justify-center shrink-0">
+                    <Icon className="w-6 h-6 text-(--primary-600)" />
+                  </div>
                 </div>
-                <p
-                  className={`text-[20px] lg:text-[24px] font-semibold leading-none ${s.valueColor}`}
-                >
-                  {s.value}
-                </p>
-                <p className="text-[12px] font-normal text-(--text-paragraph)">
-                  {s.label}
+                <div className="border border-dashed border-gray-200 mt-1 mb-1" />
+                <p className="text-[12px] font-medium text-(--success-500) flex items-center gap-1">
+                  <TrendingUp className="w-4 h-4 shrink-0" />
+                  {s.change}
                 </p>
               </div>
             );

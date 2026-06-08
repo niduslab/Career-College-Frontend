@@ -102,34 +102,26 @@ const STATS = [
   {
     label: "Total Sessions",
     value: "24",
+    change: "+3 this month",
     icon: CalendarDays,
-    bg: "bg-blue-50",
-    iconColor: "text-blue-600",
-    valueColor: "text-blue-600",
   },
   {
     label: "Live Now",
     value: "1",
+    change: "1 session in progress",
     icon: Radio,
-    bg: "bg-red-50",
-    iconColor: "text-red-500",
-    valueColor: "text-red-500",
   },
   {
     label: "Upcoming",
     value: "2",
+    change: "Next: Jun 8, 3:00 PM",
     icon: Clock,
-    bg: "bg-orange-50",
-    iconColor: "text-orange-500",
-    valueColor: "text-orange-500",
   },
   {
     label: "Students Joined",
     value: "760",
+    change: "+48 this week",
     icon: Users,
-    bg: "bg-green-50",
-    iconColor: "text-green-600",
-    valueColor: "text-green-600",
   },
 ];
 
@@ -246,20 +238,24 @@ export default function LiveSessionsPage() {
                   ref={(el) => {
                     cardsRef.current[i] = el;
                   }}
-                  className="opacity-0 flex flex-col gap-2 bg-white border border-(--gray-200) rounded-2xl px-4 py-4"
+                  className="opacity-0 bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3"
                 >
-                  <div
-                    className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center`}
-                  >
-                    <Icon className={`w-6 h-6 ${s.iconColor}`} />
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-[12px] text-(--gray-500) font-normal mb-2">
+                        {s.label}
+                      </p>
+                      <p className="lg:text-[24px] text-[20px] font-semibold text-(--text-title) leading-none">
+                        {s.value}
+                      </p>
+                    </div>
+                    <div className="w-10 h-10 rounded-[6px_4px_6px_6px] bg-(--primary-50) flex items-center justify-center shrink-0">
+                      <Icon className="w-6 h-6 text-(--primary-600)" />
+                    </div>
                   </div>
-                  <p
-                    className={`text-[20px] lg:text-[24px] font-semibold leading-none ${s.valueColor}`}
-                  >
-                    {s.value}
-                  </p>
-                  <p className="text-[12px] lg:text-[14px] font-normal text-(--gray-500)">
-                    {s.label}
+                  <div className="border border-dashed border-gray-200 mt-1 mb-1" />
+                  <p className="text-[12px] font-medium text-(--gray-500)">
+                    {s.change}
                   </p>
                 </div>
               );
