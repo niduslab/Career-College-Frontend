@@ -375,19 +375,19 @@ export default function BlogsPage() {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-[12px] text-(--gray-500) font-medium mb-2">
+                    <p className="text-[12px] lg:text-[12px] xl:text-[11px]    text-(--gray-500) font-medium mb-2">
                       {s.label}
                     </p>
-                    <p className="text-[20px] lg:text-[24px] font-semibold text-(--text-title) leading-none">
+                    <p className="text-[20px] lg:text-[24px] xl:text-[24px] font-semibold text-(--text-title) leading-none">
                       {s.value}
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-[6px_4px_6px_6px] bg-(--primary-50) flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 lg:w-10 lg:h-10 xl:w-8 xl:h-8 rounded-[6px_4px_6px_6px] bg-(--primary-50) flex items-center justify-center shrink-0">
                     <Icon className="w-6 h-6 text-(--primary-600)" />
                   </div>
                 </div>
                 <div className="border border-dashed border-gray-200" />
-                <p className="text-[12px] font-medium text-(--gray-500)">
+                <p className="text-[12px] lg:text-[12px] xl:text-[12px] 2xl:text-[12px] font-medium text-(--gray-500)">
                   {s.change}
                 </p>
               </div>

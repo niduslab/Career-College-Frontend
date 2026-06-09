@@ -150,7 +150,7 @@ const STATS = [
   {
     label: "Total Students",
     value: "1,420",
-    change: "+4.2% new enrollments vs last month",
+    change: "+4.2%   enrollments",
     icon: Users,
   },
   {
@@ -378,12 +378,12 @@ export default function StudentsPage() {
                       {s.value}
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-[6px_4px_6px_6px] bg-(--primary-50) flex items-center justify-center shrink-0">
-                    <Icon className="w-6 h-6 text-(--primary-600)" />
+                  <div className="w-10 h-10 lg:w-10 lg:h-10 xl:w-8 xl:h-8 rounded-[6px_4px_6px_6px] bg-(--primary-50) flex items-center justify-center shrink-0">
+                    <Icon className="w-6 h-6 lg:w-6 lg:h-6 xl:w-5 xl:h-5 text-(--primary-600)" />
                   </div>
                 </div>
                 <div className="border border-dashed border-gray-200 mt-1 mb-1" />
-                <p className="text-[12px] font-medium text-(--success-500) flex items-center gap-1">
+                <p className="text-[12px] font-medium text-(--success-500) flex items-center gap-1   ">
                   <TrendingUp className="w-4 h-4 shrink-0" />
                   {s.change}
                 </p>
@@ -394,47 +394,60 @@ export default function StudentsPage() {
 
         {/* Table card */}
         <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-4">
-          {/* Header + filters */}
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <p className="text-[14px] lg:text-[16px] font-medium text-(--text-title)">
-                All Students
-                <span className="ml-2 text-[12px] font-normal text-(--gray-500)">({filtered.length})</span>
-              </p>
-            </div>
+          {/* Header */}
+          <p className="text-[14px] lg:text-[16px] font-medium text-(--text-title)">
+            All Students
+            <span className="ml-2 text-[12px] font-normal text-(--gray-500)">
+              ({filtered.length})
+            </span>
+          </p>
 
-            {/* Search — full width */}
-            <div className="relative w-full">
+          {/* Search + filters — stacked on mobile, inline on md+ */}
+          <div className="flex flex-col md:flex-row md:items-center gap-3">
+            {/* Search */}
+            <div className="relative md:flex-1 lg:flex-none lg:w-75">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--gray-500)" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search by name or email..."
-                className="w-full h-12 pl-9 pr-4 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-500) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+                className="w-full h-10 pl-9 pr-4 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-500) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
               />
             </div>
 
-            {/* Course + Status filters — 2 cols on mobile, inline on sm+ */}
-            <div className="grid grid-cols-2 sm:flex sm:items-center gap-3">
-
+            {/* Filters — right side */}
+            <div className="grid grid-cols-2 md:flex md:items-center gap-3 md:ml-auto">
               {/* Course filter */}
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() => { setCourseOpen((v) => !v); setStatusOpen(false); }}
-                  className="flex items-center gap-2 w-full h-11 px-3 border border-(--gray-200) rounded-lg bg-white text-[14px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors"
+                  onClick={() => {
+                    setCourseOpen((v) => !v);
+                    setStatusOpen(false);
+                  }}
+                  className="flex items-center gap-2 w-full h-10 px-3 border border-(--gray-200) rounded-lg bg-white text-[14px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors"
                 >
                   <BookOpen className="w-3.5 h-3.5 text-(--gray-500) shrink-0" />
-                  <span className="flex-1 text-left truncate">{courseFilter}</span>
-                  <ChevronDown className={`w-4 h-4 text-(--gray-500) transition-transform shrink-0 ${courseOpen ? "rotate-180" : ""}`} />
+                  <span className="flex-1 text-left truncate">
+                    {courseFilter}
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-(--gray-500) transition-transform shrink-0 ${courseOpen ? "rotate-180" : ""}`}
+                  />
                 </button>
                 {courseOpen && (
                   <div className="absolute left-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-20 py-1 min-w-52">
                     {COURSES.map((c) => (
-                      <button key={c} type="button"
-                        onClick={() => { setCourseFilter(c); setCourseOpen(false); }}
-                        className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors truncate ${c === courseFilter ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}>
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => {
+                          setCourseFilter(c);
+                          setCourseOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors truncate ${c === courseFilter ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
+                      >
                         {c}
                       </button>
                     ))}
@@ -446,35 +459,57 @@ export default function StudentsPage() {
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() => { setStatusOpen((v) => !v); setCourseOpen(false); }}
-                  className="flex items-center gap-2 w-full h-11 px-3 border border-(--gray-200) rounded-lg bg-white text-[14px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors"
+                  onClick={() => {
+                    setStatusOpen((v) => !v);
+                    setCourseOpen(false);
+                  }}
+                  className="flex items-center gap-2 w-full h-10 px-3 border border-(--gray-200) rounded-lg bg-white text-[14px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors"
                 >
                   <span className="flex-1 text-left">{statusFilter}</span>
-                  <ChevronDown className={`w-4 h-4 text-(--gray-500) transition-transform ${statusOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown
+                    className={`w-4 h-4 text-(--gray-500) transition-transform ${statusOpen ? "rotate-180" : ""}`}
+                  />
                 </button>
                 {statusOpen && (
                   <div className="absolute right-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-20 py-1 min-w-32">
                     {STATUSES.map((st) => (
-                      <button key={st} type="button"
-                        onClick={() => { setStatusFilter(st); setStatusOpen(false); }}
-                        className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${st === statusFilter ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}>
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => {
+                          setStatusFilter(st);
+                          setStatusOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${st === statusFilter ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
+                      >
                         {st}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
-            </div>{/* end grid filters */}
-          </div>{/* end flex flex-col gap-3 */}
+            </div>
+          </div>
 
           {/* Table — horizontal scroll on mobile */}
           <div className="overflow-x-auto -mx-5 px-5">
             <div className="min-w-160">
-
               {/* Table header */}
               <div className="grid grid-cols-[2fr_2fr_1fr_1fr_1fr_auto] gap-3 px-3 pb-2 border-b border-(--gray-100)">
-                {["Student", "Course", "Progress", "Last Active", "Status", ""].map((h) => (
-                  <p key={h} className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase">{h}</p>
+                {[
+                  "Student",
+                  "Course",
+                  "Progress",
+                  "Last Active",
+                  "Status",
+                  "",
+                ].map((h) => (
+                  <p
+                    key={h}
+                    className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase"
+                  >
+                    {h}
+                  </p>
                 ))}
               </div>
 
@@ -482,82 +517,90 @@ export default function StudentsPage() {
               {filtered.length === 0 ? (
                 <div className="py-12 text-center">
                   <Users className="w-8 h-8 text-(--gray-300) mx-auto mb-2" />
-                  <p className="text-[14px] text-(--gray-500)">No students match your filters.</p>
+                  <p className="text-[14px] text-(--gray-500)">
+                    No students match your filters.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-1 pt-1">
                   {filtered.map((s, i) => (
                     <div
                       key={s.id}
-                      ref={(el) => { rowsRef.current[i] = el; }}
+                      ref={(el) => {
+                        rowsRef.current[i] = el;
+                      }}
                       className="opacity-0 grid grid-cols-[2fr_2fr_1fr_1fr_1fr_auto] gap-3 items-center px-3 py-3 rounded-xl hover:bg-(--gray-50) transition-colors"
                     >
-                  {/* Student */}
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Avatar name={s.name} />
-                    <div className="min-w-0">
-                      <p className="text-[13px] font-semibold text-(--text-title) truncate">
-                        {s.name}
+                      {/* Student */}
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Avatar name={s.name} />
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-semibold text-(--text-title) truncate">
+                            {s.name}
+                          </p>
+                          <p className="text-[12px] text-(--gray-500) truncate">
+                            {s.email}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Course */}
+                      <p className="text-[12px] text-(--gray-600) truncate">
+                        {s.course}
                       </p>
-                      <p className="text-[12px] text-(--gray-500) truncate">
-                        {s.email}
+
+                      {/* Progress */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 bg-(--gray-100) rounded-full overflow-hidden">
+                          <div
+                            ref={(el) => {
+                              progressRef.current[i] = el;
+                            }}
+                            data-progress={s.progress}
+                            className={`h-full rounded-full ${s.progress === 100 ? "bg-green-500" : s.progress >= 60 ? "bg-(--primary-600)" : "bg-orange-400"}`}
+                            style={{ width: "0%" }}
+                          />
+                        </div>
+                        <span className="text-[12px] font-semibold text-(--text-title) shrink-0 w-8 text-right">
+                          {s.progress}%
+                        </span>
+                      </div>
+
+                      {/* Last active */}
+                      <p className="text-[12px] text-(--gray-500)">
+                        {s.lastActive}
                       </p>
+
+                      {/* Status */}
+                      <StatusBadge status={s.status} />
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <button
+                          className="p-1.5 rounded-lg hover:bg-(--primary-50) text-(--gray-500) hover:text-(--primary-600) cursor-pointer transition-colors"
+                          title="Message"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </button>
+                        <button
+                          className="p-1.5 rounded-lg hover:bg-(--primary-50) text-(--gray-500) hover:text-(--primary-600) cursor-pointer transition-colors"
+                          title="View profile"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Course */}
-                  <p className="text-[12px] text-(--gray-600) truncate">
-                    {s.course}
-                  </p>
-
-                  {/* Progress */}
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-2 bg-(--gray-100) rounded-full overflow-hidden">
-                      <div
-                        ref={(el) => {
-                          progressRef.current[i] = el;
-                        }}
-                        data-progress={s.progress}
-                        className={`h-full rounded-full ${s.progress === 100 ? "bg-green-500" : s.progress >= 60 ? "bg-(--primary-600)" : "bg-orange-400"}`}
-                        style={{ width: "0%" }}
-                      />
-                    </div>
-                    <span className="text-[12px] font-semibold text-(--text-title) shrink-0 w-8 text-right">
-                      {s.progress}%
-                    </span>
-                  </div>
-
-                  {/* Last active */}
-                  <p className="text-[12px] text-(--gray-500)">
-                    {s.lastActive}
-                  </p>
-
-                  {/* Status */}
-                  <StatusBadge status={s.status} />
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-1.5 justify-end">
-                    <button
-                      className="p-1.5 rounded-lg hover:bg-(--primary-50) text-(--gray-500) hover:text-(--primary-600) cursor-pointer transition-colors"
-                      title="Message"
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                    </button>
-                    <button
-                      className="p-1.5 rounded-lg hover:bg-(--primary-50) text-(--gray-500) hover:text-(--primary-600) cursor-pointer transition-colors"
-                      title="View profile"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                  ))}
                 </div>
               )}
-            </div>{/* end min-w-160 */}
-          </div>{/* end overflow-x-auto */}
-        </div>{/* end table card */}
-      </div>{/* end left */}
+            </div>
+            {/* end min-w-160 */}
+          </div>
+          {/* end overflow-x-auto */}
+        </div>
+        {/* end table card */}
+      </div>
+      {/* end left */}
 
       {/* ── Right sidebar ── */}
       <div className="w-full xl:w-72 shrink-0 space-y-4">

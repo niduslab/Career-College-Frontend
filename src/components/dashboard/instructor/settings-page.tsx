@@ -471,7 +471,7 @@ function AccountTab() {
           </div>
           <button
             type="button"
-            className="h-11 px-4 rounded-md border border-red-200 text-red-500 text-[14px] font-medium hover:bg-red-50 transition-colors cursor-pointer"
+            className="h-11 px-4 rounded-md border border-red-200 text-red-500 text-[14px] font-medium hover:bg-red-50 transition-colors cursor-pointer whitespace-nowrap"
           >
             Delete Account
           </button>
@@ -758,7 +758,6 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* ── Content ── */}
       <ActiveContent />
     </div>
   );

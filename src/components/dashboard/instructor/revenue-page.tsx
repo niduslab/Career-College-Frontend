@@ -214,7 +214,7 @@ function EarningsChart() {
               x={PAD.left - 8}
               y={y + 4}
               textAnchor="end"
-              fontSize="11"
+              fontSize="16"
               fill="#9ca3af"
               fontFamily="inherit"
             >
@@ -231,7 +231,7 @@ function EarningsChart() {
           x={pt.x}
           y={H - 8}
           textAnchor="middle"
-          fontSize="12"
+          fontSize="16"
           fill="#9ca3af"
           fontFamily="inherit"
         >
@@ -462,7 +462,7 @@ export default function RevenuePage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-(--primary-700)" />
-            <p className="text-[16px] font-semibold text-(--text-title)">
+            <p className="text-[14px] lg:text-[16px] font-semibold text-(--text-title)">
               Earnings Trend
             </p>
           </div>
@@ -471,7 +471,7 @@ export default function RevenuePage() {
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`h-7 px-3 text-[12px] font-medium rounded-lg transition-colors cursor-pointer ${
+                className={`h-7 px-3 text-[12px] font-medium rounded-md transition-colors cursor-pointer ${
                   period === p
                     ? "bg-(--primary-700) text-white"
                     : "text-(--gray-500) hover:bg-(--gray-100)"
@@ -488,14 +488,14 @@ export default function RevenuePage() {
       {/* ── Payout History Table ── */}
       <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[16px] font-semibold text-(--text-title)">
+          <p className="text-[14px] lg:text-[16px] font-semibold text-(--text-title)">
             Payout History
           </p>
           <button
             onClick={exportCSV}
-            className="flex items-center gap-1.5 h-8 px-3 text-[13px] font-medium text-(--primary-700) border border-(--primary-200) rounded-lg hover:bg-(--primary-50) transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 h-8 px-3 text-[12px] font-medium text-(--primary-700) border border-(--primary-200) rounded-md hover:bg-(--primary-50) transition-colors cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-4 h-4" />
             Export CSV
           </button>
         </div>
