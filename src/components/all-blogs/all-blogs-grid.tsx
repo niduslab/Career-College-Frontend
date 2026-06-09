@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, Heart } from "lucide-react";
 import { gsap, prepareGsap } from "@/lib/gsap";
-import { BLOGS } from "@/data/blogs";
+import { BLOGS } from "@/data/blogs-page";
 
 export function AllBlogsGrid() {
   const sectionRef = useRef<HTMLElement | null>(null);

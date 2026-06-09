@@ -14,7 +14,6 @@ import {
   Settings,
   BookOpen,
   Sparkles,
-  ClipboardCheck,
   ChartColumn,
   MessageSquareMore,
   PenLine,
@@ -77,8 +76,8 @@ const navSections = [
       },
       {
         icon: PenLine,
-        label: "Blog & Marketing",
-        href: "/dashboard/instructor/blog-marketing",
+        label: "Blogs",
+        href: "/dashboard/instructor/blogs",
       },
       {
         icon: Award,

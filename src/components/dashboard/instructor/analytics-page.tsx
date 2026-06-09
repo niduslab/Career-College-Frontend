@@ -1,11 +1,11 @@
 "use client";
 
-import KpiCards        from "./analytics/kpi-cards";
-import WatchTimeChart  from "./analytics/watch-time-chart";
-import TrafficDonut    from "./analytics/traffic-donut";
+import KpiCards from "./analytics/kpi-cards";
+import WatchTimeChart from "./analytics/watch-time-chart";
+import TrafficDonut from "./analytics/traffic-donut";
 import CompletionFunnel from "./analytics/completion-funnel";
-import TopCourses      from "./analytics/top-courses";
-import AiInsights      from "./analytics/ai-insights";
+import TopCourses from "./analytics/top-courses";
+import AiInsights from "./analytics/ai-insights";
 
 export default function AnalyticsPageContent() {
   return (
@@ -17,7 +17,7 @@ export default function AnalyticsPageContent() {
       </div>
       <CompletionFunnel />
       <TopCourses />
-      <AiInsights />
+      {/* <AiInsights /> */}
     </div>
   );
 }

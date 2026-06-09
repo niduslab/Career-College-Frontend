@@ -1,7 +1,7 @@
 import image1 from "@/assets/images/insights-resources/image1.webp";
 import image2 from "@/assets/images/insights-resources/image2.webp";
 import image3 from "@/assets/images/insights-resources/image3.webp";
-import type { BlogDetailsData } from "@/types/blog";
+import type { BlogDetailsData } from "@/types/blogs";
 
 export interface BlogListItem {
   slug: string;
@@ -132,7 +132,10 @@ const sharedSections = [
   },
 ];
 
-export const BLOG_DETAILS: Record<string, BlogDetailsData & { pageTitle: string; pageSubtitle: string }> = Object.fromEntries(
+export const BLOG_DETAILS: Record<
+  string,
+  BlogDetailsData & { pageTitle: string; pageSubtitle: string }
+> = Object.fromEntries(
   BLOGS.map((blog) => [
     blog.slug,
     {
@@ -146,5 +149,5 @@ export const BLOG_DETAILS: Record<string, BlogDetailsData & { pageTitle: string;
       sections: sharedSections,
       recentPosts: sharedRecentPosts,
     },
-  ])
+  ]),
 );
