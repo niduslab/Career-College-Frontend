@@ -122,10 +122,10 @@ export default function PricingTab({
 
           {/* Pricing Model */}
           <div className="space-y-2">
-            <p className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase">
+            <p className="text-[12px] font-semibold tracking-widest text-(--gray-500) uppercase">
               Pricing Model
             </p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3">
               {PRICING_MODELS.map(({ key, icon: Icon, label, sub }) => (
                 <button
                   key={key}
@@ -157,7 +157,7 @@ export default function PricingTab({
           {model !== "Free" && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase">
+                <label className="text-[12px] font-semibold tracking-widest text-(--gray-400) uppercase">
                   Price
                 </label>
                 <div className="relative mt-1">
@@ -175,8 +175,8 @@ export default function PricingTab({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase">
-                  Compare-at (Strike)
+                <label className="text-[12px] font-semibold tracking-widest text-(--gray-400) uppercase">
+                  Compare-at
                 </label>
                 <div className="relative mt-1">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--gray-400) text-[14px]">
@@ -193,7 +193,7 @@ export default function PricingTab({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase">
+                <label className="text-[12px] font-semibold tracking-widest text-(--gray-400) uppercase">
                   Currency
                 </label>
                 <div className="relative mt-1">
@@ -241,7 +241,7 @@ export default function PricingTab({
             <p className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase">
               Access
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3">
               {ACCESS_TYPES.map(({ key, icon: Icon, label, sub }) => (
                 <button
                   key={key}
@@ -361,12 +361,12 @@ export default function PricingTab({
             Curriculum
           </button>
           <div className="flex items-center gap-3">
-            <button className="flex-1 sm:flex-none px-5 h-12 text-[14px] cursor-pointer font-medium border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
+            <button className="flex-1 sm:flex-none px-5 h-12 text-[12px] md:text-[14px] lg:text-[14px] cursor-pointer font-medium border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
               Save Draft
             </button>
             <button
               onClick={onContinue}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 h-12 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 h-12 text-[12px] md:text-[14px] lg:text-[14px] cursor-pointer truncate font-medium bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors"
             >
               Continue to Review
               <ChevronRight className="w-4 h-4" />

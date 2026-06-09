@@ -628,7 +628,7 @@ function BillingTab() {
           </div>
           <button
             type="button"
-            className="h-9 px-4 rounded-md border border-(--gray-200) text-[14px] font-medium text-(--gray-500) hover:bg-(--gray-50) transition-colors cursor-pointer"
+            className="h-9 px-4 rounded-md border border-(--gray-200) text-[12px] lg:text-[14px] font-medium text-(--gray-500) hover:bg-(--gray-50) transition-colors cursor-pointer"
           >
             Change Plan
           </button>

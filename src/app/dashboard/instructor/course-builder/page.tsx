@@ -35,7 +35,7 @@ export default function CourseBuilderPage() {
             Course Builder
           </h1>
           <p className="text-[14px] font-normal text-[#4a5565] mt-1">
-            Advanced — Working Draft
+            Advanced - Working Draft
           </p>
         </div>
         <button

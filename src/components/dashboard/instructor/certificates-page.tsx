@@ -463,15 +463,15 @@ export default function CertificatesPage() {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-[12px] md:text-[11px] lg:text-[12px] xl:text-[12px] text-(--gray-500) font-medium mb-2">
+                    <p className="text-[10px] truncate md:text-[11px] lg:text-[12px] xl:text-[12px] text-(--gray-500) font-medium mb-2">
                       {s.label}
                     </p>
                     <p className="text-[20px] lg:text-[24px] xl:text-[24px] font-semibold text-(--text-title) leading-none">
                       {s.value}
                     </p>
                   </div>
-                  <div className="w-10 h-10 md:w-8 md:h-8 lg:w-8 lg:h-8 xl:w-8 xl:h-8 rounded-[6px_4px_6px_6px] bg-(--primary-50) flex items-center justify-center shrink-0">
-                    <Icon className="w-6 h-6 md:w-5 md:h-5 lg:w-5 lg:h-5 xl:w-4 xl:h-4 text-(--primary-600)" />
+                  <div className="w-8 h-8 md:w-8 md:h-8 lg:w-8 lg:h-8 xl:w-8 xl:h-8 rounded-[6px_4px_6px_6px] bg-(--primary-50) flex items-center justify-center shrink-0">
+                    <Icon className="w-4 h-4 md:w-5 md:h-5 lg:w-5 lg:h-5 xl:w-4 xl:h-4 text-(--primary-600)" />
                   </div>
                 </div>
                 <div className="border border-dashed border-gray-200" />
