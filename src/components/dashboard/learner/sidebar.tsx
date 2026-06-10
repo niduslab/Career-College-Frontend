@@ -1,0 +1,172 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  X,
+  BookOpenText,
+  LayoutDashboard,
+  BookOpen,
+  PlayCircle,
+  Award,
+  Settings,
+  MessageSquareMore,
+  Heart,
+  ShoppingBag,
+  BarChart2,
+  CalendarDays,
+} from "lucide-react";
+
+const navSections = [
+  {
+    label: "Learning",
+    items: [
+      {
+        icon: LayoutDashboard,
+        label: "Dashboard",
+        href: "/dashboard/learner",
+      },
+      {
+        icon: BookOpen,
+        label: "My Courses",
+        href: "/dashboard/learner/my-courses",
+      },
+      {
+        icon: PlayCircle,
+        label: "Continue Learning",
+        href: "/dashboard/learner/continue-learning",
+      },
+      {
+        icon: CalendarDays,
+        label: "Schedule",
+        href: "/dashboard/learner/schedule",
+      },
+    ],
+  },
+  {
+    label: "Activity",
+    items: [
+      {
+        icon: BarChart2,
+        label: "Progress",
+        href: "/dashboard/learner/progress",
+      },
+      {
+        icon: MessageSquareMore,
+        label: "Messages",
+        href: "/dashboard/learner/messages",
+      },
+      {
+        icon: Heart,
+        label: "Wishlist",
+        href: "/dashboard/learner/wishlist",
+      },
+    ],
+  },
+  {
+    label: "Account",
+    items: [
+      {
+        icon: ShoppingBag,
+        label: "Purchases",
+        href: "/dashboard/learner/purchases",
+      },
+      {
+        icon: Award,
+        label: "Certificates",
+        href: "/dashboard/learner/certificates",
+      },
+      {
+        icon: Settings,
+        label: "Settings",
+        href: "/dashboard/learner/settings",
+      },
+    ],
+  },
+];
+
+export default function LearnerSidebar() {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setOpen((v) => !v);
+    window.addEventListener("toggleLearnerSidebar", handler);
+    return () => window.removeEventListener("toggleLearnerSidebar", handler);
+  }, []);
+
+  const close = () => setOpen(false);
+
+  return (
+    <>
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/40 z-30 lg:hidden"
+          onClick={close}
+        />
+      )}
+      <aside
+        className={`
+          fixed top-0 left-0 z-40 h-screen w-55 bg-white border-r border-(--gray-200) flex flex-col py-6 transition-transform duration-300
+          lg:sticky lg:top-0 lg:translate-x-0 lg:z-auto lg:shrink-0 lg:self-start
+          ${open ? "translate-x-0" : "-translate-x-full"}
+        `}
+      >
+        <div className="px-6 mb-8 flex items-center justify-between">
+          <Link
+            href="/"
+            className="flex items-center gap-1 lg:gap-2.5"
+            onClick={close}
+          >
+            <div className="w-9 h-9 flex items-center justify-center">
+              <BookOpenText className="w-6 h-6 text-(--primary-600)" />
+            </div>
+            <span className="font-medium text-(--primary-600) text-[16px] lg:text-[20px]">
+              CareerCollege
+            </span>
+          </Link>
+          <button
+            onClick={close}
+            className="lg:hidden ml-6 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-(--gray-100)"
+          >
+            <X className="w-4 h-4 text-(--gray-500)" />
+          </button>
+        </div>
+
+        <nav className="flex-1 px-3 space-y-6 overflow-y-auto">
+          {navSections.map((section) => (
+            <div key={section.label}>
+              <p className="text-[12px] font-medium text-(--gray-600) tracking-[0.08em] px-3 mb-2">
+                {section.label}
+              </p>
+              <ul className="space-y-3">
+                {section.items.map(({ icon: Icon, label, href }) => {
+                  const active = pathname === href;
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        onClick={close}
+                        className={`flex items-center gap-3 h-11 px-3 py-2 rounded-lg text-[14px] transition-colors ${
+                          active
+                            ? "bg-(--primary-600) font-medium text-white hover:bg-(--primary-700)"
+                            : "text-(--gray-600) font-normal hover:bg-(--gray-100) hover:text-(--text-title)"
+                        }`}
+                      >
+                        <Icon
+                          className={`w-4 h-4 shrink-0 ${active ? "text-white" : "text-(--gray-500)"}`}
+                        />
+                        {label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </nav>
+      </aside>
+    </>
+  );
+}
