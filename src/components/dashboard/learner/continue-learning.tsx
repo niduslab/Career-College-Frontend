@@ -139,10 +139,10 @@ export default function ContinueLearning() {
         {/* Progress */}
         <div className="relative z-10 mt-6">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[14px] text-white">
+            <span className="text-[12px] lg:text-[14px]  text-white">
               Up next: Gradient Boosting &amp; XGBoost
             </span>
-            <span className="text-[14px] font-semibold text-white">
+            <span className="text-[12px] lg:text-[14px] font-semibold text-white">
               68% complete
             </span>
           </div>
@@ -154,17 +154,17 @@ export default function ContinueLearning() {
             />
           </div>
 
-          <div className="flex items-center gap-5 mt-5">
-            <button className="flex items-center gap-2 cursor-pointer bg-white text-(--primary-700) font-semibold text-[14px] px-5 py-2.5 rounded-lg hover:bg-white/90 transition-colors">
-              <Play className="w-4 h-4 fill-current" />
+          <div className="flex flex-wrap items-center gap-3 mt-5">
+            <button className="flex items-center gap-2 cursor-pointer bg-white text-(--primary-700) font-semibold text-[14px]   px-4 py-2.5 rounded-lg hover:bg-white/90 transition-colors whitespace-nowrap shrink-0">
+              <Play className="w-4 h-4 fill-current shrink-0" />
               Resume Learning
             </button>
-            <span className="flex items-center gap-1.5  text-[14px] text-white">
-              <Monitor className="w-4 h-4" />
+            <span className="flex items-center gap-1.5 text-[12px] lg:text-[14px]   text-white whitespace-nowrap">
+              <Monitor className="w-4 h-4 shrink-0" />
               15 lessons left
             </span>
-            <span className="flex items-center gap-1.5 text-[14px] text-white">
-              <Clock className="w-4 h-4" />
+            <span className="flex items-center gap-1.5 text-[12px] lg:text-[14px]  text-white whitespace-nowrap">
+              <Clock className="w-4 h-4 shrink-0" />
               6h 20m
             </span>
           </div>
