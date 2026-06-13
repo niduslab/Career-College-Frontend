@@ -8,14 +8,21 @@ import {
   BookOpenText,
   LayoutDashboard,
   BookOpen,
-  PlayCircle,
+  Play,
   Award,
   Settings,
-  MessageSquareMore,
   Heart,
-  ShoppingBag,
-  BarChart2,
-  CalendarDays,
+  SplinePointer,
+  Target,
+  Trophy,
+  Search,
+  Video,
+  MessageCircle,
+  Users,
+  Calendar,
+  CreditCard,
+  NotebookPen,
+  Sparkles,
 } from "lucide-react";
 
 const navSections = [
@@ -33,29 +40,39 @@ const navSections = [
         href: "/dashboard/learner/my-courses",
       },
       {
-        icon: PlayCircle,
-        label: "Continue Learning",
-        href: "/dashboard/learner/continue-learning",
+        icon: SplinePointer,
+        label: "Learning Paths",
+        href: "/dashboard/learner/learning-paths",
       },
       {
-        icon: CalendarDays,
-        label: "Schedule",
-        href: "/dashboard/learner/schedule",
+        icon: Play,
+        label: "Course Player",
+        href: "/dashboard/learner/course-player",
+      },
+      {
+        icon: Target,
+        label: "Quiz Assessment",
+        href: "/dashboard/learner/quiz-assessment",
       },
     ],
   },
   {
-    label: "Activity",
+    label: "Grow",
     items: [
       {
-        icon: BarChart2,
-        label: "Progress",
-        href: "/dashboard/learner/progress",
+        icon: Award,
+        label: "Certificates",
+        href: "/dashboard/learner/certificates",
       },
       {
-        icon: MessageSquareMore,
-        label: "Messages",
-        href: "/dashboard/learner/messages",
+        icon: Trophy,
+        label: "Achievements",
+        href: "/dashboard/learner/achievements",
+      },
+      {
+        icon: Search,
+        label: "Course Catalog",
+        href: "/dashboard/learner/course-catalog",
       },
       {
         icon: Heart,
@@ -65,17 +82,47 @@ const navSections = [
     ],
   },
   {
-    label: "Account",
+    label: "Connect",
     items: [
       {
-        icon: ShoppingBag,
-        label: "Purchases",
-        href: "/dashboard/learner/purchases",
+        icon: Video,
+        label: "Live Sessions",
+        href: "/dashboard/learner/live-sessions",
       },
       {
-        icon: Award,
-        label: "Certificates",
-        href: "/dashboard/learner/certificates",
+        icon: MessageCircle,
+        label: "Discussions",
+        href: "/dashboard/learner/discussions",
+      },
+      {
+        icon: Users,
+        label: "Study Groups",
+        href: "/dashboard/learner/study-groups",
+      },
+      {
+        icon: Calendar,
+        label: "Consultancy",
+        href: "/dashboard/learner/consultancy",
+      },
+    ],
+  },
+  {
+    label: "Workspace",
+    items: [
+      {
+        icon: Sparkles,
+        label: "AI Assistant",
+        href: "/dashboard/learner/ai-assistant",
+      },
+      {
+        icon: NotebookPen,
+        label: "Notes",
+        href: "/dashboard/learner/notes",
+      },
+      {
+        icon: CreditCard,
+        label: "Payment History",
+        href: "/dashboard/learner/payment-history",
       },
       {
         icon: Settings,
@@ -137,10 +184,10 @@ export default function LearnerSidebar() {
         <nav className="flex-1 px-3 space-y-6 overflow-y-auto">
           {navSections.map((section) => (
             <div key={section.label}>
-              <p className="text-[12px] font-medium text-(--gray-600) tracking-[0.08em] px-3 mb-2">
+              <p className="text-[14px] font-normal text-(--gray-500) tracking-[0.08em] px-3 mb-2">
                 {section.label}
               </p>
-              <ul className="space-y-3">
+              <ul className="space-y-2">
                 {section.items.map(({ icon: Icon, label, href }) => {
                   const active = pathname === href;
                   return (

@@ -72,7 +72,7 @@ export default function AiRecommended() {
           return (
             <div
               key={course.title}
-              className=" bg-white rounded-2xl border border-(--gray-200) overflow-hidden cursor-pointer group hover:shadow-md transition-shadow"
+              className="rec-card bg-white rounded-2xl border border-(--gray-200) overflow-hidden cursor-pointer group hover:shadow-md transition-shadow"
             >
               {/* Gradient thumbnail */}
               <div
