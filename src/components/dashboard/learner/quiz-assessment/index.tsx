@@ -125,13 +125,13 @@ function ResultScreen({
         <div className="flex gap-3 justify-center">
           <button
             onClick={onRetry}
-            className="px-6 py-2.5 rounded-lg cursor-pointer border border-(--gray-200) text-[12px] lg:text-[14px] font-medium text-(--gray-500) hover:bg-(--gray-50) transition-colors"
+            className="px-6 py-2.5 rounded-lg cursor-pointer border border-(--gray-200) text-[12px] md:text-[14px] lg:text-[14px] font-medium text-(--gray-500) hover:bg-(--gray-50) transition-colors"
           >
             Try again
           </button>
           <button
             onClick={() => window.history.back()}
-            className="px-6 py-2.5 rounded-lg cursor-pointer bg-(--primary-700) text-[12px] lg:text-[14px] font-medium text-white hover:bg-(--primary-900) transition-colors"
+            className="px-6 py-2.5 rounded-lg cursor-pointer bg-(--primary-700) text-[12px] md:text-[14px] lg:text-[14px] font-medium text-white hover:bg-(--primary-900) transition-colors"
           >
             Back to course
           </button>
