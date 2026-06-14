@@ -25,7 +25,7 @@ const CERTIFICATES: Certificate[] = [
   {
     id: "1",
     title: "Deep Learning Foundations",
-    awardedTo: "Ayesha Rahman",
+    awardedTo: "Marop Hossain",
     issued: "May 2026",
     credentialId: "CC-DL-2026-0847",
     gradient: "from-blue-500 via-indigo-500 to-purple-500",
@@ -34,7 +34,7 @@ const CERTIFICATES: Certificate[] = [
   {
     id: "2",
     title: "SQL for Data Analytics",
-    awardedTo: "Ayesha Rahman",
+    awardedTo: "Marop Hossain",
     issued: "Apr 2026",
     credentialId: "CC-SQL-2026-1120",
     gradient: "from-emerald-400 via-teal-500 to-green-600",
@@ -43,7 +43,7 @@ const CERTIFICATES: Certificate[] = [
   {
     id: "3",
     title: "Statistics for ML",
-    awardedTo: "Ayesha Rahman",
+    awardedTo: "Marop Hossain",
     issued: "Feb 2026",
     credentialId: "CC-STAT-2026-0331",
     gradient: "from-orange-400 via-red-400 to-rose-500",
@@ -52,7 +52,7 @@ const CERTIFICATES: Certificate[] = [
   {
     id: "4",
     title: "Python Programming",
-    awardedTo: "Ayesha Rahman",
+    awardedTo: "Marop Hossain",
     issued: "Jan 2026",
     credentialId: "CC-PY-2026-0099",
     gradient: "from-violet-500 via-purple-500 to-fuchsia-500",
@@ -61,7 +61,7 @@ const CERTIFICATES: Certificate[] = [
   {
     id: "5",
     title: "Intro to Data Science",
-    awardedTo: "Ayesha Rahman",
+    awardedTo: "Marop Hossain",
     issued: "Nov 2025",
     credentialId: "CC-DS-2025-2245",
     gradient: "from-cyan-400 via-blue-500 to-indigo-500",
@@ -70,7 +70,7 @@ const CERTIFICATES: Certificate[] = [
   {
     id: "6",
     title: "Git & Version Control",
-    awardedTo: "Ayesha Rahman",
+    awardedTo: "Marop Hossain",
     issued: "Oct 2025",
     credentialId: "CC-GIT-2025-1876",
     gradient: "from-pink-500 via-fuchsia-500 to-purple-600",
