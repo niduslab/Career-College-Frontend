@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, startTransition } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Sparkles, Target, X } from "lucide-react";
 import gsap from "gsap";
 
@@ -12,6 +13,7 @@ import { ACTIVE_LESSON, AI_INITIAL, TABS, modules } from "./data";
 import type { AiMessage, TabKey } from "./types";
 
 export default function CoursePlayerPage() {
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
@@ -145,7 +147,10 @@ export default function CoursePlayerPage() {
           </button>
 
           <div className="flex items-center gap-2 shrink-0">
-            <button className="flex items-center cursor-pointer gap-1.5 text-[14px] h-10 font-medium text-(--gray-500) border border-(--gray-200) px-2.5 sm:px-3 py-1.5 rounded-lg hover:bg-(--gray-50) transition-colors whitespace-nowrap">
+            <button
+              onClick={() => router.push("/dashboard/learner/quiz-assessment")}
+              className="flex items-center cursor-pointer gap-1.5 text-[14px] h-10 font-medium text-(--gray-500) border border-(--gray-200) px-2.5 sm:px-3 py-1.5 rounded-lg hover:bg-(--gray-50) transition-colors whitespace-nowrap"
+            >
               <Target className="w-4 h-4" />
               <span className="hidden sm:inline">Take Quiz</span>
             </button>
