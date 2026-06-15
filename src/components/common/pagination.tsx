@@ -58,7 +58,7 @@ export function Pagination({
   return (
     <nav
       aria-label="Pagination"
-      className="mt-5 flex items-center justify-start gap-1.5"
+      className="mt-5 flex items-center justify-end gap-1.5"
     >
       {/* Back */}
       <button

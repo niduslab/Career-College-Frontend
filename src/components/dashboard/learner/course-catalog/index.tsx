@@ -12,6 +12,7 @@ import {
   Search,
 } from "lucide-react";
 import gsap from "gsap";
+import { Pagination } from "@/components/common/pagination";
 
 import img1 from "@/assets/images/popular-courses/image1.webp";
 import img2 from "@/assets/images/popular-courses/image2.webp";
@@ -173,6 +174,62 @@ const COURSES: Course[] = [
     originalPrice: 79,
     category: "Data",
   },
+  {
+    id: 9,
+    title: "SQL for Data Analytics",
+    instructor: "Amara Okafor",
+    image: img2,
+    instructorImg: instructor2,
+    rating: 4.6,
+    reviews: 980,
+    duration: "8h",
+    level: "Beginner",
+    price: 39,
+    originalPrice: 79,
+    category: "Data",
+  },
+  {
+    id: 10,
+    title: "SQL for Data Analytics",
+    instructor: "Amara Okafor",
+    image: img3,
+    instructorImg: instructor3,
+    rating: 4.6,
+    reviews: 980,
+    duration: "8h",
+    level: "Beginner",
+    price: 39,
+    originalPrice: 79,
+    category: "Data",
+  },
+  {
+    id: 11,
+    title: "SQL for Data Analytics",
+    instructor: "Amara Okafor",
+    image: img4,
+    instructorImg: instructor4,
+    rating: 4.6,
+    reviews: 980,
+    duration: "8h",
+    level: "Beginner",
+    price: 39,
+    originalPrice: 79,
+    category: "Data",
+  },
+  {
+    id: 12,
+    title: "SQL for Data Analytics",
+    instructor: "Amara Okafor",
+    image: img5,
+    instructorImg: instructor5,
+    rating: 4.6,
+    reviews: 980,
+    duration: "8h",
+    level: "Beginner",
+    price: 39,
+    originalPrice: 79,
+    category: "Data",
+  },
 ];
 
 const LEVEL_COLOR: Record<string, string> = {
@@ -197,7 +254,7 @@ function CourseCard({ course }: { course: Course }) {
         {/* Badge */}
         {course.badge && (
           <span
-            className={`absolute top-3 left-3 text-[11px] font-bold text-white px-2.5 py-1 rounded-full ${course.badgeColor}`}
+            className={`absolute top-3 left-3 text-[12px] font-semibold text-white px-2.5 py-1 rounded-full ${course.badgeColor}`}
           >
             {course.badge}
           </span>
@@ -208,7 +265,7 @@ function CourseCard({ course }: { course: Course }) {
           className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors cursor-pointer shadow-sm"
         >
           <Heart
-            className={`w-4 h-4 transition-colors ${wished ? "fill-rose-500 text-rose-500" : "text-(--gray-400)"}`}
+            className={`w-4 h-4 transition-colors ${wished ? "fill-rose-500 text-rose-500" : "text-(--gray-500)"}`}
           />
         </button>
       </div>
@@ -218,7 +275,7 @@ function CourseCard({ course }: { course: Course }) {
         {/* Rating */}
         <div className="flex items-center gap-1.5 mb-2">
           <Star className="w-3.5 h-3.5 text-amber-400 fill-current shrink-0" />
-          <span className="text-[13px] font-semibold text-(--text-title)">
+          <span className="text-[14px] font-semibold text-(--text-title)">
             {course.rating}
           </span>
           <span className="text-[12px] text-(--gray-400)">
@@ -250,15 +307,15 @@ function CourseCard({ course }: { course: Course }) {
         {/* Meta */}
         <div className="flex items-center gap-3 mb-4">
           <span className="flex items-center gap-1 text-[12px] text-(--gray-400)">
-            <Clock className="w-3.5 h-3.5 shrink-0" />
+            <Clock className="w-4 h-4 shrink-0" />
             {course.duration}
           </span>
           <span className="flex items-center gap-1 text-[12px] text-(--gray-400)">
-            <TrendingUp className="w-3.5 h-3.5 shrink-0" />
+            <TrendingUp className="w-4 h-4 shrink-0" />
             {course.level}
           </span>
           <span
-            className={`text-[11px] font-medium px-2 py-0.5 rounded-full ml-auto ${LEVEL_COLOR[course.level]}`}
+            className={`text-[12px] font-medium px-2 py-0.5 rounded-full ml-auto ${LEVEL_COLOR[course.level]}`}
           >
             {course.level}
           </span>
@@ -270,11 +327,11 @@ function CourseCard({ course }: { course: Course }) {
             <span className="text-[18px] font-bold text-(--text-title)">
               ${course.price}
             </span>
-            <span className="text-[13px] text-(--gray-400) line-through">
+            <span className="text-[14px] text-(--gray-400) line-through">
               ${course.originalPrice}
             </span>
           </div>
-          <button className="px-4 py-1.5 rounded-lg bg-(--primary-50) hover:bg-(--primary-100) text-(--primary-600) text-[13px] font-semibold transition-colors cursor-pointer border border-(--primary-100)">
+          <button className="px-4 py-1.5 rounded-md bg-(--primary-50) hover:bg-(--primary-100) text-(--primary-600) text-[14px] font-semibold transition-colors cursor-pointer border border-(--primary-100)">
             Enroll
           </button>
         </div>
@@ -288,6 +345,9 @@ export default function CourseCatalogPage() {
   const [sortOpen, setSortOpen] = useState(false);
   const [sortLabel, setSortLabel] = useState("Most popular");
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const PAGE_SIZE = 6;
 
   const headerRef = useRef<HTMLDivElement>(null);
   const bannerRef = useRef<HTMLDivElement>(null);
@@ -300,6 +360,13 @@ export default function CourseCatalogPage() {
       c.instructor.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
+  );
 
   useEffect(() => {
     const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
@@ -315,7 +382,7 @@ export default function CourseCatalogPage() {
     );
   }, []);
 
-  // Animate cards when filter changes
+  // Animate cards when page/filter changes
   useEffect(() => {
     if (!gridRef.current) return;
     const cards = Array.from(gridRef.current.querySelectorAll(".course-card"));
@@ -324,7 +391,7 @@ export default function CourseCatalogPage() {
       { opacity: 0, y: 20 },
       { opacity: 1, y: 0, duration: 0.35, stagger: 0.07, ease: "power3.out" },
     );
-  }, [activeCategory, search]);
+  }, [activeCategory, search, currentPage]);
 
   return (
     <div className="space-y-6">
@@ -357,7 +424,7 @@ export default function CourseCatalogPage() {
             </p>
           </div>
         </div>
-        <button className="flex items-center h-12 gap-2 px-5 py-2.5 rounded-xl bg-(--primary-600) hover:bg-(--primary-700) text-white text-[12px] md:text-[14px] lg:text-[14px] font-semibold transition-colors cursor-pointer shrink-0 whitespace-nowrap">
+        <button className="flex items-center h-12 gap-2 px-5 py-2.5 rounded-lg bg-(--primary-600) hover:bg-(--primary-700) text-white text-[12px] md:text-[14px] lg:text-[14px] font-semibold transition-colors cursor-pointer shrink-0 whitespace-nowrap">
           <Sparkles className="w-4 h-4" />
           Get AI recommendation
         </button>
@@ -371,7 +438,10 @@ export default function CourseCatalogPage() {
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
-              onClick={() => setActiveCategory(cat)}
+              onClick={() => {
+                setActiveCategory(cat);
+                setCurrentPage(1);
+              }}
               className={`px-3.5 py-1.5 rounded-md h-11 text-[12px] md:text-[14px] lg:text-[14px] font-medium transition-colors cursor-pointer border whitespace-nowrap shrink-0 ${
                 activeCategory === cat
                   ? "bg-(--primary-600) text-white border-(--primary-600)"
@@ -389,19 +459,22 @@ export default function CourseCatalogPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--gray-400)" />
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
               placeholder="Search courses..."
-              className="w-full sm:w-56 xl:w-56 pl-9 pr-4 h-11 rounded-md border border-(--gray-200) text-[13px] text-(--text-title) placeholder:text-(--gray-400) outline-none focus:border-(--primary-400) transition-colors bg-white"
+              className="w-full sm:w-56 xl:w-56 pl-9 pr-4 h-11 rounded-md border border-(--gray-200) text-[14px] text-(--text-title) placeholder:text-(--gray-400) outline-none focus:border-(--primary-400) transition-colors bg-white"
             />
           </div>
           <div className="relative shrink-0">
             <button
               onClick={() => setSortOpen((v) => !v)}
-              className="flex items-center gap-1.5 h-11 px-3.5 rounded-md border border-(--gray-200) bg-white text-[12px] md:text-[14px] lg:text-[14px] text-(--gray-600) font-medium hover:border-(--primary-300) transition-colors cursor-pointer whitespace-nowrap"
+              className="flex items-center gap-1.5 h-11 px-3.5 rounded-md border border-(--gray-200) bg-white text-[12px] md:text-[14px] lg:text-[14px] text-(--gray-500) font-normal hover:border-(--primary-300) transition-colors cursor-pointer whitespace-nowrap"
             >
               Sort: {sortLabel}
               <ChevronDown
-                className={`w-3.5 h-3.5 transition-transform ${sortOpen ? "rotate-180" : ""}`}
+                className={`w-4 h-4 transition-transform ${sortOpen ? "rotate-180" : ""}`}
               />
             </button>
             {sortOpen && (
@@ -425,7 +498,7 @@ export default function CourseCatalogPage() {
       </div>
 
       {/* Results count */}
-      <p className="text-[12px] md:text-[14px] lg:text-[14px] text-(--gray-400)">
+      <p className="text-[12px] md:text-[14px] lg:text-[14px] text-(--gray-500)">
         Showing{" "}
         <span className="font-semibold text-(--text-title)">
           {filtered.length}
@@ -447,19 +520,25 @@ export default function CourseCatalogPage() {
         ref={gridRef}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
       >
-        {filtered.map((course) => (
+        {paginated.map((course) => (
           <CourseCard key={course.id} course={course} />
         ))}
         {filtered.length === 0 && (
           <div className="col-span-full py-16 text-center text-(--gray-400)">
             <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p className="text-[14px] font-medium">No courses found</p>
+            <p className="text-[16px] font-medium">No courses found</p>
             <p className="text-[12px] md:text-[14px] lg:text-[14px] mt-1">
               Try a different keyword or category
             </p>
           </div>
         )}
       </div>
+
+      <Pagination
+        currentPage={safePage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }
