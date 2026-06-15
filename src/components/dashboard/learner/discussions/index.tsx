@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
   MessageSquare,
-  Reply,
   Search,
   Plus,
   ChevronDown,
