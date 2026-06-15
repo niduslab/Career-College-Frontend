@@ -210,11 +210,11 @@ function ChatPanel({
                     Host
                   </span>
                 )}
-                <span className="text-[11px] text-(--gray-400) ml-auto">
+                <span className="text-[12px] text-(--gray-400) ml-auto">
                   {m.time}
                 </span>
               </div>
-              <p className="text-[13px] text-(--gray-600) leading-snug wrap-break-word">
+              <p className="text-[14px] text-(--gray-500) leading-snug wrap-break-word">
                 {m.text}
               </p>
             </div>
@@ -232,9 +232,10 @@ function ChatPanel({
         />
         <button
           onClick={send}
-          className="w-9 h-9 rounded-lg bg-(--primary-600) hover:bg-(--primary-700) flex items-center justify-center text-white transition-colors cursor-pointer shrink-0"
+          disabled={!input.trim()}
+          className="w-9 h-9 rounded-lg bg-(--primary-600) hover:bg-(--primary-700) flex items-center justify-center text-white transition-colors cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-(--primary-600)"
         >
-          <Send className="w-3.5 h-3.5" />
+          <Send className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -301,7 +302,7 @@ function PollsPanel({ options }: { options: PollOption[] }) {
   return (
     <div className="px-4 py-3 overflow-y-auto flex-1 min-h-0">
       <div className="bg-(--primary-50) border border-(--primary-100) rounded-xl p-4">
-        <p className="text-[13px] font-semibold text-(--text-title) mb-3">
+        <p className="text-[14px] font-semibold text-(--text-title) mb-3">
           How clear was the last explanation?
         </p>
         <div className="space-y-2">
@@ -323,12 +324,12 @@ function PollsPanel({ options }: { options: PollOption[] }) {
                   )}
                   <div className="relative flex items-center justify-between">
                     <span
-                      className={`text-[13px] font-medium ${isVoted ? "text-(--primary-700)" : "text-(--text-title)"}`}
+                      className={`text-[14px] font-medium ${isVoted ? "text-(--primary-700)" : "text-(--text-title)"}`}
                     >
                       {opt.label}
                     </span>
                     {voted !== null && (
-                      <span className="text-[12px] font-semibold text-(--primary-600)">
+                      <span className="text-[14px] font-semibold text-(--primary-600)">
                         {pct}%
                       </span>
                     )}
@@ -408,7 +409,7 @@ export default function LiveRoomPage() {
   return (
     /* Fixed full-viewport overlay — escapes dashboard layout padding */
     <div className="fixed inset-0 z-50 flex bg-[#0d0520] overflow-hidden">
-      {/* ── Left: video column ───────────────────────────── */}
+      {/* Left: video column */}
       <div className="flex flex-col flex-1 min-w-0 min-h-0">
         {/* Topbar */}
         <div className="shrink-0 flex items-center justify-between px-4 py-2.5 bg-[#0d0520] border-b border-white/10">
@@ -425,12 +426,12 @@ export default function LiveRoomPage() {
             </span>
           </div>
           <div className="flex items-center gap-4 shrink-0">
-            <span className="hidden sm:flex items-center gap-1.5 text-[12px] text-white/60">
-              <Users className="w-3.5 h-3.5" />
+            <span className="hidden sm:flex items-center gap-1.5 text-[14px] text-white/60">
+              <Users className="w-4 h-4" />
               {watching} watching
             </span>
-            <span className="flex items-center gap-1.5 text-[12px] text-white/60">
-              <Clock className="w-3.5 h-3.5" />
+            <span className="flex items-center gap-1.5 text-[14px] text-white/60">
+              <Clock className="w-4 h-4" />
               {timer}
             </span>
             {/* Toggle panel on mobile */}
