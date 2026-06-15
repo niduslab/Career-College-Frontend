@@ -1,0 +1,172 @@
+import instructor1 from "@/assets/images/instructors/instructor1.webp";
+import instructor2 from "@/assets/images/instructors/instructor2.webp";
+import instructor3 from "@/assets/images/instructors/instructor3.webp";
+import instructor4 from "@/assets/images/instructors/instructor4.webp";
+import instructor5 from "@/assets/images/instructors/instructor5.webp";
+import instructor6 from "@/assets/images/instructors/instructor6.webp";
+
+import type { Thread, ThreadCategory, SortOption } from "./types";
+
+export const THREADS: Thread[] = [
+  {
+    id: 1,
+    title: "Why does my loss spike after the first epoch in RAG training?",
+    body: "I've been following the course closely but my training loss spikes after epoch 1. I've tried lowering the learning rate but no luck. Here's my config: batch_size=16, lr=3e-4, warmup_steps=100.",
+    author: "Kenji Tanaka",
+    avatar: instructor3,
+    category: "AI & ML",
+    tags: ["RAG", "Training", "Loss"],
+    likes: 24,
+    liked: false,
+    time: "2h ago",
+    pinned: true,
+    course: "Generative AI & LLMs in Production",
+    replies: [
+      {
+        id: 1,
+        author: "Dr. Lena Park",
+        avatar: instructor1,
+        isInstructor: true,
+        body: "Great question! This is usually caused by the learning rate schedule. Try using a cosine annealing scheduler instead of constant LR. Also check if your data is shuffled properly between epochs.",
+        likes: 18,
+        liked: false,
+        time: "1h ago",
+      },
+      {
+        id: 2,
+        author: "Sara Mendez",
+        avatar: instructor2,
+        body: "I had the same issue — switching to AdamW with weight decay 0.01 fixed it for me.",
+        likes: 7,
+        liked: false,
+        time: "45m ago",
+      },
+    ],
+  },
+  {
+    id: 2,
+    title: "Best practices for indexing large document sets in a vector DB?",
+    body: "Working on a RAG pipeline with 500k+ documents. What chunking strategy do you all recommend? Currently using fixed-size 512 token chunks but retrieval quality feels off.",
+    author: "Amara Okafor",
+    avatar: instructor6,
+    category: "AI & ML",
+    tags: ["VectorDB", "Chunking", "RAG"],
+    likes: 19,
+    liked: false,
+    time: "4h ago",
+    course: "Generative AI & LLMs in Production",
+    replies: [
+      {
+        id: 1,
+        author: "Marcus Webb",
+        avatar: instructor2,
+        body: "Try semantic chunking — split on sentence boundaries and keep chunks under 256 tokens with 50-token overlap. Retrieval quality goes up significantly.",
+        likes: 11,
+        liked: false,
+        time: "3h ago",
+      },
+    ],
+  },
+  {
+    id: 3,
+    title: "SQL window functions — ROW_NUMBER vs RANK vs DENSE_RANK",
+    body: "Can someone explain the difference between these three with a practical example? The docs are confusing me.",
+    author: "David Kim",
+    avatar: instructor4,
+    category: "Data",
+    tags: ["SQL", "Window Functions"],
+    likes: 31,
+    liked: false,
+    time: "6h ago",
+    course: "SQL for Data Analytics",
+    replies: [
+      {
+        id: 1,
+        author: "Sara Kim",
+        avatar: instructor4,
+        isInstructor: true,
+        body: "ROW_NUMBER gives a unique sequential number. RANK skips numbers on ties (1,1,3). DENSE_RANK doesn't skip (1,1,2). I'll add a notebook example to the course resources today!",
+        likes: 22,
+        liked: false,
+        time: "5h ago",
+      },
+    ],
+  },
+  {
+    id: 4,
+    title: "Figma auto layout — how to handle dynamic content heights?",
+    body: "When my content is dynamic and grows vertically my auto layout breaks. I'm using Fill for height but it's clipping. Any tips?",
+    author: "Liam Foster",
+    avatar: instructor5,
+    category: "Design",
+    tags: ["Figma", "Auto Layout"],
+    likes: 14,
+    liked: false,
+    time: "Yesterday",
+    course: "UI/UX Design Fundamentals",
+    replies: [],
+  },
+  {
+    id: 5,
+    title: "Polars vs Pandas — when should I switch?",
+    body: "I'm comfortable with Pandas but heard Polars is much faster. At what dataset size does it make sense to switch? Any gotchas to watch out for?",
+    author: "Riya Patel",
+    avatar: instructor3,
+    category: "Data",
+    tags: ["Polars", "Pandas", "Performance"],
+    likes: 27,
+    liked: false,
+    time: "Yesterday",
+    course: "Python Data Wrangling with Polars",
+    replies: [
+      {
+        id: 1,
+        author: "Dr. Omar Said",
+        avatar: instructor3,
+        isInstructor: true,
+        body: "Polars shines at 1M+ rows. Key gotcha: the lazy API is where the real gains are. Use .lazy() then .collect() instead of eager execution.",
+        likes: 15,
+        liked: false,
+        time: "Yesterday",
+      },
+      {
+        id: 2,
+        author: "David Kim",
+        avatar: instructor4,
+        body: "Also note that Polars doesn't have an index like Pandas. Took me a while to adjust to that mental model.",
+        likes: 8,
+        liked: false,
+        time: "Yesterday",
+      },
+    ],
+  },
+  {
+    id: 6,
+    title: "How to evaluate RAG output quality systematically?",
+    body: "Beyond eyeballing results, what metrics/frameworks do you use to evaluate RAG pipelines in production?",
+    author: "You",
+    avatar: instructor6,
+    category: "AI & ML",
+    tags: ["RAG", "Evaluation", "Metrics"],
+    likes: 9,
+    liked: false,
+    time: "2d ago",
+    course: "Generative AI & LLMs in Production",
+    replies: [],
+  },
+];
+
+export const CATEGORIES: ThreadCategory[] = [
+  "All",
+  "AI & ML",
+  "Data",
+  "Design",
+  "Web Dev",
+  "General",
+];
+
+export const SORT_OPTIONS: SortOption[] = [
+  "Most Recent",
+  "Most Popular",
+  "Most Replies",
+];

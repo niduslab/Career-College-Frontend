@@ -1,0 +1,137 @@
+import type { Quiz } from "./types";
+
+export const QUIZ: Quiz = {
+  id: "quiz-ensemble-methods",
+  moduleTitle: "MODULE QUIZ",
+  title: "Ensemble Methods",
+  totalQuestions: 10,
+  timeLimitSeconds: 10 * 60, // 10 minutes
+  questions: [
+    {
+      id: 1,
+      type: "multiple-choice",
+      points: 1,
+      text: "What is the main idea behind ensemble methods in machine learning?",
+      options: [
+        { id: "a", text: "Train a single powerful model on all data" },
+        { id: "b", text: "Combine multiple models to improve performance" },
+        { id: "c", text: "Use deep learning for all classification tasks" },
+        { id: "d", text: "Reduce the number of features in the dataset" },
+      ],
+      correctId: "b",
+    },
+    {
+      id: 2,
+      type: "multiple-choice",
+      points: 1,
+      text: "Which ensemble technique trains models in parallel and averages their predictions?",
+      options: [
+        { id: "a", text: "Boosting" },
+        { id: "b", text: "Stacking" },
+        { id: "c", text: "Bagging" },
+        { id: "d", text: "Pruning" },
+      ],
+      correctId: "c",
+    },
+    {
+      id: 3,
+      type: "multiple-choice",
+      points: 1,
+      text: "What best describes how gradient boosting builds its ensemble?",
+      options: [
+        { id: "a", text: "It trains trees in parallel and averages predictions" },
+        { id: "b", text: "Each tree corrects the residual errors of the previous ensemble" },
+        { id: "c", text: "It selects the single best feature at each split only" },
+        { id: "d", text: "It requires the data to be perfectly balanced" },
+      ],
+      correctId: "b",
+    },
+    {
+      id: 4,
+      type: "multiple-choice",
+      points: 1,
+      text: "XGBoost improves upon gradient boosting primarily by adding:",
+      options: [
+        { id: "a", text: "More decision tree layers" },
+        { id: "b", text: "L1 and L2 regularization terms" },
+        { id: "c", text: "A neural network backend" },
+        { id: "d", text: "Random feature selection per sample" },
+      ],
+      correctId: "b",
+    },
+    {
+      id: 5,
+      type: "true-false",
+      points: 1,
+      text: "Random Forest is an example of a boosting ensemble method.",
+      options: [
+        { id: "a", text: "True" },
+        { id: "b", text: "False" },
+      ],
+      correctId: "b",
+    },
+    {
+      id: 6,
+      type: "multiple-choice",
+      points: 1,
+      text: "Which hyperparameter controls how much each tree contributes in gradient boosting?",
+      options: [
+        { id: "a", text: "max_depth" },
+        { id: "b", text: "n_estimators" },
+        { id: "c", text: "learning_rate" },
+        { id: "d", text: "min_samples_split" },
+      ],
+      correctId: "c",
+    },
+    {
+      id: 7,
+      type: "multiple-choice",
+      points: 1,
+      text: "What does the term 'weak learner' refer to in the context of boosting?",
+      options: [
+        { id: "a", text: "A model that performs worse than random chance" },
+        { id: "b", text: "A model that performs only slightly better than random" },
+        { id: "c", text: "A model with no regularization" },
+        { id: "d", text: "A model trained on very few features" },
+      ],
+      correctId: "b",
+    },
+    {
+      id: 8,
+      type: "multiple-choice",
+      points: 1,
+      text: "In stacking, the meta-learner is trained on:",
+      options: [
+        { id: "a", text: "The original training features" },
+        { id: "b", text: "The predictions of base models" },
+        { id: "c", text: "Random subsets of the training data" },
+        { id: "d", text: "The residuals of the base models" },
+      ],
+      correctId: "b",
+    },
+    {
+      id: 9,
+      type: "true-false",
+      points: 1,
+      text: "A lower learning rate in gradient boosting always leads to worse generalization.",
+      options: [
+        { id: "a", text: "True" },
+        { id: "b", text: "False" },
+      ],
+      correctId: "b",
+    },
+    {
+      id: 10,
+      type: "multiple-choice",
+      points: 1,
+      text: "Which of the following is NOT a common ensemble method?",
+      options: [
+        { id: "a", text: "Bagging" },
+        { id: "b", text: "Boosting" },
+        { id: "c", text: "Dropout" },
+        { id: "d", text: "Stacking" },
+      ],
+      correctId: "c",
+    },
+  ],
+};
