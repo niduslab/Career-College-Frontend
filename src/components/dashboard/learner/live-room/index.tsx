@@ -421,7 +421,7 @@ export default function LiveRoomPage() {
               </span>
               LIVE
             </span>
-            <span className="text-[14px] font-semibold text-white truncate">
+            <span className="text-[12px] md:text-[14px] lg:text-[14px] font-semibold text-white truncate">
               Tuning Neural Networks
             </span>
           </div>
