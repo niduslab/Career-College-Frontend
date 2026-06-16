@@ -11,8 +11,6 @@ import {
   BookOpen,
   Calendar,
   MessageSquare,
-  Crown,
-  ChevronDown,
   X,
   Check,
 } from "lucide-react";
