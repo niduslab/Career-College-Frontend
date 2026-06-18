@@ -194,6 +194,11 @@ body {
   background-position: 0% 50%;
 }
 
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(200%);  }
+}
+
 @keyframes industryMarquee {
   from {
     transform: translate3d(0, 0, 0);
