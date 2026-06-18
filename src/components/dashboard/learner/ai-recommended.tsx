@@ -1,30 +1,31 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Sparkles, Globe, Target, ArrowRight, Lightbulb } from "lucide-react";
+import { Sparkles, ArrowRight, Lightbulb } from "lucide-react";
+import Image from "next/image";
 import gsap from "gsap";
+import course1 from "@/assets/images/popular-courses/image1.webp";
+import course2 from "@/assets/images/popular-courses/image2.webp";
+import course3 from "@/assets/images/popular-courses/image3.webp";
 
 const courses = [
   {
     title: "Generative AI & LLMs in Production",
     reason: "Builds on your ML progress",
     match: "96% match",
-    gradient: "linear-gradient(135deg,#7C3AED,#C026D3)",
-    Icon: Sparkles,
+    image: course1,
   },
   {
     title: "MLOps & Model Deployment",
     reason: "Fills your deployment skill gap",
     match: "91% match",
-    gradient: "linear-gradient(135deg, #6366F1, #3B82F6)",
-    Icon: Globe,
+    image: course2,
   },
   {
     title: "Advanced Feature Engineering",
     reason: "Recommended for your career goal",
     match: "88% match",
-    gradient: "linear-gradient(135deg, #F59E0B, #EF4444)",
-    Icon: Target,
+    image: course3,
   },
 ];
 
@@ -66,47 +67,40 @@ export default function AiRecommended() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ">
-        {courses.map((course) => {
-          const Icon = course.Icon;
-          return (
-            <div
-              key={course.title}
-              className="rec-card bg-white rounded-2xl border border-(--gray-200) overflow-hidden cursor-pointer group hover:shadow-md transition-shadow"
-            >
-              {/* Gradient thumbnail */}
-              <div
-                className="relative h-36 flex items-center justify-center overflow-hidden"
-                style={{ background: course.gradient }}
-              >
-                {/* stripe texture */}
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background:
-                      "repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.07) 0px, rgba(255, 255, 255, 0.07) 12px, transparent 12px, transparent 24px)",
-                  }}
-                />
-                <Icon className="w-10 h-10 text-white/80 relative z-10" />
-                <span className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-white/40 backdrop-blur-sm text-white text-[12px] font-semibold px-2.5 py-1 rounded-full">
-                  <Sparkles className="w-4 h-4" />
-                  {course.match}
-                </span>
-              </div>
-
-              {/* Content */}
-              <div className="p-4">
-                <h3 className="text-[14px] lg:text-[16px] font-semibold text-(--text-title) leading-snug group-hover:text-(--primary-600) transition-colors">
-                  {course.title}
-                </h3>
-                <p className="text-[12px] text-(--gray-500) mt-1.5 flex items-center gap-1.5">
-                  <Lightbulb className="w-4 h-4 text-(--primary-600) shrink-0" />
-                  {course.reason}
-                </p>
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {courses.map((course) => (
+          <div
+            key={course.title}
+            className="rec-card bg-white rounded-2xl border border-(--gray-200) overflow-hidden cursor-pointer group hover:shadow-md transition-shadow"
+          >
+            {/* Thumbnail */}
+            <div className="relative h-44 overflow-hidden">
+              <Image
+                src={course.image}
+                alt={course.title}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              {/* dark gradient overlay for badge readability */}
+              <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
+              <span className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-black/40 backdrop-blur-sm text-white text-[12px] font-semibold px-2.5 py-1 rounded-full">
+                <Sparkles className="w-4 h-4" />
+                {course.match}
+              </span>
             </div>
-          );
-        })}
+
+            {/* Content */}
+            <div className="p-4">
+              <h3 className="text-[14px] lg:text-[16px] font-semibold text-(--text-title) leading-snug group-hover:text-(--primary-600) transition-colors">
+                {course.title}
+              </h3>
+              <p className="text-[12px] text-(--gray-500) mt-1.5 flex items-center gap-1.5">
+                <Lightbulb className="w-4 h-4 text-(--primary-600) shrink-0" />
+                {course.reason}
+              </p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
