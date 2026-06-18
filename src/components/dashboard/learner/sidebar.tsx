@@ -163,7 +163,7 @@ export default function LearnerSidebar() {
         <div className="px-6 mb-8 flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-1 lg:gap-2.5"
+            className="flex items-center gap-1 lg:gap-0"
             onClick={close}
           >
             <div className="w-9 h-9 flex items-center justify-center">
@@ -181,13 +181,13 @@ export default function LearnerSidebar() {
           </button>
         </div>
 
-        <nav className="flex-1 px-3 space-y-6 overflow-y-auto">
+        <nav className="flex-1 px-3 space-y-4 overflow-y-auto">
           {navSections.map((section) => (
             <div key={section.label}>
-              <p className="text-[14px] font-normal text-(--gray-500) tracking-[0.08em] px-3 mb-2">
+              <p className="text-[12px] font-semibold text-(--gray-400) tracking-[0.08em] uppercase px-3 mb-1">
                 {section.label}
               </p>
-              <ul className="space-y-2">
+              <ul className="space-y-0.5">
                 {section.items.map(({ icon: Icon, label, href }) => {
                   const active = pathname === href;
                   return (
@@ -195,7 +195,7 @@ export default function LearnerSidebar() {
                       <Link
                         href={href}
                         onClick={close}
-                        className={`flex items-center gap-3 h-11 px-3 py-2 rounded-lg text-[14px] transition-colors ${
+                        className={`flex items-center gap-3 h-9 px-3 rounded-lg text-[14px] transition-colors ${
                           active
                             ? "bg-(--primary-600) font-medium text-white hover:bg-(--primary-700)"
                             : "text-(--gray-600) font-normal hover:bg-(--gray-100) hover:text-(--text-title)"

@@ -9,21 +9,42 @@ import {
   List,
   Star,
   Clock,
-  GraduationCap,
-  TrendingUp,
-  PenSquare,
   X,
   ChevronDown,
 } from "lucide-react";
+import Image, { StaticImageData } from "next/image";
+import img1 from "@/assets/images/popular-courses/image1.webp";
+import img2 from "@/assets/images/popular-courses/image2.webp";
+import img3 from "@/assets/images/popular-courses/image3.webp";
+import img4 from "@/assets/images/popular-courses/image4.webp";
+import img5 from "@/assets/images/popular-courses/image5.webp";
+import img6 from "@/assets/images/popular-courses/image6.webp";
 import gsap from "gsap";
+import { Pagination } from "@/components/common/pagination";
 
-type Tab = "In Progress" | "Completed" | "Archived";
+const PAGE_SIZE = 6;
 
-const courses = [
+type Tab = "All" | "In Progress" | "Completed" | "Archived";
+
+const courses: {
+  tab: Tab;
+  image: StaticImageData;
+  level: string;
+  category: string;
+  categoryColor: string;
+  title: string;
+  instructor: string;
+  initials: string;
+  initialsColor: string;
+  rating: number;
+  lessons: string;
+  pct: number;
+  timeLeft: string;
+  lastSeen: string;
+}[] = [
   {
-    tab: "In Progress" as Tab,
-    gradient: "linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c026d3 100%)",
-    Icon: GraduationCap,
+    tab: "In Progress",
+    image: img1,
     level: "Intermediate",
     category: "AI & ML",
     categoryColor: "text-violet-600 bg-violet-50",
@@ -38,9 +59,8 @@ const courses = [
     lastSeen: "2 hours ago",
   },
   {
-    tab: "In Progress" as Tab,
-    gradient: "linear-gradient(135deg, #0ea5e9 0%, #06b6d4 50%, #14b8a6 100%)",
-    Icon: TrendingUp,
+    tab: "In Progress",
+    image: img2,
     level: "Beginner",
     category: "Data",
     categoryColor: "text-cyan-600 bg-cyan-50",
@@ -55,9 +75,8 @@ const courses = [
     lastSeen: "Yesterday",
   },
   {
-    tab: "In Progress" as Tab,
-    gradient: "linear-gradient(135deg, #ec4899 0%, #f43f5e 50%, #a855f7 100%)",
-    Icon: PenSquare,
+    tab: "In Progress",
+    image: img3,
     level: "Intermediate",
     category: "Design",
     categoryColor: "text-pink-600 bg-pink-50",
@@ -72,9 +91,8 @@ const courses = [
     lastSeen: "4 days ago",
   },
   {
-    tab: "Completed" as Tab,
-    gradient: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
-    Icon: GraduationCap,
+    tab: "Completed",
+    image: img4,
     level: "Beginner",
     category: "AI & ML",
     categoryColor: "text-violet-600 bg-violet-50",
@@ -89,9 +107,8 @@ const courses = [
     lastSeen: "3 weeks ago",
   },
   {
-    tab: "Completed" as Tab,
-    gradient: "linear-gradient(135deg, #f97316 0%, #eab308 100%)",
-    Icon: TrendingUp,
+    tab: "Completed",
+    image: img5,
     level: "Intermediate",
     category: "Data",
     categoryColor: "text-cyan-600 bg-cyan-50",
@@ -106,9 +123,8 @@ const courses = [
     lastSeen: "1 month ago",
   },
   {
-    tab: "Completed" as Tab,
-    gradient: "linear-gradient(135deg, #10b981 0%, #06b6d4 100%)",
-    Icon: PenSquare,
+    tab: "Completed",
+    image: img6,
     level: "Beginner",
     category: "Design",
     categoryColor: "text-pink-600 bg-pink-50",
@@ -123,9 +139,72 @@ const courses = [
     lastSeen: "2 months ago",
   },
   {
-    tab: "Archived" as Tab,
-    gradient: "linear-gradient(135deg, #64748b 0%, #94a3b8 100%)",
-    Icon: GraduationCap,
+    tab: "In Progress",
+    image: img4,
+    level: "Advanced",
+    category: "AI & ML",
+    categoryColor: "text-violet-600 bg-violet-50",
+    title: "Deep Learning with TensorFlow",
+    instructor: "Dr. Lena Park",
+    initials: "DL",
+    initialsColor: "bg-orange-500",
+    rating: 4.8,
+    lessons: "14/36",
+    pct: 39,
+    timeLeft: "12h 10m left",
+    lastSeen: "3 days ago",
+  },
+  {
+    tab: "In Progress",
+    image: img5,
+    level: "Beginner",
+    category: "Data",
+    categoryColor: "text-cyan-600 bg-cyan-50",
+    title: "Excel for Business Analytics",
+    instructor: "Marcus Webb",
+    initials: "MW",
+    initialsColor: "bg-orange-400",
+    rating: 4.5,
+    lessons: "8/20",
+    pct: 40,
+    timeLeft: "5h 30m left",
+    lastSeen: "Today",
+  },
+  {
+    tab: "Completed",
+    image: img1,
+    level: "Beginner",
+    category: "Design",
+    categoryColor: "text-pink-600 bg-pink-50",
+    title: "Figma UI Design Basics",
+    instructor: "Sofia Alvarez",
+    initials: "SA",
+    initialsColor: "bg-emerald-500",
+    rating: 4.9,
+    lessons: "15/15",
+    pct: 100,
+    timeLeft: "Completed",
+    lastSeen: "2 weeks ago",
+  },
+  {
+    tab: "Completed",
+    image: img2,
+    level: "Intermediate",
+    category: "AI & ML",
+    categoryColor: "text-violet-600 bg-violet-50",
+    title: "Natural Language Processing",
+    instructor: "Dr. Lena Park",
+    initials: "DL",
+    initialsColor: "bg-orange-500",
+    rating: 4.7,
+    lessons: "22/22",
+    pct: 100,
+    timeLeft: "Completed",
+    lastSeen: "6 weeks ago",
+  },
+  {
+    tab: "Archived",
+    image: img3,
     level: "Advanced",
     category: "AI & ML",
     categoryColor: "text-violet-600 bg-violet-50",
@@ -139,46 +218,102 @@ const courses = [
     timeLeft: "Archived",
     lastSeen: "5 months ago",
   },
+  {
+    tab: "Archived",
+    image: img6,
+    level: "Intermediate",
+    category: "Data",
+    categoryColor: "text-cyan-600 bg-cyan-50",
+    title: "Big Data with Apache Spark",
+    instructor: "Marcus Webb",
+    initials: "MW",
+    initialsColor: "bg-orange-400",
+    rating: 4.4,
+    lessons: "2/30",
+    pct: 7,
+    timeLeft: "Archived",
+    lastSeen: "4 months ago",
+  },
+  {
+    tab: "Archived",
+    image: img4,
+    level: "Advanced",
+    category: "Design",
+    categoryColor: "text-pink-600 bg-pink-50",
+    title: "Motion Design & After Effects",
+    instructor: "Sofia Alvarez",
+    initials: "SA",
+    initialsColor: "bg-emerald-500",
+    rating: 4.6,
+    lessons: "1/25",
+    pct: 4,
+    timeLeft: "Archived",
+    lastSeen: "7 months ago",
+  },
 ];
 
 const tabs: { label: Tab; count: number }[] = [
-  { label: "In Progress", count: 3 },
-  { label: "Completed", count: 3 },
-  { label: "Archived", count: 1 },
+  { label: "All", count: courses.length },
+  {
+    label: "In Progress",
+    count: courses.filter((c) => c.tab === "In Progress").length,
+  },
+  {
+    label: "Completed",
+    count: courses.filter((c) => c.tab === "Completed").length,
+  },
+  {
+    label: "Archived",
+    count: courses.filter((c) => c.tab === "Archived").length,
+  },
 ];
 
 const LEVELS = ["Beginner", "Intermediate", "Advanced"];
 const CATEGORIES = ["AI & ML", "Data", "Design"];
 
 export default function MyCoursesPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("In Progress");
+  const [activeTab, setActiveTab] = useState<Tab>("All");
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const filterRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  const toggleLevel = (v: string) =>
+  const resetPage = () => setCurrentPage(1);
+
+  const toggleLevel = (v: string) => {
     setSelectedLevels((p) =>
       p.includes(v) ? p.filter((x) => x !== v) : [...p, v],
     );
+    resetPage();
+  };
 
-  const toggleCategory = (v: string) =>
+  const toggleCategory = (v: string) => {
     setSelectedCategories((p) =>
       p.includes(v) ? p.filter((x) => x !== v) : [...p, v],
     );
+    resetPage();
+  };
 
   const activeFilterCount = selectedLevels.length + selectedCategories.length;
 
   const filtered = courses.filter(
     (c) =>
-      c.tab === activeTab &&
+      (activeTab === "All" || c.tab === activeTab) &&
       c.title.toLowerCase().includes(search.toLowerCase()) &&
       (selectedLevels.length === 0 || selectedLevels.includes(c.level)) &&
       (selectedCategories.length === 0 ||
         selectedCategories.includes(c.category)),
+  );
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const safePage = Math.min(currentPage, totalPages || 1);
+  const paginated = filtered.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
   );
 
   // Close dropdown on outside click
@@ -200,7 +335,7 @@ export default function MyCoursesPage() {
       { opacity: 0, y: 20 },
       { opacity: 1, y: 0, duration: 0.4, stagger: 0.07, ease: "power3.out" },
     );
-  }, [activeTab, search, view, selectedLevels, selectedCategories]);
+  }, [activeTab, search, view, selectedLevels, selectedCategories, safePage]);
 
   return (
     <div className="space-y-6">
@@ -221,17 +356,20 @@ export default function MyCoursesPage() {
         </button>
       </div>
       {/* Tabs + Search + Filter */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
         {/* Tabs */}
-        <div className="flex items-center gap-1 bg-white border border-(--gray-200) rounded-lg p-1 w-fit shrink-0">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
           {tabs.map((t) => (
             <button
               key={t.label}
-              onClick={() => setActiveTab(t.label)}
-              className={`flex items-center gap-1.5 cursor-pointer px-3 lg:px-4 py-2 rounded-lg text-[14px] lg:text-[14px] transition-colors truncate ${
+              onClick={() => {
+                setActiveTab(t.label);
+                resetPage();
+              }}
+              className={`flex items-center gap-1.5 cursor-pointer px-3.5 h-11 rounded-md text-[12px] md:text-[14px]  transition-colors border whitespace-nowrap shrink-0 ${
                 activeTab === t.label
-                  ? "bg-(--primary-700) text-white font-semibold"
-                  : "text-(--text-paragraph) hover:text-(--text-title)"
+                  ? "bg-(--primary-600) text-white border-(--primary-600) font-medium"
+                  : "bg-white text-(--gray-600) font-normal border-(--gray-200) hover:border-(--primary-300)"
               }`}
             >
               {t.label}
@@ -256,7 +394,10 @@ export default function MyCoursesPage() {
               type="text"
               placeholder="Search your courses..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                resetPage();
+              }}
               className="w-full  h-12 pl-9 pr-4 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-500) focus:outline-none focus:border-(--primary-400)"
             />
           </div>
@@ -381,24 +522,31 @@ export default function MyCoursesPage() {
         ref={gridRef}
         className={
           view === "grid"
-            ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"
+            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
             : "flex flex-col gap-3"
         }
       >
-        {filtered.length === 0 && (
+        {paginated.length === 0 && (
           <p className="text-(--gray-400) text-[14px] col-span-3 py-12 text-center">
             No courses found.
           </p>
         )}
-        {filtered.map((course, i) => {
-          const Icon = course.Icon;
-          return view === "grid" ? (
+        {paginated.map((course, i) =>
+          view === "grid" ? (
             <GridCard key={i} course={course} />
           ) : (
             <ListCard key={i} course={course} />
-          );
-        })}
+          ),
+        )}
       </div>
+
+      <Pagination
+        currentPage={safePage}
+        totalPages={totalPages}
+        onPageChange={(p) => {
+          setCurrentPage(p);
+        }}
+      />
     </div>
   );
 }
@@ -406,26 +554,17 @@ export default function MyCoursesPage() {
 // Grid Card
 
 function GridCard({ course }: { course: (typeof courses)[0] }) {
-  const Icon = course.Icon;
   return (
     <div className="course-card bg-white rounded-2xl border border-(--gray-200) overflow-hidden hover:shadow-md transition-shadow cursor-pointer group">
       {/* Thumbnail */}
-      <div
-        className="relative h-40 flex items-center justify-center overflow-hidden"
-        style={{ background: course.gradient }}
-      >
-        {/* stripe */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 16px, transparent 16px, transparent 32px)",
-          }}
+      <div className="relative h-40 overflow-hidden">
+        <Image
+          src={course.image}
+          alt={course.title}
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        <Icon
-          className="w-12 h-12 text-white/80 relative z-10"
-          strokeWidth={1.5}
-        />
+        <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
         <span className="absolute bottom-3 left-3 z-10 text-[12px] font-semibold text-white bg-black/30 backdrop-blur-sm px-2.5 py-1 rounded-full">
           {course.level}
         </span>
@@ -497,24 +636,15 @@ function GridCard({ course }: { course: (typeof courses)[0] }) {
 
 // List Card
 function ListCard({ course }: { course: (typeof courses)[0] }) {
-  const Icon = course.Icon;
   return (
     <div className="course-card bg-white rounded-2xl border border-(--gray-200) p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer group">
       {/* Thumbnail */}
-      <div
-        className="relative w-16 h-16 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
-        style={{ background: course.gradient }}
-      >
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 16px, transparent 16px, transparent 32px)",
-          }}
-        />
-        <Icon
-          className="w-7 h-7 text-white/80 relative z-10"
-          strokeWidth={1.5}
+      <div className="relative w-16 h-16 rounded-xl shrink-0 overflow-hidden">
+        <Image
+          src={course.image}
+          alt={course.title}
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-500"
         />
       </div>
 

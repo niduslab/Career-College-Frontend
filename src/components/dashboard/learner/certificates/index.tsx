@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   GraduationCap,
   BadgeCheck,
@@ -10,6 +10,9 @@ import {
   QrCode,
 } from "lucide-react";
 import gsap from "gsap";
+import { Pagination } from "@/components/common/pagination";
+
+const PAGE_SIZE = 6;
 
 interface Certificate {
   id: string;
@@ -17,8 +20,6 @@ interface Certificate {
   awardedTo: string;
   issued: string;
   credentialId: string;
-  gradient: string;
-  accentText: string;
 }
 
 const CERTIFICATES: Certificate[] = [
@@ -28,8 +29,6 @@ const CERTIFICATES: Certificate[] = [
     awardedTo: "Marop Hossain",
     issued: "May 2026",
     credentialId: "CC-DL-2026-0847",
-    gradient: "from-blue-500 via-indigo-500 to-purple-500",
-    accentText: "text-blue-100",
   },
   {
     id: "2",
@@ -37,8 +36,6 @@ const CERTIFICATES: Certificate[] = [
     awardedTo: "Marop Hossain",
     issued: "Apr 2026",
     credentialId: "CC-SQL-2026-1120",
-    gradient: "from-emerald-400 via-teal-500 to-green-600",
-    accentText: "text-emerald-100",
   },
   {
     id: "3",
@@ -46,8 +43,6 @@ const CERTIFICATES: Certificate[] = [
     awardedTo: "Marop Hossain",
     issued: "Feb 2026",
     credentialId: "CC-STAT-2026-0331",
-    gradient: "from-orange-400 via-red-400 to-rose-500",
-    accentText: "text-orange-100",
   },
   {
     id: "4",
@@ -55,8 +50,6 @@ const CERTIFICATES: Certificate[] = [
     awardedTo: "Marop Hossain",
     issued: "Jan 2026",
     credentialId: "CC-PY-2026-0099",
-    gradient: "from-violet-500 via-purple-500 to-fuchsia-500",
-    accentText: "text-violet-100",
   },
   {
     id: "5",
@@ -64,8 +57,6 @@ const CERTIFICATES: Certificate[] = [
     awardedTo: "Marop Hossain",
     issued: "Nov 2025",
     credentialId: "CC-DS-2025-2245",
-    gradient: "from-cyan-400 via-blue-500 to-indigo-500",
-    accentText: "text-cyan-100",
   },
   {
     id: "6",
@@ -73,8 +64,6 @@ const CERTIFICATES: Certificate[] = [
     awardedTo: "Marop Hossain",
     issued: "Oct 2025",
     credentialId: "CC-GIT-2025-1876",
-    gradient: "from-pink-500 via-fuchsia-500 to-purple-600",
-    accentText: "text-pink-100",
   },
 ];
 
@@ -83,7 +72,11 @@ function CertificateCard({ cert }: { cert: Certificate }) {
     <div className="bg-white rounded-2xl border border-(--gray-200) overflow-hidden hover:shadow-md transition-shadow duration-200">
       {/* Card face */}
       <div
-        className={`relative bg-linear-to-br ${cert.gradient} p-5 h-44 overflow-hidden`}
+        className="relative p-5 h-44 overflow-hidden"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--primary-700), var(--primary-400))",
+        }}
       >
         {/* diagonal stripe pattern */}
         <div
@@ -110,9 +103,7 @@ function CertificateCard({ cert }: { cert: Certificate }) {
 
         {/* Body */}
         <div className="relative">
-          <p
-            className={`text-[10px] font-semibold uppercase tracking-widest mb-1 ${cert.accentText}`}
-          >
+          <p className="text-[10px] font-semibold uppercase tracking-widest mb-1 text-white/70">
             Certificate of Completion
           </p>
           <h3 className="text-[16px] md:text-[20px] lg:text-[20px] font-semibold text-white leading-tight mb-4">
@@ -120,7 +111,7 @@ function CertificateCard({ cert }: { cert: Certificate }) {
           </h3>
           <div className="flex items-end justify-between">
             <div>
-              <p className={`text-[10px] font-medium ${cert.accentText}`}>
+              <p className="text-[10px] font-medium text-white/70">
                 Awarded to
               </p>
               <p className="text-[12px] md:text-[14px] lg:text-[14px] font-semibold text-white">
@@ -172,6 +163,14 @@ function CertificateCard({ cert }: { cert: Certificate }) {
 export default function CertificatesPage() {
   const headerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(CERTIFICATES.length / PAGE_SIZE);
+  const safePage = Math.min(currentPage, totalPages || 1);
+  const paginated = CERTIFICATES.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
+  );
 
   useEffect(() => {
     gsap.fromTo(
@@ -211,10 +210,16 @@ export default function CertificatesPage() {
         ref={gridRef}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
       >
-        {CERTIFICATES.map((cert) => (
+        {paginated.map((cert) => (
           <CertificateCard key={cert.id} cert={cert} />
         ))}
       </div>
+
+      <Pagination
+        currentPage={safePage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }
