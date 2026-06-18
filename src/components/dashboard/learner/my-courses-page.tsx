@@ -369,12 +369,12 @@ export default function MyCoursesPage() {
               className={`flex items-center gap-1.5 cursor-pointer px-3.5 h-11 rounded-md text-[12px] md:text-[14px]  transition-colors border whitespace-nowrap shrink-0 ${
                 activeTab === t.label
                   ? "bg-(--primary-600) text-white border-(--primary-600) font-medium"
-                  : "bg-white text-(--gray-600) font-normal border-(--gray-200) hover:border-(--primary-300)"
+                  : "bg-white text-(--gray-500) font-normal border-(--gray-200) hover:border-(--primary-300)"
               }`}
             >
               {t.label}
               <span
-                className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
                   activeTab === t.label
                     ? "bg-white/20 text-white"
                     : "bg-(--gray-100) text-(--gray-500)"
@@ -424,72 +424,86 @@ export default function MyCoursesPage() {
             </button>
 
             {filterOpen && (
-              <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-72 bg-white border border-(--gray-200) rounded-2xl shadow-xl overflow-hidden">
-                {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-(--gray-100)">
-                  <div className="flex items-center gap-2">
-                    <SlidersHorizontal className="w-4 h-4 text-(--primary-600)" />
-                    <span className="text-[14px] font-semibold text-(--text-title)">
-                      Filters
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setFilterOpen(false)}
-                    className="w-7 h-7 flex items-center cursor-pointer justify-center rounded-lg hover:bg-(--gray-100) transition-colors"
-                  >
-                    <X className="w-4 h-4 text-(--gray-400)" />
-                  </button>
-                </div>
+              <>
+                {/* Mobile backdrop */}
+                <div
+                  className="sm:hidden fixed inset-0 bg-black/40 z-40"
+                  onClick={() => setFilterOpen(false)}
+                />
 
-                <div className="p-4 space-y-4">
-                  {/* Level */}
-                  <div>
-                    <p className="text-[11px] font-bold text-(--gray-400) uppercase tracking-wider mb-2.5">
-                      Level
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {LEVELS.map((l) => (
-                        <button
-                          key={l}
-                          onClick={() => toggleLevel(l)}
-                          className={`text-[12px] font-semibold cursor-pointer px-3 py-1.5 rounded-full border transition-colors ${
-                            selectedLevels.includes(l)
-                              ? "bg-(--primary-600) text-white border-(--primary-600)"
-                              : "border-(--gray-200) text-(--gray-600) hover:border-(--primary-400) hover:text-(--primary-600)"
-                          }`}
-                        >
-                          {l}
-                        </button>
-                      ))}
+                {/* Mobile centered modal / Desktop dropdown */}
+                <div className="
+                  fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[calc(100vw-32px)] max-w-sm rounded-2xl
+                  sm:absolute sm:top-[calc(100%+8px)] sm:left-auto sm:right-0 sm:translate-x-0 sm:translate-y-0 sm:w-72
+                  bg-white border border-(--gray-200) shadow-xl overflow-hidden
+                ">
+
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-(--gray-100)">
+                    <div className="flex items-center gap-2">
+                      <SlidersHorizontal className="w-4 h-4 text-(--primary-600)" />
+                      <span className="text-[14px] font-semibold text-(--text-title)">
+                        Filters
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setFilterOpen(false)}
+                      className="w-7 h-7 flex items-center cursor-pointer justify-center rounded-lg hover:bg-(--gray-100) transition-colors"
+                    >
+                      <X className="w-4 h-4 text-(--gray-400)" />
+                    </button>
+                  </div>
+
+                  <div className="p-4 space-y-4">
+                    {/* Level */}
+                    <div>
+                      <p className="text-[11px] font-bold text-(--gray-400) uppercase tracking-wider mb-2.5">
+                        Level
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {LEVELS.map((l) => (
+                          <button
+                            key={l}
+                            onClick={() => toggleLevel(l)}
+                            className={`text-[12px] font-semibold cursor-pointer px-3 py-1.5 rounded-full border transition-colors ${
+                              selectedLevels.includes(l)
+                                ? "bg-(--primary-600) text-white border-(--primary-600)"
+                                : "border-(--gray-200) text-(--gray-600) hover:border-(--primary-400) hover:text-(--primary-600)"
+                            }`}
+                          >
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="border-t border-(--gray-100)" />
+
+                    {/* Category */}
+                    <div>
+                      <p className="text-[11px] font-bold text-(--gray-400) uppercase tracking-wider mb-2.5">
+                        Category
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {CATEGORIES.map((c) => (
+                          <button
+                            key={c}
+                            onClick={() => toggleCategory(c)}
+                            className={`text-[12px] font-semibold cursor-pointer px-3 py-1.5 rounded-full border transition-colors ${
+                              selectedCategories.includes(c)
+                                ? "bg-(--primary-600) text-white border-(--primary-600)"
+                                : "border-(--gray-200) text-(--gray-600) hover:border-(--primary-400) hover:text-(--primary-600)"
+                            }`}
+                          >
+                            {c}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-
-                  {/* Divider */}
-                  <div className="border-t border-(--gray-100)" />
-
-                  {/* Category */}
-                  <div>
-                    <p className="text-[11px] font-bold text-(--gray-400) uppercase tracking-wider mb-2.5">
-                      Category
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {CATEGORIES.map((c) => (
-                        <button
-                          key={c}
-                          onClick={() => toggleCategory(c)}
-                          className={`text-[12px] font-semibold cursor-pointer px-3 py-1.5 rounded-full border transition-colors ${
-                            selectedCategories.includes(c)
-                              ? "bg-(--primary-600) text-white border-(--primary-600)"
-                              : "border-(--gray-200) text-(--gray-600) hover:border-(--primary-400) hover:text-(--primary-600)"
-                          }`}
-                        >
-                          {c}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
           <div className="flex items-center border border-(--gray-200) rounded-xl overflow-hidden bg-white shrink-0">
