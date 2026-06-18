@@ -14,15 +14,11 @@ import {
   Eye,
   EyeOff,
   ChevronRight,
-  Sun,
-  Moon,
-  Monitor,
-  Palette,
 } from "lucide-react";
 
 // Types
 
-type Tab = "profile" | "account" | "notifications" | "appearance";
+type Tab = "profile" | "account" | "notifications";
 
 // Sub-components
 
@@ -79,7 +75,7 @@ function Input({
       )}
       <input
         {...props}
-        className={`w-full h-10 ${Icon ? "pl-9" : "pl-3"} pr-3 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow`}
+        className={`w-full h-11 ${Icon ? "pl-9" : "pl-3"} pr-3 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow`}
       />
     </div>
   );
@@ -118,7 +114,7 @@ function SaveButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={handle}
-      className="flex items-center gap-1.5 h-10 px-5 rounded-md bg-(--primary-700) text-white text-[13px] font-medium hover:bg-(--primary-600) transition-colors cursor-pointer"
+      className="flex items-center gap-1.5 h-10 px-5 rounded-md bg-(--primary-700) text-white text-[14px] font-medium hover:bg-(--primary-600) transition-colors cursor-pointer"
     >
       {saved ? <Check className="w-4 h-4" /> : null}
       {saved ? "Saved!" : "Save Changes"}
@@ -129,10 +125,9 @@ function SaveButton({ onClick }: { onClick: () => void }) {
 // Tabs
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: "profile",       label: "Profile",       icon: User    },
-  { id: "account",       label: "Account & Security", icon: Shield },
-  { id: "notifications", label: "Notifications", icon: Bell    },
-  { id: "appearance",    label: "Appearance",    icon: Palette },
+  { id: "profile", label: "Profile", icon: User },
+  { id: "account", label: "Account & Security", icon: Shield },
+  { id: "notifications", label: "Notifications", icon: Bell },
 ];
 
 // Tab content
@@ -161,7 +156,7 @@ function ProfileTab() {
       <SectionCard title="Profile Photo">
         <div className="flex items-center gap-5">
           <div className="relative">
-            <div className="w-18 h-18 rounded-full bg-(--primary-100) text-(--primary-700) text-[22px] font-bold flex items-center justify-center shrink-0">
+            <div className="w-18 h-18 rounded-full bg-(--primary-100) text-(--primary-700) text-[22px] font-semibold flex items-center justify-center shrink-0">
               AA
             </div>
             <button
@@ -172,7 +167,7 @@ function ProfileTab() {
             </button>
           </div>
           <div>
-            <p className="text-[14px] font-medium text-(--text-title)">
+            <p className="text-[14px] font-semibold text-(--text-title)">
               Al Amin Hossain
             </p>
             <p className="text-[12px] text-(--gray-500) mt-0.5">
@@ -250,7 +245,7 @@ function ProfileTab() {
                 onChange={set("bio")}
                 rows={3}
                 placeholder="Tell us a little about yourself..."
-                className="w-full px-3 py-2.5 text-[13px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
+                className="w-full px-3 py-2.5 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
               />
             </Field>
           </div>
@@ -294,9 +289,24 @@ function AccountTab() {
   const [sessionAlerts, setSessionAlerts] = useState(true);
 
   const sessions = [
-    { device: "Chrome on Windows", location: "Dhaka, BD",  time: "Now",   current: true  },
-    { device: "Safari on iPhone",  location: "Dhaka, BD",  time: "3h ago", current: false },
-    { device: "Firefox on macOS",  location: "London, UK", time: "5d ago", current: false },
+    {
+      device: "Chrome on Windows",
+      location: "Dhaka, BD",
+      time: "Now",
+      current: true,
+    },
+    {
+      device: "Safari on iPhone",
+      location: "Dhaka, BD",
+      time: "3h ago",
+      current: false,
+    },
+    {
+      device: "Firefox on macOS",
+      location: "London, UK",
+      time: "5d ago",
+      current: false,
+    },
   ];
 
   return (
@@ -313,14 +323,18 @@ function AccountTab() {
               <input
                 type={showCurrent ? "text" : "password"}
                 placeholder="Enter current password"
-                className="w-full h-10 pl-9 pr-10 text-[13px] border border-(--gray-200) rounded-lg bg-white outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+                className="w-full h-11 pl-9 pr-10 text-[14px] border border-(--gray-200) rounded-lg bg-white outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
               />
               <button
                 type="button"
                 onClick={() => setShowCurrent((v) => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-(--gray-400) cursor-pointer"
               >
-                {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showCurrent ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
           </Field>
@@ -330,32 +344,40 @@ function AccountTab() {
               <input
                 type={showNew ? "text" : "password"}
                 placeholder="Min. 8 characters"
-                className="w-full h-10 pl-9 pr-10 text-[13px] border border-(--gray-200) rounded-lg bg-white outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+                className="w-full h-11 pl-9 pr-10 text-[14px] border border-(--gray-200) rounded-lg bg-white outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
               />
               <button
                 type="button"
                 onClick={() => setShowNew((v) => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-(--gray-400) cursor-pointer"
               >
-                {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showNew ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
           </Field>
-          <div className="sm:col-span-2 sm:max-w-sm">
+          <div>
             <Field label="Confirm password">
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--gray-400)" />
                 <input
                   type={showConfirm ? "text" : "password"}
                   placeholder="Repeat new password"
-                  className="w-full h-10 pl-9 pr-10 text-[13px] border border-(--gray-200) rounded-lg bg-white outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+                  className="w-full h-11 pl-9 pr-10 text-[14px] border border-(--gray-200) rounded-lg bg-white outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirm((v) => !v)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-(--gray-400) cursor-pointer"
                 >
-                  {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showConfirm ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </Field>
@@ -373,25 +395,33 @@ function AccountTab() {
       >
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[13px] font-medium text-(--text-title)">
+            <p className="text-[14px] font-semibold text-(--text-title)">
               Authenticator app
             </p>
             <p className="text-[12px] text-(--gray-400) mt-0.5">
-              {twoFactor ? "Enabled — using Google Authenticator" : "Not enabled"}
+              {twoFactor
+                ? "Enabled — using Google Authenticator"
+                : "Not enabled"}
             </p>
           </div>
-          <Toggle checked={twoFactor} onChange={() => setTwoFactor((v) => !v)} />
+          <Toggle
+            checked={twoFactor}
+            onChange={() => setTwoFactor((v) => !v)}
+          />
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[13px] font-medium text-(--text-title)">
+            <p className="text-[14px] font-semibold text-(--text-title)">
               Login alerts
             </p>
             <p className="text-[12px] text-(--gray-400) mt-0.5">
               Get an email when a new session is started
             </p>
           </div>
-          <Toggle checked={sessionAlerts} onChange={() => setSessionAlerts((v) => !v)} />
+          <Toggle
+            checked={sessionAlerts}
+            onChange={() => setSessionAlerts((v) => !v)}
+          />
         </div>
       </SectionCard>
 
@@ -408,7 +438,7 @@ function AccountTab() {
             >
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="text-[13px] font-medium text-(--text-title)">
+                  <p className="text-[14px] font-semibold text-(--text-title)">
                     {s.device}
                   </p>
                   {s.current && (
@@ -417,14 +447,14 @@ function AccountTab() {
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-(--gray-400) mt-0.5">
+                <p className="text-[12px] text-(--gray-400) mt-0.5">
                   {s.location} · {s.time}
                 </p>
               </div>
               {!s.current && (
                 <button
                   type="button"
-                  className="text-[12px] font-medium text-red-500 hover:underline cursor-pointer"
+                  className="text-[12px] md:text-[14px] lg:text-[14px] font-medium text-red-500 hover:underline cursor-pointer"
                 >
                   Revoke
                 </button>
@@ -441,21 +471,31 @@ function AccountTab() {
       >
         <div className="space-y-3">
           {[
-            { name: "Google",   connected: true,  color: "bg-rose-500"    },
-            { name: "GitHub",   connected: false, color: "bg-(--gray-800)" },
-            { name: "LinkedIn", connected: false, color: "bg-blue-600"    },
+            { name: "Google", connected: true, color: "bg-rose-500" },
+            { name: "GitHub", connected: false, color: "bg-(--gray-800)" },
+            { name: "LinkedIn", connected: false, color: "bg-blue-600" },
           ].map((acc) => (
             <div key={acc.name} className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg ${acc.color} flex items-center justify-center shrink-0`}>
-                  <span className="text-white text-[11px] font-bold">{acc.name[0]}</span>
+                <div
+                  className={`w-8 h-8 rounded-lg ${acc.color} flex items-center justify-center shrink-0`}
+                >
+                  <span className="text-white text-[12px] font-bold">
+                    {acc.name[0]}
+                  </span>
                 </div>
                 <div>
-                  <p className="text-[13px] font-medium text-(--text-title)">{acc.name}</p>
-                  <p className="text-[12px] text-(--gray-400)">{acc.connected ? "Connected" : "Not connected"}</p>
+                  <p className="text-[14px] font-semibold text-(--text-title)">
+                    {acc.name}
+                  </p>
+                  <p className="text-[12px] text-(--gray-400)">
+                    {acc.connected ? "Connected" : "Not connected"}
+                  </p>
                 </div>
               </div>
-              <button className={`text-[13px] font-medium cursor-pointer transition-colors ${acc.connected ? "text-red-500 hover:underline" : "text-(--primary-600) hover:underline"}`}>
+              <button
+                className={`text-[12px] md:text-[14px] lg:text-[14px] font-medium cursor-pointer transition-colors ${acc.connected ? "text-red-500 hover:underline" : "text-(--primary-600) hover:underline"}`}
+              >
                 {acc.connected ? "Disconnect" : "Connect"}
               </button>
             </div>
@@ -476,7 +516,7 @@ function AccountTab() {
           </div>
           <button
             type="button"
-            className="h-11 px-4 rounded-md border border-red-200 text-red-500 text-[14px] font-medium hover:bg-red-50 transition-colors cursor-pointer whitespace-nowrap"
+            className="h-11 px-4 rounded-md border border-red-200 text-red-500 text-[12px] md:text-[14px] lg:text-[14px] font-medium hover:bg-red-50 transition-colors cursor-pointer whitespace-nowrap"
           >
             Delete Account
           </button>
@@ -488,14 +528,14 @@ function AccountTab() {
 
 function NotificationsTab() {
   const [prefs, setPrefs] = useState({
-    newContent:     true,
-    replies:        true,
-    announcements:  false,
-    marketing:      false,
-    liveSession:    true,
-    reminders:      true,
-    emailDigest:    true,
-    pushNotifs:     false,
+    newContent: true,
+    replies: true,
+    announcements: false,
+    marketing: false,
+    liveSession: true,
+    reminders: true,
+    emailDigest: true,
+    pushNotifs: false,
   });
 
   const toggle = (k: keyof typeof prefs) => () =>
@@ -505,24 +545,56 @@ function NotificationsTab() {
     {
       title: "Course Activity",
       items: [
-        { key: "newContent"    as const, label: "New course content",   desc: "When new modules or lessons are added to your courses"  },
-        { key: "replies"       as const, label: "Discussion replies",    desc: "When someone replies to your threads or comments"       },
-        { key: "liveSession"   as const, label: "Live session alerts",   desc: "When a live session you're registered for is starting"  },
+        {
+          key: "newContent" as const,
+          label: "New course content",
+          desc: "When new modules or lessons are added to your courses",
+        },
+        {
+          key: "replies" as const,
+          label: "Discussion replies",
+          desc: "When someone replies to your threads or comments",
+        },
+        {
+          key: "liveSession" as const,
+          label: "Live session alerts",
+          desc: "When a live session you're registered for is starting",
+        },
       ],
     },
     {
       title: "Platform",
       items: [
-        { key: "announcements" as const, label: "Announcements",        desc: "Important platform and course announcements"            },
-        { key: "reminders"     as const, label: "Study reminders",      desc: "Daily reminders to keep your learning streak going"     },
-        { key: "emailDigest"   as const, label: "Email digest",         desc: "Weekly summary of your learning activity"               },
+        {
+          key: "announcements" as const,
+          label: "Announcements",
+          desc: "Important platform and course announcements",
+        },
+        {
+          key: "reminders" as const,
+          label: "Study reminders",
+          desc: "Daily reminders to keep your learning streak going",
+        },
+        {
+          key: "emailDigest" as const,
+          label: "Email digest",
+          desc: "Weekly summary of your learning activity",
+        },
       ],
     },
     {
       title: "Marketing",
       items: [
-        { key: "marketing"     as const, label: "Promotions & offers",  desc: "Discounts, new courses, and special recommendations"    },
-        { key: "pushNotifs"    as const, label: "Push notifications",   desc: "Browser push notifications for real-time alerts"        },
+        {
+          key: "marketing" as const,
+          label: "Promotions & offers",
+          desc: "Discounts, new courses, and special recommendations",
+        },
+        {
+          key: "pushNotifs" as const,
+          label: "Push notifications",
+          desc: "Browser push notifications for real-time alerts",
+        },
       ],
     },
   ];
@@ -535,8 +607,12 @@ function NotificationsTab() {
             {g.items.map(({ key, label, desc }) => (
               <div key={key} className="flex items-center justify-between">
                 <div>
-                  <p className="text-[13px] font-medium text-(--text-title)">{label}</p>
-                  <p className="text-[12px] text-(--gray-400)">{desc}</p>
+                  <p className="text-[14px] font-semibold text-(--text-title)">
+                    {label}
+                  </p>
+                  <p className="text-[12px] font-normal text-(--gray-500)">
+                    {desc}
+                  </p>
                 </div>
                 <Toggle checked={prefs[key]} onChange={toggle(key)} />
               </div>
@@ -544,72 +620,7 @@ function NotificationsTab() {
           </div>
         </SectionCard>
       ))}
-      <div className="flex justify-end">
-        <SaveButton onClick={() => {}} />
-      </div>
-    </div>
-  );
-}
-
-function AppearanceTab() {
-  const [theme, setTheme] = useState<"light" | "dark" | "system">("light");
-  const [language, setLanguage] = useState("English");
-  const [fontSize, setFontSize] = useState<"sm" | "md" | "lg">("md");
-
-  const themes = [
-    { key: "light"  as const, label: "Light",  Icon: Sun     },
-    { key: "dark"   as const, label: "Dark",   Icon: Moon    },
-    { key: "system" as const, label: "System", Icon: Monitor },
-  ];
-
-  return (
-    <div className="space-y-4">
-      <SectionCard title="Theme" description="Choose how CareerCollege looks to you.">
-        <div className="grid grid-cols-3 gap-3">
-          {themes.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setTheme(t.key)}
-              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer ${theme === t.key ? "border-(--primary-600) bg-(--primary-50)" : "border-(--gray-200) hover:border-(--primary-200)"}`}
-            >
-              <t.Icon className={`w-6 h-6 ${theme === t.key ? "text-(--primary-600)" : "text-(--gray-400)"}`} />
-              <span className={`text-[13px] font-medium ${theme === t.key ? "text-(--primary-600)" : "text-(--gray-500)"}`}>{t.label}</span>
-            </button>
-          ))}
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Language" description="Select your preferred display language.">
-        <Field label="Language">
-          <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            className="w-full h-10 px-3 rounded-lg border border-(--gray-200) text-[14px] text-(--text-title) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow bg-white cursor-pointer"
-          >
-            {["English", "Bengali", "Spanish", "French", "Arabic", "German", "Japanese"].map((l) => (
-              <option key={l}>{l}</option>
-            ))}
-          </select>
-        </Field>
-      </SectionCard>
-
-      <SectionCard title="Font Size" description="Adjust the text size for better readability.">
-        <div className="flex gap-3">
-          {([["sm", "Small"], ["md", "Default"], ["lg", "Large"]] as const).map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setFontSize(key)}
-              className={`flex-1 h-11 rounded-xl border-2 text-[14px] font-medium transition-all cursor-pointer ${fontSize === key ? "border-(--primary-600) bg-(--primary-50) text-(--primary-600)" : "border-(--gray-200) text-(--gray-500) hover:border-(--primary-200)"}`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </SectionCard>
-
-      <div className="flex justify-end">
+      <div className="flex justify-start">
         <SaveButton onClick={() => {}} />
       </div>
     </div>
@@ -622,10 +633,9 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
 
   const ActiveContent = {
-    profile:       ProfileTab,
-    account:       AccountTab,
+    profile: ProfileTab,
+    account: AccountTab,
     notifications: NotificationsTab,
-    appearance:    AppearanceTab,
   }[activeTab];
 
   return (
@@ -649,7 +659,9 @@ export default function SettingsPage() {
                       : "text-(--gray-500) hover:text-(--text-title)"
                   }`}
                 >
-                  <Icon className={`w-4 h-4 shrink-0 ${active ? "text-white" : "text-(--gray-400)"}`} />
+                  <Icon
+                    className={`w-4 h-4 shrink-0 ${active ? "text-white" : "text-(--gray-400)"}`}
+                  />
                   {label}
                 </button>
               </React.Fragment>
