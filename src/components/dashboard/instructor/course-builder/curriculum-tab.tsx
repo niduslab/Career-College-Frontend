@@ -248,7 +248,11 @@ function SortableModule({
 
 // Curriculum Tab
 
-export default function CurriculumTab({ onContinue }: { onContinue?: () => void }) {
+export default function CurriculumTab({
+  onContinue,
+}: {
+  onContinue?: () => void;
+}) {
   const [modules, setModules] = useState<Module[]>(SEED_MODULES);
 
   const [moduleModal, setModuleModal] = useState<{
@@ -267,7 +271,7 @@ export default function CurriculumTab({ onContinue }: { onContinue?: () => void 
   const moduleSensors = useSensors(useSensor(PointerSensor));
 
   const totalVideos = modules.reduce(
-    (s, m) => s + m.lessons.filter((l) => l.type === "Video").length,
+    (s, m) => s + m.lessons.filter((l) => l.type === "Lecture").length,
     0,
   );
 
@@ -441,10 +445,13 @@ export default function CurriculumTab({ onContinue }: { onContinue?: () => void 
         <div className="w-full xl:w-82.5 shrink-0 space-y-5">
           {/* Footer buttons — shown above AI panel on mobile/md, hidden on lg (rendered below instead) */}
           <div className="flex justify-start gap-3 xl:hidden">
-            <button className="px-5 h-12 text-[14px] cursor-pointer font-normal border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
+            <button className="px-5 h-11 text-[14px] cursor-pointer font-normal border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
               Save Draft
             </button>
-            <button onClick={onContinue} className="px-5 h-12 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors flex items-center gap-2">
+            <button
+              onClick={onContinue}
+              className="px-5 h-11 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors flex items-center gap-2"
+            >
               Continue
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -513,10 +520,13 @@ export default function CurriculumTab({ onContinue }: { onContinue?: () => void 
 
       {/* Footer buttons — only on lg and above */}
       <div className="hidden xl:flex justify-start gap-3">
-        <button className="px-5 h-12 text-[14px] cursor-pointer font-normal border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
+        <button className="px-5 h-11 text-[14px] cursor-pointer font-normal border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
           Save Draft
         </button>
-        <button onClick={onContinue} className="px-5 h-12 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors flex items-center gap-2">
+        <button
+          onClick={onContinue}
+          className="px-5 h-11 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors flex items-center gap-2"
+        >
           Continue
           <ChevronRight className="w-4 h-4" />
         </button>

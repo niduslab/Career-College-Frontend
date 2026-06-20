@@ -114,14 +114,14 @@ export default function CourseBuilderPage() {
             modules: SEED_MODULES.map((m) => ({
               title: m.title,
               lessons: m.lessons.length,
-              videos: m.lessons.filter((l) => l.type === "Video").length,
+              videos: m.lessons.filter((l) => l.type === "Lecture").length,
             })),
             totalLessons: SEED_MODULES.reduce(
               (s, m) => s + m.lessons.length,
               0,
             ),
             totalVideos: SEED_MODULES.reduce(
-              (s, m) => s + m.lessons.filter((l) => l.type === "Video").length,
+              (s, m) => s + m.lessons.filter((l) => l.type === "Lecture").length,
               0,
             ),
             price: "149",

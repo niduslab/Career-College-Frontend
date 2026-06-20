@@ -1,10 +1,9 @@
 import {
-  Video,
+  BookOpen,
   FileQuestion,
   Code2,
   ClipboardList,
   Settings,
-  BookOpen,
   DollarSign,
   Rocket,
 } from "lucide-react";
@@ -29,7 +28,7 @@ export const LANGUAGES = ["English", "Spanish", "French", "German", "Arabic"];
 export const VIDEO_TYPES = ["Free Preview", "Paid"];
 
 export const LESSON_TYPES: { key: LessonType; icon: React.ElementType }[] = [
-  { key: "Video", icon: Video },
+  { key: "Lecture", icon: BookOpen },
   { key: "Quiz", icon: FileQuestion },
   { key: "Coding Exercise", icon: Code2 },
   { key: "Assignment", icon: ClipboardList },
@@ -44,7 +43,7 @@ export const SEED_MODULES: Module[] = [
     lessons: [
       {
         id: "l1",
-        type: "Video",
+        type: "Lecture",
         title: "Introduction to Figma Essentials training course",
         videoType: "Free Preview",
         duration: "2.34",
@@ -53,7 +52,7 @@ export const SEED_MODULES: Module[] = [
       },
       {
         id: "l2",
-        type: "Video",
+        type: "Lecture",
         title: "Getting started with Figma training",
         videoType: "Free Preview",
         duration: "5.34",
@@ -62,7 +61,7 @@ export const SEED_MODULES: Module[] = [
       },
       {
         id: "l3",
-        type: "Video",
+        type: "Lecture",
         title: "What is Figma for & does it do the coding?",
         videoType: "Paid",
         duration: "8.20",
@@ -71,7 +70,7 @@ export const SEED_MODULES: Module[] = [
       },
       {
         id: "l4",
-        type: "Video",
+        type: "Lecture",
         title: "What we are making in this Figma course",
         videoType: "Paid",
         duration: "3.10",
@@ -88,7 +87,7 @@ export const SEED_MODULES: Module[] = [
     lessons: [
       {
         id: "l5",
-        type: "Video",
+        type: "Lecture",
         title: "Wireframe basics",
         videoType: "Paid",
         duration: "4.00",
@@ -97,7 +96,7 @@ export const SEED_MODULES: Module[] = [
       },
       {
         id: "l6",
-        type: "Video",
+        type: "Lecture",
         title: "Lo-fi layout techniques",
         videoType: "Paid",
         duration: "6.15",
@@ -106,7 +105,7 @@ export const SEED_MODULES: Module[] = [
       },
       {
         id: "l7",
-        type: "Video",
+        type: "Lecture",
         title: "User flow mapping",
         videoType: "Paid",
         duration: "5.45",
@@ -123,7 +122,7 @@ export const SEED_MODULES: Module[] = [
     lessons: [
       {
         id: "l8",
-        type: "Video",
+        type: "Lecture",
         title: "Design tokens overview",
         videoType: "Paid",
         duration: "7.00",

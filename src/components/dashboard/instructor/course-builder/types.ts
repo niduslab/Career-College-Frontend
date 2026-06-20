@@ -1,6 +1,7 @@
 export type Step = "Setup" | "Curriculum" | "Pricing" | "Review";
 
-export type LessonType = "Video" | "Quiz" | "Coding Exercise" | "Assignment";
+export type LessonType = "Lecture" | "Quiz" | "Coding Exercise" | "Assignment";
+export type LectureType = "Video" | "Article";
 
 export interface Lesson {
   id: string;
