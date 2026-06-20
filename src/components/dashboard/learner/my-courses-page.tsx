@@ -398,7 +398,7 @@ export default function MyCoursesPage() {
                 setSearch(e.target.value);
                 resetPage();
               }}
-              className="w-full  h-12 pl-9 pr-4 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-500) focus:outline-none focus:border-(--primary-400)"
+              className="w-full  h-12 pl-9 pr-4 text-[12px] md:text-[14px] lg:text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-500) focus:outline-none focus:border-(--primary-400)"
             />
           </div>
           {/* Filter button + dropdown */}
@@ -432,12 +432,13 @@ export default function MyCoursesPage() {
                 />
 
                 {/* Mobile centered modal / Desktop dropdown */}
-                <div className="
+                <div
+                  className="
                   fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[calc(100vw-32px)] max-w-sm rounded-2xl
                   sm:absolute sm:top-[calc(100%+8px)] sm:left-auto sm:right-0 sm:translate-x-0 sm:translate-y-0 sm:w-72
                   bg-white border border-(--gray-200) shadow-xl overflow-hidden
-                ">
-
+                "
+                >
                   {/* Header */}
                   <div className="flex items-center justify-between px-4 py-3 border-b border-(--gray-100)">
                     <div className="flex items-center gap-2">
@@ -576,6 +577,7 @@ function GridCard({ course }: { course: (typeof courses)[0] }) {
           src={course.image}
           alt={course.title}
           fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover group-hover:scale-105 transition-transform duration-500"
         />
         <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
@@ -658,6 +660,7 @@ function ListCard({ course }: { course: (typeof courses)[0] }) {
           src={course.image}
           alt={course.title}
           fill
+          sizes="64px"
           className="object-cover group-hover:scale-105 transition-transform duration-500"
         />
       </div>

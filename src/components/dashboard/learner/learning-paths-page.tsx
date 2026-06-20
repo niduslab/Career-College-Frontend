@@ -13,6 +13,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import gsap from "gsap";
+import { useRouter } from "next/navigation";
 
 const skills = [
   "Python",
@@ -81,6 +82,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const PCT = 58;
 
 export default function LearningPathsPage() {
+  const router = useRouter();
   const heroRef = useRef<HTMLDivElement>(null);
   const circleRef = useRef<SVGCircleElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -155,7 +157,9 @@ export default function LearningPathsPage() {
             Your guided roadmap to becoming an AI/ML Engineer.
           </p>
         </div>
-        <button className="self-start flex items-center gap-2 border border-(--primary-200) bg-(--primary-50) hover:bg-(--primary-100) text-(--primary-700)  text-[14px] font-semibold px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap">
+        <button
+          onClick={() => router.push("/dashboard/learner/ai-assistant")}
+          className="self-start flex items-center cursor-pointer gap-2 border border-(--primary-200) bg-(--primary-50) hover:bg-(--primary-100) text-(--primary-700)  text-[14px] font-semibold px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap">
           <Sparkles className="w-4 h-4" />
           Adjust with AI
         </button>

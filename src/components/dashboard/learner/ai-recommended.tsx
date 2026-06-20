@@ -53,15 +53,15 @@ export default function AiRecommended() {
     <div ref={sectionRef}>
       <div className="flex items-start justify-between mb-5">
         <div>
-          <h2 className="text-[18px] lg:text-[20px]  font-semibold text-(--text-title) flex items-center gap-2">
+          <h2 className="text-[14px] md:text-[20px] lg:text-[20px]  font-semibold text-(--text-title) flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-(--primary-700)" />
             AI Recommended for You
           </h2>
-          <p className="text-[12px] lg:text-[14px] text-(--gray-500) mt-0.5">
+          <p className="text-[12px] md:text-[14px] lg:text-[14px] text-(--gray-500) mt-0.5">
             Personalized from your progress, goals &amp; skill gaps
           </p>
         </div>
-        <button className="flex items-center gap-1.5  text-[12px] truncate lg:text-[14px] font-semibold text-(--text-title) border border-(--gray-200) px-4 py-2 rounded-lg hover:bg-(--gray-50) transition-colors">
+        <button className="flex items-center gap-1.5  text-[12px] truncate md:text-[14px] lg:text-[14px] font-semibold text-(--text-title) border border-(--gray-200) px-4 py-2 rounded-lg hover:bg-(--gray-50) transition-colors">
           Explore catalog
           <ArrowRight className="w-4 h-4" />
         </button>
@@ -79,6 +79,7 @@ export default function AiRecommended() {
                 src={course.image}
                 alt={course.title}
                 fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
               {/* dark gradient overlay for badge readability */}
