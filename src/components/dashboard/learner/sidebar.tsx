@@ -187,7 +187,7 @@ export default function LearnerSidebar() {
               <p className="text-[12px] font-semibold text-(--gray-400) tracking-[0.08em] uppercase px-3 mb-1">
                 {section.label}
               </p>
-              <ul className="space-y-0.5">
+              <ul className="space-y-1.5">
                 {section.items.map(({ icon: Icon, label, href }) => {
                   const active = pathname === href;
                   return (
@@ -198,7 +198,7 @@ export default function LearnerSidebar() {
                         className={`flex items-center gap-3 h-9 px-3 rounded-lg text-[14px] transition-colors ${
                           active
                             ? "bg-(--primary-600) font-medium text-white hover:bg-(--primary-700)"
-                            : "text-(--gray-600) font-normal hover:bg-(--gray-100) hover:text-(--text-title)"
+                            : "text-(--gray-500) font-normal hover:bg-(--gray-100) hover:text-(--text-title)"
                         }`}
                       >
                         <Icon

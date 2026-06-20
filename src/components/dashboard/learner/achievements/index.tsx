@@ -324,6 +324,7 @@ function Leaderboard({
                     src={entry.avatar}
                     alt={entry.name}
                     fill
+                    sizes="40px"
                     className="object-cover"
                   />
                 </div>

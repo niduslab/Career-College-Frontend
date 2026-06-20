@@ -12,6 +12,7 @@ import {
   Search,
 } from "lucide-react";
 import gsap from "gsap";
+import { useRouter } from "next/navigation";
 import { Pagination } from "@/components/common/pagination";
 
 import img1 from "@/assets/images/popular-courses/image1.webp";
@@ -249,6 +250,7 @@ function CourseCard({ course }: { course: Course }) {
           src={course.image}
           alt={course.title}
           fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover transition-transform duration-300 hover:scale-105"
         />
         {/* Badge */}
@@ -341,6 +343,7 @@ function CourseCard({ course }: { course: Course }) {
 }
 
 export default function CourseCatalogPage() {
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState("All");
   const [sortOpen, setSortOpen] = useState(false);
   const [sortLabel, setSortLabel] = useState("Most popular");
@@ -424,7 +427,10 @@ export default function CourseCatalogPage() {
             </p>
           </div>
         </div>
-        <button className="flex items-center h-12 gap-2 px-5 py-2.5 rounded-lg bg-(--primary-600) hover:bg-(--primary-700) text-white text-[12px] md:text-[14px] lg:text-[14px] font-semibold transition-colors cursor-pointer shrink-0 whitespace-nowrap">
+        <button
+          onClick={() => router.push("/dashboard/learner/ai-assistant")}
+          className="flex items-center h-12 gap-2 px-5 py-2.5 rounded-lg bg-(--primary-600) hover:bg-(--primary-700) text-white text-[12px] md:text-[14px] lg:text-[14px] font-semibold transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+        >
           <Sparkles className="w-4 h-4" />
           Get AI recommendation
         </button>

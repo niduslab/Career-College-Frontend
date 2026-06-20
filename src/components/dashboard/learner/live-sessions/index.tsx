@@ -423,7 +423,7 @@ export default function LiveSessionsPage() {
       </div>
 
       {/* Stats row */}
-      <div ref={statsRef} className="grid grid-cols-3 gap-4">
+      {/* <div ref={statsRef} className="grid grid-cols-3 gap-4">
         {stats.map((s) => {
           const Icon = s.icon;
           return (
@@ -453,7 +453,7 @@ export default function LiveSessionsPage() {
             </div>
           );
         })}
-      </div>
+      </div> */}
 
       {/* Filter row */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

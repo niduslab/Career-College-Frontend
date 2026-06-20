@@ -155,7 +155,7 @@ export default function CoursePlayerPage() {
               <span className="hidden sm:inline">Take Quiz</span>
             </button>
             <button
-              onClick={() => setAiOpen((v) => !v)}
+              onClick={() => router.push("/dashboard/learner/ai-assistant")}
               className="flex cursor-pointer items-center gap-1.5 text-[14px] h-10 font-medium text-white bg-(--primary-600) hover:bg-(--primary-700) px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
             >
               <Sparkles className="w-4 h-4" />

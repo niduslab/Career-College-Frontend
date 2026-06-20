@@ -100,7 +100,7 @@ const skills = [
     label: "Machine Learning",
     pct: 82,
     status: "Strong",
-    statusColor: "text-(--success-500)",
+    statusColor: "text-(--primary-600)",
   },
   {
     label: "Data Visualization",
@@ -118,13 +118,13 @@ const skills = [
     label: "MLOps / Deployment",
     pct: 34,
     status: "Needs work",
-    statusColor: "text-(--warning-500)",
+    statusColor: "text-(--primary-600)",
   },
   {
     label: "Statistics",
     pct: 78,
     status: "Strong",
-    statusColor: "text-(--success-500)",
+    statusColor: "text-(--primary-600)",
   },
 ];
 
@@ -148,19 +148,19 @@ const XP_MAX = 10000;
 const PCT = Math.round((XP / XP_MAX) * 100);
 
 function barColor(status: string) {
-  if (status === "Strong") return "var(--success-500)";
-  if (status === "Needs work") return "var(--warning-500)";
+  if (status === "Strong") return "var(--primary-600)";
+  if (status === "Needs work") return "var(--primary-600)";
   return "var(--primary-600)";
 }
 
-// ── Component ────────────────────────────────────────────────────────────────
+// Component
 
 export default function ProgressSkill() {
-  const progressRef    = useRef<HTMLDivElement>(null);
-  const skillRef       = useRef<HTMLDivElement>(null);
-  const circleRef      = useRef<SVGCircleElement>(null);
-  const xpBarRef       = useRef<HTMLDivElement>(null);
-  const readinessRef   = useRef<SVGCircleElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const skillRef = useRef<HTMLDivElement>(null);
+  const circleRef = useRef<SVGCircleElement>(null);
+  const xpBarRef = useRef<HTMLDivElement>(null);
+  const readinessRef = useRef<SVGCircleElement>(null);
   const [tooltip, setTooltip] = useState<string | null>(null);
 
   useEffect(() => {
@@ -186,7 +186,12 @@ export default function ProgressSkill() {
       gsap.fromTo(
         readinessRef.current,
         { strokeDashoffset: circ },
-        { strokeDashoffset: circ * (1 - 0.66), duration: 1.6, ease: "power2.out", delay: 0.3 },
+        {
+          strokeDashoffset: circ * (1 - 0.66),
+          duration: 1.6,
+          ease: "power2.out",
+          delay: 0.3,
+        },
       );
     }
 
@@ -236,7 +241,7 @@ export default function ProgressSkill() {
 
   return (
     <div className="flex flex-col lg:flex-row gap-4">
-      {/* ══ Your Progress ══════════════════════════════════════════════════ */}
+      {/* Your Progress */}
       <div
         ref={progressRef}
         className="opacity-0 flex-1 bg-white rounded-2xl border border-(--gray-200) p-5 lg:p-6 flex flex-col gap-5"
@@ -325,7 +330,7 @@ export default function ProgressSkill() {
             </div>
 
             {/* 3 stat pills */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2">
               {[
                 {
                   icon: Trophy,
@@ -393,10 +398,7 @@ export default function ProgressSkill() {
                 key={d.day}
                 className="flex-1 flex flex-col items-center gap-1"
               >
-                <div
-                  className="w-full rounded-t-md overflow-hidden bg-(--gray-200)"
-                  style={{ height: 36 }}
-                >
+                <div className="w-full rounded-t-md overflow-hidden bg-(--gray-200) h-9">
                   <div
                     className="w-full rounded-t-md transition-all"
                     style={{
@@ -499,7 +501,7 @@ export default function ProgressSkill() {
             </p>
           </div>
           <span className="flex items-center gap-1 text-[12px] font-semibold text-(--primary-600) bg-(--primary-50) border border-(--primary-100) px-2.5 py-1 rounded-lg">
-            <Sparkles className="w-3.5 h-3.5" /> AI
+            <Sparkles className="w-4 h-4" /> AI
           </span>
         </div>
 
@@ -528,15 +530,15 @@ export default function ProgressSkill() {
                 strokeDashoffset={2 * Math.PI * 26}
               />
             </svg>
-            <span className="absolute text-[13px] font-extrabold text-(--text-title)">
+            <span className="absolute text-[14px] font-bold text-(--text-title)">
               66%
             </span>
           </div>
           <div>
-            <p className="text-[13px] font-bold text-(--text-title)">
+            <p className="text-[14px] font-semibold text-(--text-title)">
               Overall Readiness
             </p>
-            <p className="text-[11px] text-(--gray-500) mt-0.5">
+            <p className="text-[12px] text-(--gray-500) mt-0.5">
               You&apos;re 66% ready for AI/ML Engineer roles
             </p>
             <div className="flex items-center gap-1 mt-1.5">

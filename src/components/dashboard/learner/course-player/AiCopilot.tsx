@@ -1,6 +1,7 @@
 "use client";
 
 import { Maximize, Send, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { AI_SHORTCUTS } from "./data";
 import type { AiMessage } from "./types";
 
@@ -19,6 +20,7 @@ export default function AiCopilot({
   aiMessagesEndRef: React.RefObject<HTMLDivElement | null>;
   setAiMessages: React.Dispatch<React.SetStateAction<AiMessage[]>>;
 }) {
+  const router = useRouter();
   return (
     <>
       {/* Header */}
@@ -37,7 +39,10 @@ export default function AiCopilot({
             </p>
           </div>
         </div>
-        <button className="w-7 h-7 flex items-center justify-center cursor-pointer rounded-lg hover:bg-(--gray-100) transition-colors text-(--gray-400)">
+        <button
+          onClick={() => router.push("/dashboard/learner/ai-assistant")}
+          className="w-7 h-7 flex items-center justify-center cursor-pointer rounded-lg hover:bg-(--gray-100) transition-colors text-(--gray-400)"
+        >
           <Maximize className="w-4 h-4" />
         </button>
       </div>
