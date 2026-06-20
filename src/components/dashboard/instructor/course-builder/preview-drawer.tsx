@@ -35,7 +35,7 @@ export default function PreviewDrawer({
 }: PreviewDrawerProps) {
   const totalLessons = modules.reduce((s, m) => s + m.lessons.length, 0);
   const totalVideos  = modules.reduce(
-    (s, m) => s + m.lessons.filter((l) => l.type === "Video").length,
+    (s, m) => s + m.lessons.filter((l) => l.type === "Lecture").length,
     0,
   );
   const totalDuration = modules.reduce(
@@ -168,7 +168,7 @@ export default function PreviewDrawer({
             ) : (
               <div className="space-y-2">
                 {modules.map((mod, i) => {
-                  const videos = mod.lessons.filter((l) => l.type === "Video").length;
+                  const videos = mod.lessons.filter((l) => l.type === "Lecture").length;
                   return (
                     <div
                       key={mod.id}
