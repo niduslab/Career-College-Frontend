@@ -389,11 +389,15 @@ export default function CourseCatalogPage() {
   useEffect(() => {
     if (!gridRef.current) return;
     const cards = Array.from(gridRef.current.querySelectorAll(".course-card"));
-    gsap.fromTo(
-      cards,
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.35, stagger: 0.07, ease: "power3.out" },
-    );
+    gsap.killTweensOf(cards);
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.35, stagger: 0.07, ease: "power3.out" },
+      );
+    }, gridRef);
+    return () => ctx.revert();
   }, [activeCategory, search, currentPage]);
 
   return (

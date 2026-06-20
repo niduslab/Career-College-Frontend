@@ -328,13 +328,16 @@ export default function MyCoursesPage() {
 
   useEffect(() => {
     if (!gridRef.current) return;
-    const cards = gridRef.current.querySelectorAll(".course-card");
+    const cards = Array.from(gridRef.current.querySelectorAll(".course-card"));
     gsap.killTweensOf(cards);
-    gsap.fromTo(
-      cards,
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.4, stagger: 0.07, ease: "power3.out" },
-    );
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.4, stagger: 0.07, ease: "power3.out" },
+      );
+    }, gridRef);
+    return () => ctx.revert();
   }, [activeTab, search, view, selectedLevels, selectedCategories, safePage]);
 
   return (
