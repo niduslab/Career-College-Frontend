@@ -170,7 +170,7 @@ export default function PartnershipRevenueChart() {
                 x={PAD.l - 8}
                 y={y + 4}
                 textAnchor="end"
-                fontSize="10"
+                className="chart-axis-text"
                 fill="#9ca3af"
                 fontFamily="inherit"
               >
@@ -210,7 +210,7 @@ export default function PartnershipRevenueChart() {
             x={PAD.l + (i / (months.length - 1)) * chartW}
             y={H - 6}
             textAnchor="middle"
-            fontSize="10"
+            className="chart-axis-text"
             fill="#9ca3af"
             fontFamily="inherit"
           >
@@ -269,6 +269,8 @@ export default function PartnershipRevenueChart() {
       <style>{`
         @keyframes lineDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
         @keyframes areaFade { from { opacity: 0; } to { opacity: 1; } }
+        .chart-axis-text { font-size: 12px; }
+        @media (min-width: 1024px) { .chart-axis-text { font-size: 10px; } }
       `}</style>
     </div>
   );
