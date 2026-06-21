@@ -1,16 +1,13 @@
 import RevenuePage from "@/components/dashboard/instructor/revenue-page";
+import PageHeader from "@/components/dashboard/common/page-header";
 
 export default function Page() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-[20px] lg:text-[24px] font-semibold text-(--text-title)">
-          Revenue
-        </h1>
-        <p className="text-[14px] text-(--gray-500) mt-0.5">
-          Track your earnings, payouts and platform fees.
-        </p>
-      </div>
+      <PageHeader
+        title="Revenue"
+        subtitle="Track your earnings, payouts and platform fees."
+      />
       <RevenuePage />
     </div>
   );
