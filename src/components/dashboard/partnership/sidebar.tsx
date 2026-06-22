@@ -17,6 +17,10 @@ import {
   BadgePercent,
   Settings,
   Bell,
+  GraduationCap,
+  BookOpen,
+  UsersRound,
+  Video,
 } from "lucide-react";
 
 const navSections = [
@@ -29,22 +33,48 @@ const navSections = [
         href: "/dashboard/partnership",
       },
       {
-        icon: Handshake,
-        label: "Partnerships",
-        href: "/dashboard/partnership/partnerships",
+        icon: GraduationCap,
+        label: "Instructors",
+        href: "/dashboard/partnership/instructors",
       },
       {
-        icon: Building2,
-        label: "Organizations",
-        href: "/dashboard/partnership/organizations",
+        icon: BookOpen,
+        label: "Courses",
+        href: "/dashboard/partnership/courses",
       },
       {
-        icon: FileText,
-        label: "Proposals",
-        href: "/dashboard/partnership/proposals",
+        icon: UsersRound,
+        label: "Cohorts",
+        href: "/dashboard/partnership/cohorts",
+      },
+      {
+        icon: Video,
+        label: "Webinars",
+        href: "/dashboard/partnership/webinars",
       },
     ],
   },
+
+  // {
+  //   label: "Partnerships",
+  //   items: [
+  //     {
+  //       icon: Handshake,
+  //       label: "Partnerships",
+  //       href: "/dashboard/partnership/partnerships",
+  //     },
+  //     {
+  //       icon: Building2,
+  //       label: "Organizations",
+  //       href: "/dashboard/partnership/organizations",
+  //     },
+  //     {
+  //       icon: FileText,
+  //       label: "Proposals",
+  //       href: "/dashboard/partnership/proposals",
+  //     },
+  //   ],
+  // },
   {
     label: "Insights",
     items: [
@@ -104,7 +134,8 @@ export default function PartnershipSidebar() {
   useEffect(() => {
     const handler = () => setOpen((v) => !v);
     window.addEventListener("togglePartnershipSidebar", handler);
-    return () => window.removeEventListener("togglePartnershipSidebar", handler);
+    return () =>
+      window.removeEventListener("togglePartnershipSidebar", handler);
   }, []);
 
   const close = () => setOpen(false);
