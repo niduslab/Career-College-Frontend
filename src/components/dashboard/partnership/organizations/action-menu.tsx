@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MoreHorizontal, MessageSquareMore, FileText, Eye } from "lucide-react";
+import { MoreHorizontal, Pencil, Eye, Trash2, MessageSquareMore } from "lucide-react";
 
 interface ActionMenuProps {
   open: boolean;
@@ -10,11 +10,11 @@ interface ActionMenuProps {
   setRef: (el: HTMLDivElement | null) => void;
 }
 
-export default function ActionMenu({ open, onToggle, setRef }: ActionMenuProps) {
+export default function OrgActionMenu({ open, onToggle, setRef }: ActionMenuProps) {
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const [coords, setCoords] = useState({ top: 0, right: 0 });
 
-  const MENU_HEIGHT = 114; // 3 items × ~38px
+  const MENU_HEIGHT = 152; // 4 items × ~38px
 
   useLayoutEffect(() => {
     if (!open || !btnRef.current) return;
@@ -27,9 +27,10 @@ export default function ActionMenu({ open, onToggle, setRef }: ActionMenuProps) 
   }, [open]);
 
   const items = [
+    { icon: Eye, label: "View Details" },
+    { icon: Pencil, label: "Edit" },
     { icon: MessageSquareMore, label: "Message" },
-    { icon: FileText, label: "Proposal" },
-    { icon: Eye, label: "View Profile" },
+    { icon: Trash2, label: "Remove", danger: true },
   ];
 
   return (
@@ -46,19 +47,18 @@ export default function ActionMenu({ open, onToggle, setRef }: ActionMenuProps) 
         createPortal(
           <div
             data-action-portal
-            style={{
-              position: "fixed",
-              top: coords.top,
-              right: coords.right,
-              zIndex: 9999,
-            }}
-            className="bg-white border border-(--gray-200) rounded-xl shadow-lg py-1 min-w-36"
+            style={{ position: "fixed", top: coords.top, right: coords.right, zIndex: 9999 }}
+            className="bg-white border border-(--gray-200) rounded-xl shadow-lg py-1 min-w-40"
           >
-            {items.map(({ icon: Icon, label }) => (
+            {items.map(({ icon: Icon, label, danger }) => (
               <button
                 key={label}
                 type="button"
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-(--gray-600) hover:bg-(--gray-50) hover:text-(--text-title) cursor-pointer transition-colors"
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-[13px] cursor-pointer transition-colors ${
+                  danger
+                    ? "text-red-500 hover:bg-red-50"
+                    : "text-(--gray-600) hover:bg-(--gray-50) hover:text-(--text-title)"
+                }`}
               >
                 <Icon className="w-4 h-4 shrink-0" />
                 {label}
