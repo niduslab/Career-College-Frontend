@@ -16,6 +16,8 @@ import { INSTRUCTORS, DEPARTMENTS, SPECIALIZATIONS, STATUSES } from "./data";
 import { InstructorStatus, Department, Specialization } from "./types";
 import InstructorStatusBadge from "./status-badge";
 import InstructorActionMenu from "./action-menu";
+import dynamic from "next/dynamic";
+const AddInstructorDrawer = dynamic(() => import("./add-drawer"), { ssr: false });
 
 const COLS = "grid-cols-[2fr_1fr_1fr_70px_80px_90px_40px]";
 
@@ -30,6 +32,7 @@ export default function InstructorsTable() {
   const [specOpen, setSpecOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const rowsRef = useRef<(HTMLDivElement | null)[]>([]);
   const menuRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
@@ -110,6 +113,7 @@ export default function InstructorsTable() {
           </button>
           <button
             type="button"
+            onClick={() => setDrawerOpen(true)}
             className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-(--primary-700) text-white text-[13px] font-medium hover:bg-(--primary-600) cursor-pointer transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -355,6 +359,7 @@ export default function InstructorsTable() {
           )}
         </div>
       </div>
+      <AddInstructorDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </div>
   );
 }
