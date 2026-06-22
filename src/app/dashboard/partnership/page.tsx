@@ -1,7 +1,4 @@
-import PartnershipStatsCards from "@/components/dashboard/partnership/stats-cards";
-import PartnershipRevenueChart from "@/components/dashboard/partnership/revenue-chart";
-import PartnershipActivityPanel from "@/components/dashboard/partnership/activity-panel";
-import PartnershipsTable from "@/components/dashboard/partnership/partnerships-table";
+import PartnershipDashboard from "@/components/dashboard/partnership/dashboard";
 import PageHeader from "@/components/dashboard/common/page-header";
 import { Plus } from "lucide-react";
 
@@ -19,17 +16,7 @@ export default function PartnershipDashboardPage() {
         }
       />
 
-      {/* Stats */}
-      <PartnershipStatsCards />
-
-      {/* Chart + Activity panel */}
-      <div className="flex flex-col lg:flex-row gap-4">
-        <PartnershipRevenueChart />
-        <PartnershipActivityPanel />
-      </div>
-
-      {/* Partnerships table */}
-      <PartnershipsTable />
+      <PartnershipDashboard />
     </div>
   );
 }
