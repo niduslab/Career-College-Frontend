@@ -18,7 +18,12 @@ export default function InstructorsPageContent() {
       gsap.fromTo(
         el,
         { width: "0%" },
-        { width: `${el.dataset.progress}%`, duration: 0.8, delay: 0.3 + i * 0.1, ease: "power3.out" },
+        {
+          width: `${el.dataset.progress}%`,
+          duration: 0.8,
+          delay: 0.3 + i * 0.1,
+          ease: "power3.out",
+        },
       );
     });
   }, []);
@@ -33,7 +38,6 @@ export default function InstructorsPageContent() {
 
       {/* Right sidebar */}
       <div className="w-full xl:w-60 2xl:w-72 shrink-0 space-y-4">
-
         {/* Department Breakdown */}
         <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-3">
           <p className="text-[12px] font-semibold tracking-widest text-(--gray-500) uppercase">
@@ -45,12 +49,18 @@ export default function InstructorsPageContent() {
               return (
                 <div key={dept.label} className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[12px] font-medium text-(--text-title) truncate">{dept.label}</span>
-                    <span className="text-[12px] text-(--gray-500) shrink-0 ml-2">{dept.count}</span>
+                    <span className="text-[12px] font-medium text-(--text-title) truncate">
+                      {dept.label}
+                    </span>
+                    <span className="text-[12px] text-(--gray-500) shrink-0 ml-2">
+                      {dept.count}
+                    </span>
                   </div>
                   <div className="h-1.5 bg-(--gray-100) rounded-full overflow-hidden">
                     <div
-                      ref={(el) => { barRef.current[i] = el; }}
+                      ref={(el) => {
+                        barRef.current[i] = el;
+                      }}
                       data-progress={pct}
                       className={`h-full rounded-full ${dept.color}`}
                       style={{ width: "0%" }}
@@ -90,8 +100,12 @@ export default function InstructorsPageContent() {
           <div className="space-y-2.5">
             {TIPS.map(({ color, text }) => (
               <div key={text} className="flex items-start gap-2">
-                <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${color.replace("text-", "bg-")}`} />
-                <p className="text-[12px] text-(--gray-500) leading-snug">{text}</p>
+                <div
+                  className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${color.replace("text-", "bg-")}`}
+                />
+                <p className="text-[12px] text-(--gray-500) leading-snug">
+                  {text}
+                </p>
               </div>
             ))}
           </div>

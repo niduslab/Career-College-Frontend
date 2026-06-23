@@ -266,7 +266,7 @@ export default function CohortsTable() {
                   >
                     {/* Cohort name + course thumbnail + dates */}
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0">
+                      <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0">
                         <Image
                           src={c.courseThumbnail}
                           alt={c.course}
@@ -280,6 +280,9 @@ export default function CohortsTable() {
                         <p className="text-[11px] text-(--gray-400) truncate">
                           {c.startDate} – {c.endDate}
                         </p>
+                        {/* <p className="text-[12px] text-(--gray-600) truncate">
+                          {c.department}
+                        </p> */}
                       </div>
                     </div>
 

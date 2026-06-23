@@ -14,7 +14,7 @@ export default function CohortStatusBadge({
 }) {
   return (
     <span
-      className={`inline-flex items-center justify-center text-[12px] w-20 font-semibold px-2.5 py-1 rounded-full border ${STYLES[status]}`}
+      className={`inline-flex items-center justify-center  text-[12px] w-20 font-semibold px-2.5 py-1 rounded-full border ${STYLES[status]}`}
     >
       {status}
     </span>

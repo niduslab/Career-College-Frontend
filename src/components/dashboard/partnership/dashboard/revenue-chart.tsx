@@ -99,7 +99,7 @@ export default function PartnershipRevenueChart() {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-(--gray-200) p-5 flex-1 relative">
+    <div className="bg-white rounded-xl border border-(--gray-200) p-5 flex-1 relative h-full">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-[16px] font-semibold text-(--text-title)">
           Revenue Growth

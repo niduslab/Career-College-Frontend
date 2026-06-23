@@ -5,10 +5,6 @@ import avatar3 from "@/assets/images/instructors/instructor3.webp";
 import avatar4 from "@/assets/images/instructors/instructor4.webp";
 import avatar5 from "@/assets/images/instructors/instructor5.webp";
 import avatar6 from "@/assets/images/instructors/instructor6.webp";
-import image1 from "@/assets/images/instructors/image1.webp";
-import image2 from "@/assets/images/instructors/image2.webp";
-import image3 from "@/assets/images/instructors/image3.webp";
-import image4 from "@/assets/images/instructors/image4.webp";
 import { Cohort, CohortDepartment, CohortMode, CohortStatus } from "./types";
 
 export const COHORTS: Cohort[] = [
@@ -16,7 +12,7 @@ export const COHORTS: Cohort[] = [
     id: "co1",
     name: "Web Dev Batch 2026-A",
     course: "Full-Stack Web Development Bootcamp",
-    courseThumbnail: image1,
+    courseThumbnail: avatar1,
     instructor: "Sarah Kim",
     instructorAvatar: avatar1,
     department: "Engineering",
@@ -31,7 +27,7 @@ export const COHORTS: Cohort[] = [
     id: "co2",
     name: "ML Cohort Spring 2026",
     course: "Machine Learning Fundamentals",
-    courseThumbnail: image2,
+    courseThumbnail: avatar2,
     instructor: "Dr. Alan Torres",
     instructorAvatar: avatar2,
     department: "Data Science",
@@ -46,7 +42,7 @@ export const COHORTS: Cohort[] = [
     id: "co3",
     name: "UX Design — June Intake",
     course: "UI/UX Design Mastery",
-    courseThumbnail: image3,
+    courseThumbnail: avatar3,
     instructor: "Mark Patel",
     instructorAvatar: avatar6,
     department: "Design",
@@ -61,7 +57,7 @@ export const COHORTS: Cohort[] = [
     id: "co4",
     name: "Finance Modelling — Q2",
     course: "Financial Modelling & Analysis",
-    courseThumbnail: image4,
+    courseThumbnail: avatar4,
     instructor: "Lena Müller",
     instructorAvatar: avatar4,
     department: "Business",
@@ -76,7 +72,7 @@ export const COHORTS: Cohort[] = [
     id: "co5",
     name: "DevOps Cloud — May Run",
     course: "DevOps & Cloud Infrastructure",
-    courseThumbnail: image1,
+    courseThumbnail: avatar1,
     instructor: "Nina Kovac",
     instructorAvatar: avatar5,
     department: "Engineering",
@@ -91,7 +87,7 @@ export const COHORTS: Cohort[] = [
     id: "co6",
     name: "Digital Marketing — Batch 3",
     course: "Digital Marketing Strategy 2026",
-    courseThumbnail: image2,
+    courseThumbnail: avatar2,
     instructor: "Carlos Mendez",
     instructorAvatar: avatar3,
     department: "Marketing",
@@ -106,7 +102,7 @@ export const COHORTS: Cohort[] = [
     id: "co7",
     name: "Clinical Data — Healthcare A",
     course: "Clinical Data Management",
-    courseThumbnail: image3,
+    courseThumbnail: avatar3,
     instructor: "Dr. Priya Singh",
     instructorAvatar: avatar5,
     department: "Healthcare",
@@ -121,7 +117,7 @@ export const COHORTS: Cohort[] = [
     id: "co8",
     name: "Product Mgmt — Cohort 1",
     course: "Product Management Essentials",
-    courseThumbnail: image4,
+    courseThumbnail: avatar4,
     instructor: "Wei Liang",
     instructorAvatar: avatar2,
     department: "Business",
@@ -135,29 +131,74 @@ export const COHORTS: Cohort[] = [
 ];
 
 export const STATS = [
-  { label: "Total Cohorts", value: "8", change: "+2 this month", icon: CalendarDays },
+  {
+    label: "Total Cohorts",
+    value: "8",
+    change: "+2 this month",
+    icon: CalendarDays,
+  },
   { label: "Active Cohorts", value: "3", change: "Running now", icon: Users },
-  { label: "Completion Rate", value: "94%", change: "+2% vs last batch", icon: CheckCircle2 },
-  { label: "Total Learners", value: "103", change: "+18 this month", icon: TrendingUp },
+  {
+    label: "Completion Rate",
+    value: "94%",
+    change: "+2% vs last batch",
+    icon: CheckCircle2,
+  },
+  {
+    label: "Total Learners",
+    value: "103",
+    change: "+18 this month",
+    icon: TrendingUp,
+  },
 ];
 
-export const DEPT_BREAKDOWN: { label: CohortDepartment; count: number; color: string }[] = [
+export const DEPT_BREAKDOWN: {
+  label: CohortDepartment;
+  count: number;
+  color: string;
+}[] = [
   { label: "Engineering", count: 2, color: "bg-(--primary-600)" },
-  { label: "Business", count: 2, color: "bg-blue-500" },
-  { label: "Data Science", count: 1, color: "bg-purple-500" },
-  { label: "Design", count: 1, color: "bg-pink-500" },
-  { label: "Marketing", count: 1, color: "bg-orange-400" },
-  { label: "Healthcare", count: 1, color: "bg-emerald-500" },
+  { label: "Business", count: 2, color: "bg-(--primary-600)" },
+  { label: "Data Science", count: 1, color: "bg-(--primary-600)" },
+  { label: "Design", count: 1, color: "bg-(--primary-600)" },
+  { label: "Marketing", count: 1, color: "bg-(--primary-600)" },
+  { label: "Healthcare", count: 1, color: "bg-(--primary-600)" },
 ];
 
 export const TIPS = [
-  { color: "text-blue-500", text: "Keep cohort sizes under 30 for better instructor engagement." },
-  { color: "text-green-500", text: "Send reminders 1 week before start to reduce no-shows." },
-  { color: "text-orange-500", text: "Hybrid cohorts see 15% higher completion than online-only." },
+  {
+    color: "text-blue-500",
+    text: "Keep cohort sizes under 30 for better instructor engagement.",
+  },
+  {
+    color: "text-green-500",
+    text: "Send reminders 1 week before start to reduce no-shows.",
+  },
+  {
+    color: "text-orange-500",
+    text: "Hybrid cohorts see 15% higher completion than online-only.",
+  },
 ];
 
 export const DEPARTMENTS: ("All" | CohortDepartment)[] = [
-  "All", "Engineering", "Design", "Business", "Data Science", "Marketing", "Healthcare",
+  "All",
+  "Engineering",
+  "Design",
+  "Business",
+  "Data Science",
+  "Marketing",
+  "Healthcare",
 ];
-export const MODES: ("All" | CohortMode)[] = ["All", "Online", "Hybrid", "In-Person"];
-export const STATUSES: ("All" | CohortStatus)[] = ["All", "Active", "Upcoming", "Completed", "Cancelled"];
+export const MODES: ("All" | CohortMode)[] = [
+  "All",
+  "Online",
+  "Hybrid",
+  "In-Person",
+];
+export const STATUSES: ("All" | CohortStatus)[] = [
+  "All",
+  "Active",
+  "Upcoming",
+  "Completed",
+  "Cancelled",
+];

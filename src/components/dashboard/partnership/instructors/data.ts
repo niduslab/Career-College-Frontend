@@ -166,24 +166,24 @@ export const DEPT_BREAKDOWN: {
   count: number;
   color: string;
 }[] = [
-  { label: "Engineering", count: 3, color: "bg-blue-500" },
-  { label: "Design", count: 1, color: "bg-purple-500" },
-  { label: "Business", count: 2, color: "bg-orange-400" },
-  { label: "Data Science", count: 1, color: "bg-green-500" },
-  { label: "Marketing", count: 1, color: "bg-pink-500" },
-  { label: "Healthcare", count: 2, color: "bg-teal-500" },
+  { label: "Engineering", count: 3, color: "bg-(--primary-600)" },
+  { label: "Design", count: 1, color: "bg-(--primary-600)" },
+  { label: "Business", count: 2, color: "bg-(--primary-600)" },
+  { label: "Data Science", count: 1, color: "bg-(--primary-600)" },
+  { label: "Marketing", count: 1, color: "bg-(--primary-600)" },
+  { label: "Healthcare", count: 2, color: "bg-(--primary-600)" },
 ];
 
 export const SPECIALIZATION_TAGS: { label: Specialization; color: string }[] = [
-  { label: "Frontend", color: "bg-blue-50 text-blue-600" },
-  { label: "Backend", color: "bg-indigo-50 text-indigo-600" },
-  { label: "UI/UX", color: "bg-purple-50 text-purple-600" },
-  { label: "Product", color: "bg-orange-50 text-orange-600" },
-  { label: "ML/AI", color: "bg-green-50 text-green-600" },
-  { label: "DevOps", color: "bg-gray-100 text-gray-600" },
-  { label: "Finance", color: "bg-yellow-50 text-yellow-700" },
-  { label: "Growth", color: "bg-pink-50 text-pink-600" },
-  { label: "Clinical", color: "bg-teal-50 text-teal-600" },
+  { label: "Frontend", color: "bg-(--gray-100) text-(--gray-600)" },
+  { label: "Backend", color: "bg-(--gray-100) text-(--gray-600)" },
+  { label: "UI/UX", color: "bg-(--gray-100) text-(--gray-600)" },
+  { label: "Product", color: "bg-(--gray-100) text-(--gray-600)" },
+  { label: "ML/AI", color: "bg-(--gray-100) text-(--gray-600)" },
+  { label: "DevOps", color: "bg-(--gray-100) text-(--gray-600)" },
+  { label: "Finance", color: "bg-(--gray-100) text-(--gray-600)" },
+  { label: "Growth", color: "bg-(--gray-100) text-(--gray-600)" },
+  { label: "Clinical", color: "bg-(--gray-100) text-(--gray-600)" },
 ];
 
 export const TIPS = [

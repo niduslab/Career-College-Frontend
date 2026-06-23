@@ -116,7 +116,7 @@ export default function CohortsPageContent() {
                       : "text-red-500";
               return (
                 <div key={st} className="flex items-center gap-3">
-                  <span className="text-[11px] text-(--gray-600) w-20 shrink-0 truncate">
+                  <span className="text-[12px] text-(--gray-500) w-20 shrink-0 truncate">
                     {st}
                   </span>
                   <div className="flex-1 h-2 bg-(--gray-100) rounded-full overflow-hidden">

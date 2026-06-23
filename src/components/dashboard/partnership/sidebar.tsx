@@ -100,21 +100,16 @@ const navSections = [
         label: "Revenue",
         href: "/dashboard/partnership/revenue",
       },
-      {
-        icon: BadgePercent,
-        label: "Commissions",
-        href: "/dashboard/partnership/commissions",
-      },
+      // {
+      //   icon: BadgePercent,
+      //   label: "Commissions",
+      //   href: "/dashboard/partnership/commissions",
+      // },
     ],
   },
   {
     label: "Account",
     items: [
-      {
-        icon: Bell,
-        label: "Notifications",
-        href: "/dashboard/partnership/notifications",
-      },
       {
         icon: Settings,
         label: "Settings",
