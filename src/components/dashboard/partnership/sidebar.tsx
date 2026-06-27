@@ -11,9 +11,7 @@ import {
   Users,
   MessageSquareMore,
   DollarSign,
-  BadgePercent,
   Settings,
-  Bell,
   GraduationCap,
   BookOpen,
   UsersRound,
@@ -80,11 +78,7 @@ const navSections = [
         label: "Analytics",
         href: "/dashboard/partnership/analytics",
       },
-      {
-        icon: Users,
-        label: "Contacts",
-        href: "/dashboard/partnership/contacts",
-      },
+
       {
         icon: MessageSquareMore,
         label: "Messages",
