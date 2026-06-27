@@ -8,7 +8,6 @@ import {
   BookOpenText,
   LayoutDashboard,
   ChartColumn,
-  Users,
   MessageSquareMore,
   DollarSign,
   Settings,
