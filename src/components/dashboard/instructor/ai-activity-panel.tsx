@@ -42,7 +42,7 @@ export default function AiActivityPanel() {
 
       {/* Recent Activity */}
       <div className="bg-white rounded-2xl border border-(--gray-200) p-6 flex-1">
-        <h3 className="text-[12px] font-normal text-(--text-title) mb-4">
+        <h3 className="text-[16px] font-semibold text-(--text-title) mb-4">
           Recent Activity
         </h3>
         <ul className="space-y-3">
@@ -51,7 +51,7 @@ export default function AiActivityPanel() {
               <span
                 className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${a.color}`}
               />
-              <span className="text-[12px] leading-snug text-(--text-paragraph)">
+              <span className="text-[12px] md:text-[14px] lg:text-[14px] leading-snug text-(--text-paragraph)">
                 {a.text[0]}
                 <span className="text-[#100D14] font-medium">{a.text[1]}</span>
               </span>

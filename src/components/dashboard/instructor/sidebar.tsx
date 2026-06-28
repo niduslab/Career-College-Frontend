@@ -123,7 +123,7 @@ export default function InstructorSidebar() {
         <div className="px-6 mb-8 flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-1 lg:gap-2.5"
+            className="flex items-center gap-1 lg:gap-0"
             onClick={close}
           >
             <div className="w-9 h-9   flex items-center justify-center">
