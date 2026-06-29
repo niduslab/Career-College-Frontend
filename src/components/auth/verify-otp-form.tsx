@@ -2,15 +2,25 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { verifyOtp, resendOtp, type OtpPurpose } from "@/lib/auth-api";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
 
 const OTP_LENGTH = 6;
 const RESEND_COUNTDOWN = 60;
 
 export function VerifyOtpForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email") ?? "";
+  const purpose = (searchParams.get("purpose") as OtpPurpose) ?? "registration";
+
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [countdown, setCountdown] = useState(RESEND_COUNTDOWN);
   const [resending, setResending] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -69,24 +79,66 @@ export function VerifyOtpForm() {
   };
 
   const handleResend = async () => {
+    if (!email) {
+      setError("Missing email address. Please sign up again.");
+      return;
+    }
     setResending(true);
-
-    await new Promise((r) => setTimeout(r, 800));
-    setResending(false);
-    setCountdown(RESEND_COUNTDOWN);
-    setOtp(Array(OTP_LENGTH).fill(""));
-    inputRefs.current[0]?.focus();
+    setError("");
+    try {
+      await resendOtp(email, purpose);
+      notify.success("A new code has been sent to your email.");
+      setCountdown(RESEND_COUNTDOWN);
+      setOtp(Array(OTP_LENGTH).fill(""));
+      inputRefs.current[0]?.focus();
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError
+          ? err.message
+          : "Couldn't resend the code. Please try again.",
+      );
+    } finally {
+      setResending(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = otp.join("");
     if (code.length < OTP_LENGTH) {
       setError("Please enter the complete 6-digit code.");
       return;
     }
-    console.log("OTP submitted:", code);
-    // TODO: navigate to reset-password
+    if (!email) {
+      setError("Missing email address. Please sign up again.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+    try {
+      const data = await verifyOtp(email, code, purpose);
+      if (purpose === "password_reset") {
+        // Carry the email + reset_token forward to the reset-password step.
+        const token = data.reset_token ?? "";
+        router.push(
+          `/reset-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`,
+        );
+      } else {
+        notify.success("Email verified. You can now log in.");
+        router.push("/login?verified=1");
+      }
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError
+          ? err.message
+          : "Verification failed. Please try again.",
+      );
+      setOtp(Array(OTP_LENGTH).fill(""));
+      inputRefs.current[0]?.focus();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -95,7 +147,13 @@ export function VerifyOtpForm() {
         Verify Your Email
       </h2>
       <p className="sg-p-default text-(--gray-600) mb-1">
-        We&apos;ve sent a 6-digit verification code to your email address.
+        We&apos;ve sent a 6-digit verification code to{" "}
+        {email ? (
+          <span className="font-semibold text-(--text-title)">{email}</span>
+        ) : (
+          "your email address"
+        )}
+        .
       </p>
       <p className="sg-p-default text-(--gray-600) mb-6">
         Enter the code below to continue.
@@ -161,15 +219,16 @@ export function VerifyOtpForm() {
 
         <Button
           type="submit"
-          className="h-12 w-full bg-(--primary-700) text-white font-semibold py-3 rounded-lg cursor-pointer transition-colors"
+          disabled={submitting}
+          className="h-12 w-full bg-(--primary-700) text-white font-semibold py-3 rounded-lg cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Verify Code
+          {submitting ? "Verifying…" : "Verify Code"}
         </Button>
       </form>
 
       <div className="mt-6 text-center">
         <Link
-          href="/forgot-password"
+          href={purpose === "password_reset" ? "/forgot-password" : "/signup"}
           className="inline-flex items-center gap-2 sg-p-default text-(--gray-500) hover:text-(--text-title) transition-colors"
         >
           <ChevronLeft size={16} />

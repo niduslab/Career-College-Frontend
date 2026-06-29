@@ -2,10 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Eye, EyeOff, ChevronLeft, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { resetPassword } from "@/lib/auth-api";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
 
 interface ResetPasswordFormData {
   password: string;
@@ -20,16 +24,21 @@ const PASSWORD_RULES = [
 ];
 
 export function ResetPasswordForm() {
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email") ?? "";
+  const token = searchParams.get("token") ?? "";
+
   const [formData, setFormData] = useState<ResetPasswordFormData>({
     password: "",
     confirm_password: "",
   });
   const [errors, setErrors] = useState<Partial<ResetPasswordFormData>>({});
+  const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Partial<ResetPasswordFormData> = {};
 
@@ -50,8 +59,40 @@ export function ResetPasswordForm() {
       return;
     }
 
-    console.log("Reset password:", formData.password);
-    setSubmitted(true);
+    if (!email || !token) {
+      notify.error(
+        "Your reset session is invalid or expired. Please restart the password reset.",
+      );
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await resetPassword({
+        email,
+        reset_token: token,
+        new_password: formData.password,
+        confirm_password: formData.confirm_password,
+      });
+      notify.success("Password reset successfully.");
+      setSubmitted(true);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        const fieldErrors: Partial<ResetPasswordFormData> = {};
+        if (err.fieldErrors.new_password) {
+          fieldErrors.password = err.fieldErrors.new_password;
+        }
+        if (err.fieldErrors.confirm_password) {
+          fieldErrors.confirm_password = err.fieldErrors.confirm_password;
+        }
+        if (Object.keys(fieldErrors).length > 0) setErrors(fieldErrors);
+        notify.error(err.message);
+      } else {
+        notify.error("Something went wrong. Please try again.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const updateField = (field: keyof ResetPasswordFormData, value: string) => {
@@ -191,9 +232,10 @@ export function ResetPasswordForm() {
 
         <Button
           type="submit"
-          className="h-12 w-full bg-(--primary-700) text-white font-semibold py-3 rounded-lg cursor-pointer transition-colors"
+          disabled={submitting}
+          className="h-12 w-full bg-(--primary-700) text-white font-semibold py-3 rounded-lg cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Reset Password
+          {submitting ? "Resetting…" : "Reset Password"}
         </Button>
       </form>
 

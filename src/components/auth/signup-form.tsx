@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { FaLinkedin } from "react-icons/fa6";
@@ -9,12 +10,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { SignUpFormData, UserType, InstitutionType } from "@/types/auth";
+import { register } from "@/lib/auth-api";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
 
-const INSTITUTION_TYPES = [
-  "University",
-  "College",
-  "Technical Institute",
-  "Online Academy",
+// Label shown to the user → value the backend expects (guide §5.3).
+const INSTITUTION_TYPES: { label: string; value: InstitutionType }[] = [
+  { label: "University", value: "university" },
+  { label: "College", value: "college" },
+  { label: "Training Center", value: "training_center" },
+  { label: "Other", value: "other" },
 ];
 
 interface SignUpFormProps {
@@ -22,6 +27,8 @@ interface SignUpFormProps {
 }
 
 export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
+  const router = useRouter();
+
   const [formData, setFormData] = useState<SignUpFormData>({
     email: "",
     full_name: "",
@@ -33,14 +40,19 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
   const [errors, setErrors] = useState<
     Partial<Record<keyof SignUpFormData, string>>
   >({});
+  const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showInstitutionDropdown, setShowInstitutionDropdown] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const selectedInstitutionLabel = INSTITUTION_TYPES.find(
+    (t) => t.value === formData.institution_type,
+  )?.label;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
+    // Client-side validation
     const newErrors: Partial<Record<keyof SignUpFormData, string>> = {};
 
     if (!formData.email) newErrors.email = "Email is required";
@@ -64,8 +76,26 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
       return;
     }
 
-    // Handle signup
-    console.log("Sign up data:", formData);
+    setSubmitting(true);
+    try {
+      await register(formData);
+      // Registration succeeded — backend emailed an OTP. Verify next.
+      notify.success("Account created. Check your email for the OTP.");
+      router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}`);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        // Map any field-level errors back onto the form inputs.
+        const fieldErrors = err.fieldErrors;
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors(fieldErrors as Partial<Record<keyof SignUpFormData, string>>);
+        }
+        notify.error(err.message);
+      } else {
+        notify.error("Something went wrong. Please try again.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const updateField = (field: keyof SignUpFormData, value: string) => {
@@ -74,8 +104,8 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
     if (field === "user_type") onUserTypeChange?.(value as UserType);
   };
 
-  const handleInstitutionSelect = (type: string) => {
-    updateField("institution_type", type as InstitutionType);
+  const handleInstitutionSelect = (value: InstitutionType) => {
+    updateField("institution_type", value);
     setShowInstitutionDropdown(false);
   };
 
@@ -201,7 +231,7 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
                   className="w-full  h-12 px-3 py-2 rounded-lg border border-(--gray-200) bg-(--text-white) text-(--gray-500) focus:outline-none focus:ring-2 focus:ring-(--primary-500) focus:border-transparent text-left flex items-center justify-between sg-p-default"
                 >
                   <span>
-                    {formData.institution_type || "Select institution type"}
+                    {selectedInstitutionLabel || "Select institution type"}
                   </span>
                   <div className="text-(--gray-500) pointer-events-none">
                     {showInstitutionDropdown ? (
@@ -217,12 +247,12 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
                   <div className="absolute top-full left-0 right-0 mt-2 bg-(--text-white) border border-(--gray-300) rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
                     {INSTITUTION_TYPES.map((type) => (
                       <button
-                        key={type}
+                        key={type.value}
                         type="button"
-                        onClick={() => handleInstitutionSelect(type)}
+                        onClick={() => handleInstitutionSelect(type.value)}
                         className="w-full px-3 py-2.5 hover:bg-(--primary-50) transition-colors text-left border-b border-(--gray-200) last:border-b-0 sg-p-default text-(--text-title)"
                       >
-                        {type}
+                        {type.label}
                       </button>
                     ))}
                   </div>
@@ -345,9 +375,10 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
         {/* Create Account Button */}
         <Button
           type="submit"
-          className="h-12 w-full bg-(--primary-700) text-white font-semibold py-3 rounded-lg cursor-pointer  transition-colors flex items-center justify-center gap-2 group"
+          disabled={submitting}
+          className="h-12 w-full bg-(--primary-700) text-white font-semibold py-3 rounded-lg cursor-pointer  transition-colors flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Create Account
+          {submitting ? "Creating Account…" : "Create Account"}
         </Button>
       </form>
 

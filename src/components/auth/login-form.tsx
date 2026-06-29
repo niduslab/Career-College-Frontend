@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { FaLinkedin } from "react-icons/fa6";
@@ -9,12 +10,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { LoginFormData, UserType } from "@/types/auth";
+import { login, dashboardPathFor } from "@/lib/auth-api";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
 
 interface LoginFormProps {
   onUserTypeChange?: (type: UserType) => void;
 }
 
 export function LoginForm({ onUserTypeChange }: LoginFormProps = {}) {
+  const router = useRouter();
+
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: "",
@@ -24,12 +30,13 @@ export function LoginForm({ onUserTypeChange }: LoginFormProps = {}) {
   const [errors, setErrors] = useState<
     Partial<Record<keyof LoginFormData, string>>
   >({});
+  const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
+    // Client-side validation
     const newErrors: Partial<Record<keyof LoginFormData, string>> = {};
 
     if (!formData.email) newErrors.email = "Email is required";
@@ -40,8 +47,25 @@ export function LoginForm({ onUserTypeChange }: LoginFormProps = {}) {
       return;
     }
 
-    // Handle login
-    console.log("Login data:", formData);
+    setSubmitting(true);
+    try {
+      const user = await login(formData.email, formData.password);
+      notify.success("Logged in successfully.");
+      router.push(dashboardPathFor(user));
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (Object.keys(err.fieldErrors).length > 0) {
+          setErrors(
+            err.fieldErrors as Partial<Record<keyof LoginFormData, string>>,
+          );
+        }
+        notify.error(err.message);
+      } else {
+        notify.error("Something went wrong. Please try again.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const updateField = (field: keyof LoginFormData, value: string) => {
@@ -62,7 +86,6 @@ export function LoginForm({ onUserTypeChange }: LoginFormProps = {}) {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* User Type Selection */}
         <div>
-          {/* <Label className="sg-p-default">I am a</Label> */}
           <div className="grid grid-cols-3 gap-2 mt-2">
             {(
               ["learner", "instructor", "partner_institution"] as UserType[]
@@ -151,9 +174,10 @@ export function LoginForm({ onUserTypeChange }: LoginFormProps = {}) {
         </div>
         <Button
           type="submit"
-          className="h-12 w-full bg-(--primary-700) text-white font-semibold py-3 rounded-lg cursor-pointer  transition-colors flex items-center justify-center gap-2 group"
+          disabled={submitting}
+          className="h-12 w-full bg-(--primary-700) text-white font-semibold py-3 rounded-lg cursor-pointer  transition-colors flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Log In
+          {submitting ? "Logging in…" : "Log In"}
         </Button>
       </form>
 

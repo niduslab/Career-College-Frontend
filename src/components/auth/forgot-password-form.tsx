@@ -2,26 +2,31 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Mail, CheckCircle, ChevronLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Mail, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { forgotPassword } from "@/lib/auth-api";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
 
 interface ForgotPasswordFormData {
   email: string;
 }
 
 export function ForgotPasswordForm() {
+  const router = useRouter();
   const [formData, setFormData] = useState<ForgotPasswordFormData>({
     email: "",
   });
   const [errors, setErrors] = useState<Partial<ForgotPasswordFormData>>({});
-  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const validateEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const newErrors: Partial<ForgotPasswordFormData> = {};
@@ -37,9 +42,25 @@ export function ForgotPasswordForm() {
       return;
     }
 
-    // Handle forgot password submission
-    console.log("Forgot password email:", formData.email);
-    setSubmitted(true);
+    setSubmitting(true);
+    try {
+      await forgotPassword(formData.email);
+      notify.success("We've sent a reset code to your email.");
+      router.push(
+        `/verify-otp?email=${encodeURIComponent(formData.email)}&purpose=password_reset`,
+      );
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.fieldErrors.email) {
+          setErrors({ email: err.fieldErrors.email });
+        }
+        notify.error(err.message);
+      } else {
+        notify.error("Something went wrong. Please try again.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const updateEmail = (value: string) => {
@@ -47,52 +68,13 @@ export function ForgotPasswordForm() {
     setErrors({});
   };
 
-  if (submitted) {
-    return (
-      <div className="bg-gray-100 p-6 rounded-2xl border border-(--gray-200)">
-        <div className="flex flex-col items-center text-center py-6">
-          <div className="w-16 h-16 rounded-full bg-(--primary-50) flex items-center justify-center mb-4">
-            <CheckCircle size={32} className="text-(--primary-700)" />
-          </div>
-          <h2 className="sg-h4 font-semibold text-(--text-title) mb-2">
-            Check Your Email
-          </h2>
-          <p className="sg-p-default text-(--gray-600) mb-2 max-w-sm">
-            We&apos;ve sent a password reset link to
-          </p>
-          <p className="sg-p-default font-semibold text-(--text-title) mb-6">
-            {formData.email}
-          </p>
-          <p className="sg-p-small text-(--gray-500) mb-8 max-w-sm">
-            Didn&apos;t receive the email? Check your spam folder or{" "}
-            <button
-              type="button"
-              onClick={() => setSubmitted(false)}
-              className="text-(--primary-700) hover:underline font-medium"
-            >
-              try again
-            </button>
-            .
-          </p>
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 text-(--primary-700) hover:underline sg-p-default font-medium"
-          >
-            <ArrowLeft size={16} />
-            Back to Login
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-gray-100 p-6 rounded-2xl border border-(--gray-200)">
       <h2 className="sg-h4 font-semibold text-(--text-title) mb-2">
         Forgot Password?
       </h2>
       <p className="sg-p-default text-(--gray-600) mb-6">
-        Enter your registered email and we&apos;ll send you a link to reset your
+        Enter your registered email and we&apos;ll send you a code to reset your
         password.
       </p>
 
@@ -125,9 +107,10 @@ export function ForgotPasswordForm() {
 
         <Button
           type="submit"
-          className="h-12 w-full bg-(--primary-700) text-white font-semibold py-3 rounded-lg cursor-pointer transition-colors flex items-center justify-center gap-2"
+          disabled={submitting}
+          className="h-12 w-full bg-(--primary-700) text-white font-semibold py-3 rounded-lg cursor-pointer transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Reset Password
+          {submitting ? "Sending…" : "Send Reset Code"}
         </Button>
       </form>
 
