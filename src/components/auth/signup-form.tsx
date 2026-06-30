@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { FaLinkedin } from "react-icons/fa6";
@@ -9,12 +10,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { SignUpFormData, UserType, InstitutionType } from "@/types/auth";
+import { register } from "@/lib/auth-api";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
+import {
+  validateEmail,
+  validateInstitutionalEmail,
+  validateFullName,
+  validatePassword,
+  validateConfirmPassword,
+  validateRequired,
+} from "@/lib/validation";
 
-const INSTITUTION_TYPES = [
-  "University",
-  "College",
-  "Technical Institute",
-  "Online Academy",
+const INSTITUTION_TYPES: { label: string; value: InstitutionType }[] = [
+  { label: "University", value: "university" },
+  { label: "College", value: "college" },
+  { label: "Training Center", value: "training_center" },
+  { label: "Other", value: "other" },
 ];
 
 interface SignUpFormProps {
@@ -22,6 +34,8 @@ interface SignUpFormProps {
 }
 
 export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
+  const router = useRouter();
+
   const [formData, setFormData] = useState<SignUpFormData>({
     email: "",
     full_name: "",
@@ -33,39 +47,93 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
   const [errors, setErrors] = useState<
     Partial<Record<keyof SignUpFormData, string>>
   >({});
+  const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showInstitutionDropdown, setShowInstitutionDropdown] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [termsError, setTermsError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const selectedInstitutionLabel = INSTITUTION_TYPES.find(
+    (t) => t.value === formData.institution_type,
+  )?.label;
+
+  // Validate every field; returns the full error map for the current values.
+  const validateAll = (
+    data: SignUpFormData,
+  ): Partial<Record<keyof SignUpFormData, string>> => {
+    const next: Partial<Record<keyof SignUpFormData, string>> = {};
+
+    next.full_name = validateFullName(data.full_name);
+    next.email =
+      data.user_type === "partner_institution"
+        ? validateInstitutionalEmail(data.email)
+        : validateEmail(data.email);
+    next.password = validatePassword(data.password);
+    next.confirm_password = validateConfirmPassword(
+      data.password,
+      data.confirm_password,
+    );
+
+    if (data.user_type === "partner_institution") {
+      next.institution_name = validateRequired(
+        data.institution_name,
+        "Institution name",
+      );
+      next.institution_type = validateRequired(
+        data.institution_type,
+        "Institution type",
+      );
+    }
+
+    // Drop keys with no error so `Object.keys` reflects real problems only.
+    (Object.keys(next) as (keyof SignUpFormData)[]).forEach((k) => {
+      if (!next[k]) delete next[k];
+    });
+    return next;
+  };
+
+  // Re-validate a single field on blur for instant feedback.
+  const validateOnBlur = (field: keyof SignUpFormData) => {
+    const all = validateAll(formData);
+    setErrors((prev) => ({ ...prev, [field]: all[field] ?? "" }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
-    const newErrors: Partial<Record<keyof SignUpFormData, string>> = {};
-
-    if (!formData.email) newErrors.email = "Email is required";
-    if (!formData.full_name) newErrors.full_name = "Full name is required";
-    if (!formData.password) newErrors.password = "Password is required";
-    if (formData.password !== formData.confirm_password) {
-      newErrors.confirm_password = "Passwords do not match";
+    const newErrors = validateAll(formData);
+    const termsMissing = !agreedToTerms;
+    if (termsMissing) {
+      setTermsError("You must agree to the Terms and Privacy Policy");
     }
-
-    if (formData.user_type === "partner_institution") {
-      if (!formData.institution_name) {
-        newErrors.institution_name = "Institution name is required";
-      }
-      if (!formData.institution_type) {
-        newErrors.institution_type = "Institution type is required";
-      }
-    }
-
-    if (Object.keys(newErrors).length > 0) {
+    if (Object.keys(newErrors).length > 0 || termsMissing) {
       setErrors(newErrors);
       return;
     }
 
-    // Handle signup
-    console.log("Sign up data:", formData);
+    setSubmitting(true);
+    try {
+      await register(formData);
+      // Registration succeeded — backend emailed an OTP. Verify next.
+      notify.success("Account created. Check your email for the OTP.");
+      router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}`);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        // Map any field-level errors back onto the form inputs.
+        const fieldErrors = err.fieldErrors;
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors(
+            fieldErrors as Partial<Record<keyof SignUpFormData, string>>,
+          );
+        }
+        notify.error(err.message);
+      } else {
+        notify.error("Something went wrong. Please try again.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const updateField = (field: keyof SignUpFormData, value: string) => {
@@ -74,8 +142,8 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
     if (field === "user_type") onUserTypeChange?.(value as UserType);
   };
 
-  const handleInstitutionSelect = (type: string) => {
-    updateField("institution_type", type as InstitutionType);
+  const handleInstitutionSelect = (value: InstitutionType) => {
+    updateField("institution_type", value);
     setShowInstitutionDropdown(false);
   };
 
@@ -127,6 +195,7 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
               type="text"
               value={formData.full_name}
               onChange={(e) => updateField("full_name", e.target.value)}
+              onBlur={() => validateOnBlur("full_name")}
               placeholder="Enter your full name"
               className="mt-2 w-full h-12 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-(--primary-700) focus:border-transparent"
             />
@@ -149,6 +218,7 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
               type="email"
               value={formData.email}
               onChange={(e) => updateField("email", e.target.value)}
+              onBlur={() => validateOnBlur("email")}
               placeholder="Enter your email"
               className="mt-2 w-full h-12 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-(--primary-700) focus:border-transparent"
             />
@@ -175,6 +245,7 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
                 onChange={(e) =>
                   updateField("institution_name", e.target.value)
                 }
+                onBlur={() => validateOnBlur("institution_name")}
                 placeholder="Enter institution name"
                 className="mt-2 w-full h-12 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-(--primary-700) focus:border-transparent"
               />
@@ -201,7 +272,7 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
                   className="w-full  h-12 px-3 py-2 rounded-lg border border-(--gray-200) bg-(--text-white) text-(--gray-500) focus:outline-none focus:ring-2 focus:ring-(--primary-500) focus:border-transparent text-left flex items-center justify-between sg-p-default"
                 >
                   <span>
-                    {formData.institution_type || "Select institution type"}
+                    {selectedInstitutionLabel || "Select institution type"}
                   </span>
                   <div className="text-(--gray-500) pointer-events-none">
                     {showInstitutionDropdown ? (
@@ -217,12 +288,12 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
                   <div className="absolute top-full left-0 right-0 mt-2 bg-(--text-white) border border-(--gray-300) rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
                     {INSTITUTION_TYPES.map((type) => (
                       <button
-                        key={type}
+                        key={type.value}
                         type="button"
-                        onClick={() => handleInstitutionSelect(type)}
+                        onClick={() => handleInstitutionSelect(type.value)}
                         className="w-full px-3 py-2.5 hover:bg-(--primary-50) transition-colors text-left border-b border-(--gray-200) last:border-b-0 sg-p-default text-(--text-title)"
                       >
-                        {type}
+                        {type.label}
                       </button>
                     ))}
                   </div>
@@ -252,6 +323,7 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
                 type={showPassword ? "text" : "password"}
                 value={formData.password}
                 onChange={(e) => updateField("password", e.target.value)}
+                onBlur={() => validateOnBlur("password")}
                 placeholder="Create a password"
                 className="w-full h-12 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-(--primary-700) focus:border-transparent"
               />
@@ -290,6 +362,7 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
                 onChange={(e) =>
                   updateField("confirm_password", e.target.value)
                 }
+                onBlur={() => validateOnBlur("confirm_password")}
                 placeholder="Confirm your password"
                 className="w-full h-12 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-(--primary-700) focus:border-transparent"
               />
@@ -315,10 +388,15 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
             )}
           </div>
         </div>
-        <div className="flex items-center justify-between sg-p-small">
-          <label className="flex items-center cursor-pointer">
+        <div className="sg-p-small">
+          <label className="flex items-center ">
             <input
               type="checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => {
+                setAgreedToTerms(e.target.checked);
+                if (e.target.checked) setTermsError("");
+              }}
               className="w-4 h-4 mr-2 rounded-2xl cursor-pointer mt-0.5 border-(--gray-300)"
               style={{
                 accentColor: "var(--primary-700)",
@@ -341,13 +419,17 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
               </Link>
             </span>
           </label>
+          {termsError && (
+            <p className="text-red-600 sg-caption mt-1.5">{termsError}</p>
+          )}
         </div>
         {/* Create Account Button */}
         <Button
           type="submit"
-          className="h-12 w-full bg-(--primary-700) text-white font-semibold py-3 rounded-lg cursor-pointer  transition-colors flex items-center justify-center gap-2 group"
+          disabled={submitting}
+          className="h-12 w-full bg-(--primary-700) text-white font-semibold py-3 rounded-lg cursor-pointer  transition-colors flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Create Account
+          {submitting ? "Creating Account…" : "Create Account"}
         </Button>
       </form>
 

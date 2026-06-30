@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Menu, Search, Sparkles, X, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "@/lib/gsap";
+import { useAuth } from "@/lib/use-auth";
 
 const NAV_LINKS = [
   { label: "Categories", href: "#" },
@@ -26,6 +27,7 @@ const COURSES_DROPDOWN = [
 ];
 
 export function Navbar() {
+  const { authed, logout } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileDropdown, setMobileDropdown] = useState<
@@ -224,20 +226,32 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-4 xl:flex">
-          <Link
-            href="/login"
-            className="h-10 cursor-pointer shrink-0 whitespace-nowrap rounded-md border border-(--primary-700) px-5 sg-p-default font-semibold text-(--primary-700) transition-colors hover:bg-(--primary-50) inline-flex items-center justify-center"
-            suppressHydrationWarning
-          >
-            Login
-          </Link>
-          <Link
-            href="/signup"
-            className="h-10 cursor-pointer shrink-0 whitespace-nowrap rounded-md bg-(--primary-700) px-5 sg-p-default font-semibold text-(--text-white) transition-colors hover:bg-(--primary-700) inline-flex items-center justify-center"
-            suppressHydrationWarning
-          >
-            Sign Up
-          </Link>
+          {authed ? (
+            <button
+              type="button"
+              onClick={logout}
+              className="h-10 cursor-pointer shrink-0 whitespace-nowrap rounded-md border border-(--primary-700) px-5 sg-p-default font-semibold text-(--primary-700) transition-colors hover:bg-(--primary-50) inline-flex items-center justify-center"
+            >
+              Logout
+            </button>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="h-10 cursor-pointer shrink-0 whitespace-nowrap rounded-md border border-(--primary-700) px-5 sg-p-default font-semibold text-(--primary-700) transition-colors hover:bg-(--primary-50) inline-flex items-center justify-center"
+                suppressHydrationWarning
+              >
+                Login
+              </Link>
+              <Link
+                href="/signup"
+                className="h-10 cursor-pointer shrink-0 whitespace-nowrap rounded-md bg-(--primary-700) px-5 sg-p-default font-semibold text-(--text-white) transition-colors hover:bg-(--primary-700) inline-flex items-center justify-center"
+                suppressHydrationWarning
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -417,18 +431,33 @@ export function Navbar() {
               data-mobile-stagger
               className="mt-4 flex flex-wrap items-center justify-start gap-3"
             >
-              <Link
-                href="/login"
-                className="h-10 min-w-35 rounded-md border border-(--primary-500) px-8 text-sm font-semibold text-(--primary-600) transition-colors hover:bg-(--primary-50) sm:min-w-42 inline-flex items-center justify-center"
-              >
-                Login
-              </Link>
-              <Link
-                href="/signup"
-                className="h-10 min-w-35 rounded-md bg-(--primary-600) px-8 text-sm font-semibold text-(--text-white) transition-colors hover:bg-(--primary-700) sm:min-w-42 inline-flex items-center justify-center"
-              >
-                Sign Up
-              </Link>
+              {authed ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileOpen(false);
+                    logout();
+                  }}
+                  className="h-10 min-w-35 rounded-md border border-(--primary-500) px-8 text-sm font-semibold text-(--primary-600) transition-colors hover:bg-(--primary-50) sm:min-w-42 inline-flex items-center justify-center"
+                >
+                  Logout
+                </button>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="h-10 min-w-35 rounded-md border border-(--primary-500) px-8 text-sm font-semibold text-(--primary-600) transition-colors hover:bg-(--primary-50) sm:min-w-42 inline-flex items-center justify-center"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="h-10 min-w-35 rounded-md bg-(--primary-600) px-8 text-sm font-semibold text-(--text-white) transition-colors hover:bg-(--primary-700) sm:min-w-42 inline-flex items-center justify-center"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
