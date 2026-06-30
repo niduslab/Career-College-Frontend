@@ -13,8 +13,15 @@ import type { SignUpFormData, UserType, InstitutionType } from "@/types/auth";
 import { register } from "@/lib/auth-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import {
+  validateEmail,
+  validateInstitutionalEmail,
+  validateFullName,
+  validatePassword,
+  validateConfirmPassword,
+  validateRequired,
+} from "@/lib/validation";
 
-// Label shown to the user → value the backend expects (guide §5.3).
 const INSTITUTION_TYPES: { label: string; value: InstitutionType }[] = [
   { label: "University", value: "university" },
   { label: "College", value: "college" },
@@ -44,34 +51,63 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showInstitutionDropdown, setShowInstitutionDropdown] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [termsError, setTermsError] = useState("");
 
   const selectedInstitutionLabel = INSTITUTION_TYPES.find(
     (t) => t.value === formData.institution_type,
   )?.label;
 
+  // Validate every field; returns the full error map for the current values.
+  const validateAll = (
+    data: SignUpFormData,
+  ): Partial<Record<keyof SignUpFormData, string>> => {
+    const next: Partial<Record<keyof SignUpFormData, string>> = {};
+
+    next.full_name = validateFullName(data.full_name);
+    next.email =
+      data.user_type === "partner_institution"
+        ? validateInstitutionalEmail(data.email)
+        : validateEmail(data.email);
+    next.password = validatePassword(data.password);
+    next.confirm_password = validateConfirmPassword(
+      data.password,
+      data.confirm_password,
+    );
+
+    if (data.user_type === "partner_institution") {
+      next.institution_name = validateRequired(
+        data.institution_name,
+        "Institution name",
+      );
+      next.institution_type = validateRequired(
+        data.institution_type,
+        "Institution type",
+      );
+    }
+
+    // Drop keys with no error so `Object.keys` reflects real problems only.
+    (Object.keys(next) as (keyof SignUpFormData)[]).forEach((k) => {
+      if (!next[k]) delete next[k];
+    });
+    return next;
+  };
+
+  // Re-validate a single field on blur for instant feedback.
+  const validateOnBlur = (field: keyof SignUpFormData) => {
+    const all = validateAll(formData);
+    setErrors((prev) => ({ ...prev, [field]: all[field] ?? "" }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Client-side validation
-    const newErrors: Partial<Record<keyof SignUpFormData, string>> = {};
-
-    if (!formData.email) newErrors.email = "Email is required";
-    if (!formData.full_name) newErrors.full_name = "Full name is required";
-    if (!formData.password) newErrors.password = "Password is required";
-    if (formData.password !== formData.confirm_password) {
-      newErrors.confirm_password = "Passwords do not match";
+    const newErrors = validateAll(formData);
+    const termsMissing = !agreedToTerms;
+    if (termsMissing) {
+      setTermsError("You must agree to the Terms and Privacy Policy");
     }
-
-    if (formData.user_type === "partner_institution") {
-      if (!formData.institution_name) {
-        newErrors.institution_name = "Institution name is required";
-      }
-      if (!formData.institution_type) {
-        newErrors.institution_type = "Institution type is required";
-      }
-    }
-
-    if (Object.keys(newErrors).length > 0) {
+    if (Object.keys(newErrors).length > 0 || termsMissing) {
       setErrors(newErrors);
       return;
     }
@@ -87,7 +123,9 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
         // Map any field-level errors back onto the form inputs.
         const fieldErrors = err.fieldErrors;
         if (Object.keys(fieldErrors).length > 0) {
-          setErrors(fieldErrors as Partial<Record<keyof SignUpFormData, string>>);
+          setErrors(
+            fieldErrors as Partial<Record<keyof SignUpFormData, string>>,
+          );
         }
         notify.error(err.message);
       } else {
@@ -157,6 +195,7 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
               type="text"
               value={formData.full_name}
               onChange={(e) => updateField("full_name", e.target.value)}
+              onBlur={() => validateOnBlur("full_name")}
               placeholder="Enter your full name"
               className="mt-2 w-full h-12 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-(--primary-700) focus:border-transparent"
             />
@@ -179,6 +218,7 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
               type="email"
               value={formData.email}
               onChange={(e) => updateField("email", e.target.value)}
+              onBlur={() => validateOnBlur("email")}
               placeholder="Enter your email"
               className="mt-2 w-full h-12 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-(--primary-700) focus:border-transparent"
             />
@@ -205,6 +245,7 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
                 onChange={(e) =>
                   updateField("institution_name", e.target.value)
                 }
+                onBlur={() => validateOnBlur("institution_name")}
                 placeholder="Enter institution name"
                 className="mt-2 w-full h-12 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-(--primary-700) focus:border-transparent"
               />
@@ -282,6 +323,7 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
                 type={showPassword ? "text" : "password"}
                 value={formData.password}
                 onChange={(e) => updateField("password", e.target.value)}
+                onBlur={() => validateOnBlur("password")}
                 placeholder="Create a password"
                 className="w-full h-12 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-(--primary-700) focus:border-transparent"
               />
@@ -320,6 +362,7 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
                 onChange={(e) =>
                   updateField("confirm_password", e.target.value)
                 }
+                onBlur={() => validateOnBlur("confirm_password")}
                 placeholder="Confirm your password"
                 className="w-full h-12 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-(--primary-700) focus:border-transparent"
               />
@@ -345,10 +388,15 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
             )}
           </div>
         </div>
-        <div className="flex items-center justify-between sg-p-small">
-          <label className="flex items-center cursor-pointer">
+        <div className="sg-p-small">
+          <label className="flex items-center ">
             <input
               type="checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => {
+                setAgreedToTerms(e.target.checked);
+                if (e.target.checked) setTermsError("");
+              }}
               className="w-4 h-4 mr-2 rounded-2xl cursor-pointer mt-0.5 border-(--gray-300)"
               style={{
                 accentColor: "var(--primary-700)",
@@ -371,6 +419,9 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
               </Link>
             </span>
           </label>
+          {termsError && (
+            <p className="text-red-600 sg-caption mt-1.5">{termsError}</p>
+          )}
         </div>
         {/* Create Account Button */}
         <Button

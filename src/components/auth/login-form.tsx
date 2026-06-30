@@ -13,6 +13,7 @@ import type { LoginFormData, UserType } from "@/types/auth";
 import { login, dashboardPathFor } from "@/lib/auth-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import { validateEmail, validateRequired } from "@/lib/validation";
 
 interface LoginFormProps {
   onUserTypeChange?: (type: UserType) => void;
@@ -39,8 +40,10 @@ export function LoginForm({ onUserTypeChange }: LoginFormProps = {}) {
     // Client-side validation
     const newErrors: Partial<Record<keyof LoginFormData, string>> = {};
 
-    if (!formData.email) newErrors.email = "Email is required";
-    if (!formData.password) newErrors.password = "Password is required";
+    const emailError = validateEmail(formData.email);
+    if (emailError) newErrors.email = emailError;
+    const passwordError = validateRequired(formData.password, "Password");
+    if (passwordError) newErrors.password = passwordError;
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
