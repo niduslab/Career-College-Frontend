@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   User,
   Mail,
-  Phone,
   Globe,
   Lock,
   Bell,
@@ -14,7 +13,25 @@ import {
   Eye,
   EyeOff,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
+import {
+  getMyProfile,
+  updateMyProfile,
+  updateProfilePhoto,
+  EXPERIENCE_LEVELS,
+  type MyProfileResponse,
+  type LearnerProfile,
+} from "@/lib/profile-api";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
+import { config } from "@/lib/config";
+import { LocationSelect } from "@/components/common/location-select";
+import { SelectDropdown } from "@/components/common/select-dropdown";
+import { validateUrl, validateMaxLength } from "@/lib/validation";
+import RichTextEditor from "@/components/common/rich-text-editor";
+import DatePicker from "@/components/common/date-picker";
+import Image from "next/image";
 
 // Types
 
@@ -48,9 +65,11 @@ function SectionCard({
 function Field({
   label,
   children,
+  error,
 }: {
   label: string;
   children: React.ReactNode;
+  error?: string;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -58,6 +77,7 @@ function Field({
         {label}
       </label>
       {children}
+      {error && <p className="text-red-600 text-[12px] mt-0.5">{error}</p>}
     </div>
   );
 }
@@ -75,7 +95,7 @@ function Input({
       )}
       <input
         {...props}
-        className={`w-full h-11 ${Icon ? "pl-9" : "pl-3"} pr-3 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow`}
+        className={`w-full h-12 ${Icon ? "pl-9" : "pl-3"} pr-3 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow disabled:bg-(--gray-50) disabled:text-(--gray-500) disabled:cursor-not-allowed`}
       />
     </div>
   );
@@ -122,6 +142,33 @@ function SaveButton({ onClick }: { onClick: () => void }) {
   );
 }
 
+// Save button driven by external async state (from an API call).
+function AsyncSaveButton({
+  onClick,
+  saving,
+  saved,
+}: {
+  onClick: () => void;
+  saving: boolean;
+  saved: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={saving}
+      className="flex items-center gap-1.5 h-10 px-5 rounded-md bg-(--primary-700) text-white text-[14px] font-medium hover:bg-(--primary-600) transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+    >
+      {saving ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
+      ) : saved ? (
+        <Check className="w-4 h-4" />
+      ) : null}
+      {saving ? "Saving…" : saved ? "Saved!" : "Save Changes"}
+    </button>
+  );
+}
+
 // Tabs
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
@@ -132,23 +179,221 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 
 // Tab content
 
+function mediaUrl(path: string | null): string | null {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  const origin = config.apiBaseUrl.replace(/\/api\/v1\/?$/, "");
+  return `${origin}${path}`;
+}
+
+function isoToDate(iso: string): Date | undefined {
+  if (!iso) return undefined;
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return undefined;
+  return new Date(y, m - 1, d);
+}
+function dateToIso(date: Date | undefined): string {
+  if (!date) return "";
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0][0]!.toUpperCase();
+  return (parts[0][0]! + parts[parts.length - 1][0]!).toUpperCase();
+}
+
+type SaveSection = "personal" | "social";
+
 function ProfileTab() {
+  const [loading, setLoading] = useState(true);
+  const [savingSection, setSavingSection] = useState<SaveSection | null>(null);
+  const [savedSection, setSavedSection] = useState<SaveSection | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [user, setUser] = useState<MyProfileResponse["user"] | null>(null);
+  const [photo, setPhoto] = useState<string | null>(null);
   const [form, setForm] = useState({
-    firstName: "Al Amin",
-    lastName: "Hossain",
-    email: "alamin@niduslab.com",
-    phone: "+880 1700 000000",
-    bio: "Passionate learner exploring AI, data science, and full-stack development.",
-    website: "https://niduslab.com",
-    linkedin: "linkedin.com/in/alamin",
-    twitter: "@alamin",
-    location: "Dhaka, Bangladesh",
+    headline: "",
+    bio: "",
+    date_of_birth: "",
+    city: "",
+    state: "",
+    country: "",
+    experience_level: "",
+    learning_goal: "",
+    interests: "", //
+    linkedin_url: "",
+    github_url: "",
+    website_url: "",
   });
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof typeof form, string>>
+  >({});
+
+  const validate = (
+    data: typeof form,
+  ): Partial<Record<keyof typeof form, string>> => {
+    const next: Partial<Record<keyof typeof form, string>> = {};
+    const headline = validateMaxLength(data.headline, 150, "Headline");
+    if (headline) next.headline = headline;
+    // Bio is HTML from the rich-text editor; measure the visible text, not tags.
+    const bioText = data.bio.replace(/<[^>]*>/g, "").trim();
+    const bio = validateMaxLength(bioText, 1000, "Bio");
+    if (bio) next.bio = bio;
+    const goal = validateMaxLength(data.learning_goal, 255, "Learning goal");
+    if (goal) next.learning_goal = goal;
+    const linkedin = validateUrl(
+      data.linkedin_url,
+      "LinkedIn URL",
+      "linkedin.com",
+    );
+    if (linkedin) next.linkedin_url = linkedin;
+    const github = validateUrl(data.github_url, "GitHub URL", "github.com");
+    if (github) next.github_url = github;
+    const website = validateUrl(data.website_url, "website URL");
+    if (website) next.website_url = website;
+    return next;
+  };
+
+  const hydrateProfile = (profile: LearnerProfile) => {
+    setPhoto(profile.profile_photo);
+    setForm({
+      headline: profile.headline ?? "",
+      bio: profile.bio ?? "",
+      date_of_birth: profile.date_of_birth ?? "",
+      city: profile.city ?? "",
+      state: profile.state ?? "",
+      country: profile.country ?? "",
+      experience_level: profile.experience_level ?? "",
+      learning_goal: profile.learning_goal ?? "",
+      interests: (profile.interests ?? []).join(", "),
+      linkedin_url: profile.linkedin_url ?? "",
+      github_url: profile.github_url ?? "",
+      website_url: profile.website_url ?? "",
+    });
+    setErrors({});
+  };
+
+  // Populate everything from the full GET response ({ user, profile, ... }).
+  const hydrate = (data: MyProfileResponse) => {
+    setUser(data.user);
+    hydrateProfile(data.profile);
+  };
+
+  useEffect(() => {
+    let active = true;
+    getMyProfile()
+      .then((data) => {
+        if (active) hydrate(data);
+      })
+      .catch((err) => {
+        notify.error(
+          err instanceof ApiError
+            ? err.message
+            : "Failed to load your profile.",
+        );
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+    // Run once on mount; hydrate is a stable local setter wrapper.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const set =
     (k: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    (
+      e: React.ChangeEvent<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      >,
+    ) => {
       setForm((f) => ({ ...f, [k]: e.target.value }));
+      setErrors((prev) => ({ ...prev, [k]: "" }));
+    };
+
+  const handleSave = async (section: SaveSection) => {
+    const found = validate(form);
+    if (Object.keys(found).length > 0) {
+      setErrors(found);
+      notify.error("Please fix the highlighted fields.");
+      return;
+    }
+    setSavingSection(section);
+    try {
+      const data = await updateMyProfile({
+        headline: form.headline,
+        bio: form.bio,
+        date_of_birth: form.date_of_birth || null,
+        city: form.city,
+        state: form.state,
+        country: form.country,
+        experience_level: form.experience_level || undefined,
+        learning_goal: form.learning_goal,
+        interests: form.interests
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        linkedin_url: form.linkedin_url,
+        github_url: form.github_url,
+        website_url: form.website_url,
+      });
+      hydrateProfile(data);
+      notify.success("Profile updated.");
+      setSavedSection(section);
+      setTimeout(
+        () => setSavedSection((s) => (s === section ? null : s)),
+        2000,
+      );
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to update profile.",
+      );
+    } finally {
+      setSavingSection(null);
+    }
+  };
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      notify.error("Image must be 2MB or smaller.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const data = await updateProfilePhoto(file);
+      hydrateProfile(data);
+      notify.success("Photo updated.");
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to upload photo.",
+      );
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-(--gray-500)">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+        Loading your profile…
+      </div>
+    );
+  }
+
+  const photoUrl = mediaUrl(photo);
 
   return (
     <div className="space-y-4">
@@ -156,28 +401,53 @@ function ProfileTab() {
       <SectionCard title="Profile Photo">
         <div className="flex items-center gap-5">
           <div className="relative">
-            <div className="w-18 h-18 rounded-full bg-(--primary-100) text-(--primary-700) text-[22px] font-semibold flex items-center justify-center shrink-0">
-              AA
+            <div className="w-18 h-18 rounded-full bg-(--primary-100) text-(--primary-700) text-[22px] font-semibold flex items-center justify-center shrink-0 overflow-hidden">
+              {photoUrl ? (
+                <Image
+                  src={photoUrl}
+                  alt={user?.full_name ?? "Profile"}
+                  className="w-full h-full object-cover"
+                  width={72}
+                  height={72}
+                />
+              ) : (
+                initialsOf(user?.full_name ?? "")
+              )}
             </div>
             <button
               type="button"
-              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-(--primary-600) text-white flex items-center justify-center cursor-pointer hover:bg-(--primary-700) transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-(--primary-600) text-white flex items-center justify-center cursor-pointer hover:bg-(--primary-700) transition-colors disabled:opacity-60"
             >
-              <Camera className="w-4 h-4" />
+              {uploading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Camera className="w-4 h-4" />
+              )}
             </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg"
+              onChange={handlePhotoSelect}
+              className="hidden"
+            />
           </div>
           <div>
             <p className="text-[14px] font-semibold text-(--text-title)">
-              Al Amin Hossain
+              {user?.full_name}
             </p>
             <p className="text-[12px] text-(--gray-500) mt-0.5">
               JPG or PNG, max 2MB
             </p>
             <button
               type="button"
-              className="mt-2 text-[12px] font-medium text-(--primary-600) hover:underline cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="mt-2 text-[12px] font-medium text-(--primary-600) hover:underline cursor-pointer disabled:opacity-60"
             >
-              Upload new photo
+              {uploading ? "Uploading…" : "Upload new photo"}
             </button>
           </div>
         </div>
@@ -189,92 +459,132 @@ function ProfileTab() {
         description="This is displayed on your public learner profile."
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="First name">
-            <Input
-              icon={User}
-              value={form.firstName}
-              onChange={set("firstName")}
-              placeholder="e.g. Al Amin"
-            />
-          </Field>
-          <Field label="Last name">
-            <Input
-              value={form.lastName}
-              onChange={set("lastName")}
-              placeholder="e.g. Hossain"
-            />
+          <Field label="Full name">
+            <Input icon={User} value={user?.full_name ?? ""} disabled />
           </Field>
           <Field label="Email">
             <Input
               icon={Mail}
               type="email"
-              value={form.email}
-              onChange={set("email")}
-              placeholder="you@example.com"
+              value={user?.email ?? ""}
+              disabled
             />
           </Field>
-          <Field label="Phone">
+          <Field label="Headline" error={errors.headline}>
             <Input
-              icon={Phone}
-              type="tel"
-              value={form.phone}
-              onChange={set("phone")}
-              placeholder="+880 1700 000000"
+              value={form.headline}
+              onChange={set("headline")}
+              placeholder="e.g. Data Analyst at Google"
             />
           </Field>
-          <Field label="Location">
+          <Field label="Date of birth">
+            <DatePicker
+              value={isoToDate(form.date_of_birth)}
+              onChange={(d) =>
+                setForm((f) => ({ ...f, date_of_birth: dateToIso(d) }))
+              }
+              placeholder="Select your date of birth"
+              disablePast={false}
+              disableFuture
+              captionDropdown
+              fromYear={new Date().getFullYear() - 100}
+              toYear={new Date().getFullYear() - 10}
+            />
+          </Field>
+          <Field label="Experience level">
+            <SelectDropdown
+              value={form.experience_level}
+              onChange={(v) => setForm((f) => ({ ...f, experience_level: v }))}
+              options={EXPERIENCE_LEVELS}
+              placeholder="Select experience level"
+            />
+          </Field>
+          <LocationSelect
+            value={{
+              country: form.country,
+              state: form.state,
+              city: form.city,
+            }}
+            onChange={(loc) =>
+              setForm((f) => ({
+                ...f,
+                country: loc.country,
+                state: loc.state,
+                city: loc.city,
+              }))
+            }
+          />
+          <Field label="Learning goal" error={errors.learning_goal}>
             <Input
-              value={form.location}
-              onChange={set("location")}
-              placeholder="City, Country"
+              value={form.learning_goal}
+              onChange={set("learning_goal")}
+              placeholder="e.g. Switch to a data science career"
             />
           </Field>
-          <Field label="Website">
+          <Field label="Interests (comma separated)">
             <Input
-              icon={Globe}
-              type="url"
-              value={form.website}
-              onChange={set("website")}
-              placeholder="https://yourwebsite.com"
+              value={form.interests}
+              onChange={set("interests")}
+              placeholder="Python, Machine Learning, Design"
             />
           </Field>
+
           <div className="sm:col-span-2">
-            <Field label="Bio">
-              <textarea
+            <Field label="Bio" error={errors.bio}>
+              <RichTextEditor
                 value={form.bio}
-                onChange={set("bio")}
-                rows={3}
+                onChange={(html) => {
+                  setForm((f) => ({ ...f, bio: html }));
+                  setErrors((prev) => ({ ...prev, bio: "" }));
+                }}
                 placeholder="Tell us a little about yourself..."
-                className="w-full px-3 py-2.5 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
+                minHeight="120px"
               />
             </Field>
           </div>
         </div>
         <div className="flex justify-start pt-2">
-          <SaveButton onClick={() => {}} />
+          <AsyncSaveButton
+            onClick={() => handleSave("personal")}
+            saving={savingSection === "personal"}
+            saved={savedSection === "personal"}
+          />
         </div>
       </SectionCard>
 
       {/* Social links */}
       <SectionCard title="Social Links">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="LinkedIn">
+          <Field label="LinkedIn" error={errors.linkedin_url}>
             <Input
-              value={form.linkedin}
-              onChange={set("linkedin")}
-              placeholder="linkedin.com/in/username"
+              value={form.linkedin_url}
+              onChange={set("linkedin_url")}
+              placeholder="https://linkedin.com/in/username"
             />
           </Field>
-          <Field label="Twitter / X">
+          <Field label="GitHub" error={errors.github_url}>
             <Input
-              value={form.twitter}
-              onChange={set("twitter")}
-              placeholder="@username"
+              value={form.github_url}
+              onChange={set("github_url")}
+              placeholder="https://github.com/username"
+            />
+          </Field>
+          <Field label="Website" error={errors.website_url}>
+            <Input
+              icon={Globe}
+              type="url"
+              value={form.website_url}
+              onChange={set("website_url")}
+              placeholder="https://yourwebsite.com"
             />
           </Field>
         </div>
         <div className="flex justify-start pt-2">
-          <SaveButton onClick={() => {}} />
+          <AsyncSaveButton
+            onClick={() => handleSave("social")}
+            saving={savingSection === "social"}
+            saved={savedSection === "social"}
+          />
         </div>
       </SectionCard>
     </div>
