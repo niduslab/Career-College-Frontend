@@ -42,6 +42,7 @@ export function LocationSelect({ value, onChange }: LocationSelectProps) {
   const [openState, setOpenState] = useState(false);
   const [openCity, setOpenCity] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
+  const [stateSearch, setStateSearch] = useState("");
 
   const countryRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef<HTMLDivElement>(null);
@@ -74,6 +75,9 @@ export function LocationSelect({ value, onChange }: LocationSelectProps) {
 
   const filteredCountries = countries.filter((c) =>
     c.name.toLowerCase().includes(countrySearch.toLowerCase()),
+  );
+  const filteredStates = states.filter((s) =>
+    s.name.toLowerCase().includes(stateSearch.toLowerCase()),
   );
 
   const stateIsFreeText = !!selectedCountry && states.length === 0;
@@ -155,34 +159,53 @@ export function LocationSelect({ value, onChange }: LocationSelectProps) {
           />
         ) : (
           <div ref={stateRef} className="relative">
-            <button
-              type="button"
-              disabled={!selectedCountry}
-              onClick={() => setOpenState((p) => !p)}
-              className={TRIGGER_CLS}
-            >
-              <span>{value.state || "Select state"}</span>
-              {openState ? (
-                <ChevronUp size={20} className="text-gray-500 shrink-0" />
-              ) : (
-                <ChevronDown size={20} className="text-gray-500 shrink-0" />
-              )}
-            </button>
-            {openState && states.length > 0 && (
+            <div className="relative">
+              <Search
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
+              <input
+                type="text"
+                placeholder="Search state / province..."
+                value={openState ? stateSearch : value.state}
+                onChange={(e) => setStateSearch(e.target.value)}
+                onFocus={() => {
+                  setOpenState(true);
+                  setStateSearch("");
+                }}
+                className="w-full h-12 pl-10 pr-10 py-3 rounded-lg border border-gray-200 bg-white text-gray-500 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-(--primary-700) focus:border-transparent"
+                autoComplete="off"
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                {openState ? (
+                  <ChevronUp size={20} />
+                ) : (
+                  <ChevronDown size={20} />
+                )}
+              </div>
+            </div>
+            {openState && (
               <div className={PANEL_CLS}>
-                {states.map((s) => (
-                  <button
-                    key={s.isoCode}
-                    type="button"
-                    onClick={() => {
-                      onChange({ ...value, state: s.name, city: "" });
-                      setOpenState(false);
-                    }}
-                    className={ITEM_CLS}
-                  >
-                    {s.name}
-                  </button>
-                ))}
+                {filteredStates.length === 0 ? (
+                  <p className="px-4 py-3 text-gray-400 sg-p-default">
+                    No states found
+                  </p>
+                ) : (
+                  filteredStates.map((s) => (
+                    <button
+                      key={s.isoCode}
+                      type="button"
+                      onClick={() => {
+                        onChange({ ...value, state: s.name, city: "" });
+                        setStateSearch("");
+                        setOpenState(false);
+                      }}
+                      className={ITEM_CLS}
+                    >
+                      {s.name}
+                    </button>
+                  ))
+                )}
               </div>
             )}
           </div>

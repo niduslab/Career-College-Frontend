@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { DayPicker, type DropdownProps } from "react-day-picker";
 import { format } from "date-fns";
 import {
@@ -101,10 +102,47 @@ export default function DatePicker({
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number }>({
+    top: 0,
+    left: 0,
+  });
+
+  // The calendar renders in a portal on document.body (so it's never clipped by
+  // a scrollable parent, e.g. a modal). Position it under the trigger, flipping
+  // above if there isn't room below the viewport.
+  useLayoutEffect(() => {
+    if (!open || !ref.current) return;
+    const CAL_HEIGHT = 340;
+    const CAL_WIDTH = 288; // w-72
+    const reposition = () => {
+      const r = ref.current!.getBoundingClientRect();
+      const below = window.innerHeight - r.bottom;
+      const top =
+        below < CAL_HEIGHT && r.top > CAL_HEIGHT
+          ? r.top - CAL_HEIGHT - 4
+          : r.bottom + 4;
+      const left = Math.min(r.left, window.innerWidth - CAL_WIDTH - 8);
+      setCoords({ top, left: Math.max(8, left) });
+    };
+    reposition();
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    return () => {
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
+    };
+  }, [open]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        ref.current &&
+        !ref.current.contains(target) &&
+        popRef.current &&
+        !popRef.current.contains(target)
+      ) {
         setOpen(false);
       }
     };
@@ -139,9 +177,15 @@ export default function DatePicker({
           </span>
         </button>
 
-        {/* Calendar dropdown */}
-        {open && (
-          <div className="absolute left-0 top-full mt-1 z-50 bg-white border border-(--gray-200) rounded-2xl shadow-xl p-3 w-72">
+        {/* Calendar dropdown — portaled to body so a scrollable parent
+            (e.g. a modal) can't clip it. */}
+        {open &&
+          createPortal(
+            <div
+              ref={popRef}
+              style={{ top: coords.top, left: coords.left }}
+              className="fixed z-9999 bg-white border border-(--gray-200) rounded-2xl shadow-xl p-3 w-72"
+            >
             <DayPicker
               mode="single"
               selected={value}
@@ -209,8 +253,9 @@ export default function DatePicker({
                 Dropdown: CalendarDropdown,
               }}
             />
-          </div>
-        )}
+            </div>,
+            document.body,
+          )}
       </div>
     </div>
   );

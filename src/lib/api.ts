@@ -120,3 +120,31 @@ export async function apiPatch<T = unknown>(
 
   return handleResponse<T>(res);
 }
+
+/** DELETE a resource. Tolerates an empty (204) body. */
+export async function apiDelete(path: string): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${config.apiBaseUrl}${path}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+  } catch {
+    throw new ApiError(
+      "Unable to reach the server. Please check your connection and try again.",
+      0,
+    );
+  }
+
+  if (!res.ok) {
+    // Try to surface a message if the server sent one.
+    let message = "Delete failed. Please try again.";
+    try {
+      const json = (await res.json()) as ApiEnvelope;
+      if (json.message) message = json.message;
+    } catch {
+      /* empty body — keep default */
+    }
+    throw new ApiError(message, res.status);
+  }
+}
