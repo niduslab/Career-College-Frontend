@@ -1,4 +1,4 @@
-import SettingsPage from "@/components/dashboard/instructor/settings-page";
+import SettingsPage from "@/components/dashboard/instructor/settings";
 import PageHeader from "@/components/dashboard/common/page-header";
 
 export default function Page() {

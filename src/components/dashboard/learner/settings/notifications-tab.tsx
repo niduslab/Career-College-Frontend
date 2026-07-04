@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { SectionCard, Toggle, SaveButton } from "./ui";
+import {
+  SectionCard,
+  Toggle,
+  SaveButton,
+} from "../../settings-shared/ui";
 
 export function NotificationsTab() {
   const [prefs, setPrefs] = useState({
