@@ -127,6 +127,18 @@ export async function resetPassword(args: {
   await apiPost("/auth/password/reset/", args);
 }
 
+/**
+ * Change the password of the logged-in user (guide §15A). Requires the current
+ * password as proof-of-identity; no OTP. Auth cookie is sent automatically.
+ */
+export async function changePassword(args: {
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+}): Promise<void> {
+  await apiPost("/auth/password/change/", args);
+}
+
 export async function logout(): Promise<void> {
   try {
     await apiPost("/auth/logout/", {});

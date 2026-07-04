@@ -7,6 +7,25 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
 ];
 
+// Allow images served by the backend (profile photos, media, etc.). Derived
+// from NEXT_PUBLIC_API_BASE_URL so it follows whatever host the API runs on.
+function backendImagePattern() {
+  const base = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!base) return [];
+  try {
+    const url = new URL(base);
+    return [
+      {
+        protocol: url.protocol.replace(":", "") as "http" | "https",
+        hostname: url.hostname,
+        port: url.port || undefined,
+      },
+    ];
+  } catch {
+    return [];
+  }
+}
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
@@ -19,6 +38,8 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+
+      ...backendImagePattern(),
     ],
   },
   async headers() {

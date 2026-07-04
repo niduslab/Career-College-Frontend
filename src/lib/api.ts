@@ -95,3 +95,56 @@ export async function apiGet<T = unknown>(
 
   return handleResponse<T>(res);
 }
+
+export async function apiPatch<T = unknown>(
+  path: string,
+  body: unknown,
+): Promise<ApiEnvelope<T>> {
+  const isFormData =
+    typeof FormData !== "undefined" && body instanceof FormData;
+
+  let res: Response;
+  try {
+    res = await fetch(`${config.apiBaseUrl}${path}`, {
+      method: "PATCH",
+      headers: isFormData ? undefined : { "Content-Type": "application/json" },
+      credentials: "include",
+      body: isFormData ? (body as FormData) : JSON.stringify(body),
+    });
+  } catch {
+    throw new ApiError(
+      "Unable to reach the server. Please check your connection and try again.",
+      0,
+    );
+  }
+
+  return handleResponse<T>(res);
+}
+
+/** DELETE a resource. Tolerates an empty (204) body. */
+export async function apiDelete(path: string): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${config.apiBaseUrl}${path}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+  } catch {
+    throw new ApiError(
+      "Unable to reach the server. Please check your connection and try again.",
+      0,
+    );
+  }
+
+  if (!res.ok) {
+    // Try to surface a message if the server sent one.
+    let message = "Delete failed. Please try again.";
+    try {
+      const json = (await res.json()) as ApiEnvelope;
+      if (json.message) message = json.message;
+    } catch {
+      /* empty body — keep default */
+    }
+    throw new ApiError(message, res.status);
+  }
+}
