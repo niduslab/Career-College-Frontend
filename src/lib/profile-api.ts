@@ -32,11 +32,56 @@ export interface LearnerProfile {
   is_profile_public: boolean;
 }
 
+/** Instructor profile */
+export interface InstructorProfile {
+  id: number;
+  profile_photo: string | null;
+  headline: string;
+  bio: string;
+  city: string;
+  state: string;
+  country: string;
+  specialization: string[];
+  years_of_experience: number | null;
+  current_title: string;
+  current_organization: string;
+  linkedin_url: string;
+  github_url: string;
+  website_url: string;
+  is_verified?: boolean;
+  is_profile_public: boolean;
+}
+
 export interface MyProfileResponse {
   user: ProfileUser;
   profile: LearnerProfile;
   education: unknown[];
   work_experience: unknown[];
+}
+
+/** Same endpoint as `MyProfileResponse` but typed for an instructor. */
+export interface MyInstructorProfileResponse {
+  user: ProfileUser;
+  profile: InstructorProfile;
+  education: unknown[];
+  work_experience: unknown[];
+}
+
+/** Fields an instructor may update */
+export interface InstructorProfileUpdate {
+  headline?: string;
+  bio?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  specialization?: string[];
+  years_of_experience?: number;
+  current_title?: string;
+  current_organization?: string;
+  linkedin_url?: string;
+  github_url?: string;
+  website_url?: string;
+  is_profile_public?: boolean;
 }
 
 /** Fields a learner may update via PATCH   */
@@ -94,6 +139,38 @@ export async function updateProfilePhoto(
   form.append("profile_photo", file ?? "");
   const res = await apiPatch("/auth/profile/me/", form);
   return extractProfile(res.data);
+}
+
+// Instructor profile (same endpoint, instructor-shaped fields)
+
+export async function getMyInstructorProfile(): Promise<MyInstructorProfileResponse> {
+  const res = await apiGet<MyInstructorProfileResponse>("/auth/profile/me/");
+  return res.data as MyInstructorProfileResponse;
+}
+
+/** PATCH response returns the profile directly; GET nests it under `profile`. */
+function extractInstructorProfile(data: unknown): InstructorProfile {
+  const obj = data as {
+    profile?: InstructorProfile;
+  } & Partial<InstructorProfile>;
+  return (obj?.profile ?? obj) as InstructorProfile;
+}
+
+export async function updateInstructorProfile(
+  patch: InstructorProfileUpdate,
+): Promise<InstructorProfile> {
+  const res = await apiPatch("/auth/profile/me/", patch);
+  return extractInstructorProfile(res.data);
+}
+
+/** Upload/replace the instructor photo; returns the instructor profile shape. */
+export async function updateInstructorPhoto(
+  file: File | null,
+): Promise<InstructorProfile> {
+  const form = new FormData();
+  form.append("profile_photo", file ?? "");
+  const res = await apiPatch("/auth/profile/me/", form);
+  return extractInstructorProfile(res.data);
 }
 
 // Education

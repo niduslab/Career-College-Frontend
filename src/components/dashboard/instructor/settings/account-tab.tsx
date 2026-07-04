@@ -6,12 +6,7 @@ import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 import { validatePassword } from "@/lib/validation";
 import { changePassword } from "@/lib/auth-api";
-import {
-  SectionCard,
-  Field,
-  Toggle,
-  AsyncSaveButton,
-} from "../../settings-shared/ui";
+import { SectionCard, Field, Toggle, AsyncSaveButton } from "../../settings-shared/ui";
 
 export function AccountTab() {
   const [showCurrent, setShowCurrent] = useState(false);
@@ -80,7 +75,7 @@ export function AccountTab() {
 
   const sessions = [
     {
-      device: "Chrome on Windows",
+      device: "Chrome on macOS",
       location: "Dhaka, BD",
       time: "Now",
       current: true,
@@ -88,13 +83,13 @@ export function AccountTab() {
     {
       device: "Safari on iPhone",
       location: "Dhaka, BD",
-      time: "3h ago",
+      time: "2h ago",
       current: false,
     },
     {
-      device: "Firefox on macOS",
+      device: "Firefox on Windows",
       location: "London, UK",
-      time: "5d ago",
+      time: "3d ago",
       current: false,
     },
   ];
@@ -115,7 +110,7 @@ export function AccountTab() {
                 value={pw.current_password}
                 onChange={(e) => setPwField("current_password", e.target.value)}
                 placeholder="Enter current password"
-                className="w-full h-11 pl-9 pr-10 text-[14px] border border-(--gray-200) rounded-lg bg-white outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+                className="w-full h-10 pl-9 pr-10 text-[13px] border border-(--gray-200) rounded-lg bg-white outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
               />
               <button
                 type="button"
@@ -138,7 +133,7 @@ export function AccountTab() {
                 value={pw.new_password}
                 onChange={(e) => setPwField("new_password", e.target.value)}
                 placeholder="Min. 8 characters"
-                className="w-full h-11 pl-9 pr-10 text-[14px] border border-(--gray-200) rounded-lg bg-white outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+                className="w-full h-10 pl-9 pr-10 text-[13px] border border-(--gray-200) rounded-lg bg-white outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
               />
               <button
                 type="button"
@@ -153,7 +148,7 @@ export function AccountTab() {
               </button>
             </div>
           </Field>
-          <div>
+          <div className="sm:col-span-2 sm:max-w-sm">
             <Field label="Confirm password" error={pwErrors.confirm_password}>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--gray-400)" />
@@ -164,7 +159,7 @@ export function AccountTab() {
                     setPwField("confirm_password", e.target.value)
                   }
                   placeholder="Repeat new password"
-                  className="w-full h-11 pl-9 pr-10 text-[14px] border border-(--gray-200) rounded-lg bg-white outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+                  className="w-full h-10 pl-9 pr-10 text-[13px] border border-(--gray-200) rounded-lg bg-white outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
                 />
                 <button
                   type="button"
@@ -197,7 +192,7 @@ export function AccountTab() {
       >
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[14px] font-semibold text-(--text-title)">
+            <p className="text-[13px] font-medium text-(--text-title)">
               Authenticator app
             </p>
             <p className="text-[12px] text-(--gray-400) mt-0.5">
@@ -206,11 +201,14 @@ export function AccountTab() {
                 : "Not enabled"}
             </p>
           </div>
-          <Toggle checked={twoFactor} onChange={() => setTwoFactor((v) => !v)} />
+          <Toggle
+            checked={twoFactor}
+            onChange={() => setTwoFactor((v) => !v)}
+          />
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[14px] font-semibold text-(--text-title)">
+            <p className="text-[13px] font-medium text-(--text-title)">
               Login alerts
             </p>
             <p className="text-[12px] text-(--gray-400) mt-0.5">
@@ -237,7 +235,7 @@ export function AccountTab() {
             >
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="text-[14px] font-semibold text-(--text-title)">
+                  <p className="text-[13px] font-medium text-(--text-title)">
                     {s.device}
                   </p>
                   {s.current && (
@@ -246,14 +244,14 @@ export function AccountTab() {
                     </span>
                   )}
                 </div>
-                <p className="text-[12px] text-(--gray-400) mt-0.5">
+                <p className="text-[11px] text-(--gray-400) mt-0.5">
                   {s.location} · {s.time}
                 </p>
               </div>
               {!s.current && (
                 <button
                   type="button"
-                  className="text-[12px] md:text-[14px] lg:text-[14px] font-medium text-red-500 hover:underline cursor-pointer"
+                  className="text-[12px] font-medium text-red-500 hover:underline cursor-pointer"
                 >
                   Revoke
                 </button>
@@ -263,44 +261,26 @@ export function AccountTab() {
         </div>
       </SectionCard>
 
-      {/* Linked accounts */}
-      <SectionCard
-        title="Linked Accounts"
-        description="Connect third-party accounts for quick sign-in."
-      >
-        <div className="space-y-3">
-          {[
-            { name: "Google", connected: true, color: "bg-rose-500" },
-            { name: "GitHub", connected: false, color: "bg-(--gray-800)" },
-            { name: "LinkedIn", connected: false, color: "bg-blue-600" },
-          ].map((acc) => (
-            <div key={acc.name} className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-8 h-8 rounded-lg ${acc.color} flex items-center justify-center shrink-0`}
-                >
-                  <span className="text-white text-[12px] font-bold">
-                    {acc.name[0]}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[14px] font-semibold text-(--text-title)">
-                    {acc.name}
-                  </p>
-                  <p className="text-[12px] text-(--gray-400)">
-                    {acc.connected ? "Connected" : "Not connected"}
-                  </p>
-                </div>
-              </div>
-              <button
-                className={`text-[12px] md:text-[14px] lg:text-[14px] font-medium cursor-pointer transition-colors ${acc.connected ? "text-red-500 hover:underline" : "text-(--primary-600) hover:underline"}`}
-              >
-                {acc.connected ? "Disconnect" : "Connect"}
-              </button>
-            </div>
-          ))}
+      {/* Danger zone */}
+      <SectionCard title="Danger Zone">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[14px] font-medium text-(--text-title)">
+              Delete account
+            </p>
+            <p className="text-[12px] text-(--gray-500) mt-0.5">
+              Permanently delete your account and all data.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="h-11 px-4 rounded-md border border-red-200 text-red-500 text-[14px] font-medium hover:bg-red-50 transition-colors cursor-pointer whitespace-nowrap"
+          >
+            Delete Account
+          </button>
         </div>
       </SectionCard>
     </div>
   );
 }
+

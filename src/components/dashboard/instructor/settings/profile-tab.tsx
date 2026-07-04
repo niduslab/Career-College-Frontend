@@ -1,58 +1,49 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { User, Mail, Globe, Camera, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { User, Mail, Globe, Camera, Loader2 } from "lucide-react";
 import {
-  getMyProfile,
-  updateMyProfile,
-  updateProfilePhoto,
-  EXPERIENCE_LEVELS,
-  type MyProfileResponse,
-  type LearnerProfile,
+  getMyInstructorProfile,
+  updateInstructorProfile,
+  updateInstructorPhoto,
+  type MyInstructorProfileResponse,
+  type InstructorProfile,
 } from "@/lib/profile-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 import { validateUrl, validateMaxLength } from "@/lib/validation";
 import { LocationSelect } from "@/components/common/location-select";
-import { SelectDropdown } from "@/components/common/select-dropdown";
 import RichTextEditor from "@/components/common/rich-text-editor";
-import DatePicker from "@/components/common/date-picker";
+import { SectionCard, Field, Input, AsyncSaveButton } from "../../settings-shared/ui";
+import { mediaUrl, initialsOf } from "../../settings-shared/helpers";
 import { EducationAndExperience } from "../../settings-shared/education-experience";
-import {
-  SectionCard,
-  Field,
-  Input,
-  AsyncSaveButton,
-} from "../../settings-shared/ui";
-import {
-  mediaUrl,
-  isoToDate,
-  dateToIso,
-  initialsOf,
-} from "../../settings-shared/helpers";
-
-type SaveSection = "personal" | "social";
 
 export function ProfileTab() {
   const [loading, setLoading] = useState(true);
-  const [savingSection, setSavingSection] = useState<SaveSection | null>(null);
-  const [savedSection, setSavedSection] = useState<SaveSection | null>(null);
+  const [savingSection, setSavingSection] = useState<
+    "professional" | "social" | null
+  >(null);
+  const [savedSection, setSavedSection] = useState<
+    "professional" | "social" | null
+  >(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [user, setUser] = useState<MyProfileResponse["user"] | null>(null);
+  const [user, setUser] = useState<MyInstructorProfileResponse["user"] | null>(
+    null,
+  );
   const [photo, setPhoto] = useState<string | null>(null);
   const [form, setForm] = useState({
     headline: "",
     bio: "",
-    date_of_birth: "",
+    current_title: "",
+    current_organization: "",
+    years_of_experience: "",
+    specialization: "", // comma-separated in UI, split on save
     city: "",
     state: "",
     country: "",
-    experience_level: "",
-    learning_goal: "",
-    interests: "",
     linkedin_url: "",
     github_url: "",
     website_url: "",
@@ -67,12 +58,14 @@ export function ProfileTab() {
     const next: Partial<Record<keyof typeof form, string>> = {};
     const headline = validateMaxLength(data.headline, 150, "Headline");
     if (headline) next.headline = headline;
-    // Bio is HTML from the rich-text editor; measure the visible text, not tags.
     const bioText = data.bio.replace(/<[^>]*>/g, "").trim();
-    const bio = validateMaxLength(bioText, 1000, "Bio");
+    const bio = validateMaxLength(bioText, 2000, "Bio");
     if (bio) next.bio = bio;
-    const goal = validateMaxLength(data.learning_goal, 255, "Learning goal");
-    if (goal) next.learning_goal = goal;
+    if (data.years_of_experience) {
+      const yrs = Number(data.years_of_experience);
+      if (!Number.isFinite(yrs) || yrs < 0 || yrs > 80)
+        next.years_of_experience = "Enter a valid number of years";
+    }
     const linkedin = validateUrl(
       data.linkedin_url,
       "LinkedIn URL",
@@ -86,36 +79,33 @@ export function ProfileTab() {
     return next;
   };
 
-  const hydrateProfile = (profile: LearnerProfile) => {
-    setPhoto(profile.profile_photo);
+  const hydrateProfile = (p: InstructorProfile) => {
+    setPhoto(p.profile_photo);
     setForm({
-      headline: profile.headline ?? "",
-      bio: profile.bio ?? "",
-      date_of_birth: profile.date_of_birth ?? "",
-      city: profile.city ?? "",
-      state: profile.state ?? "",
-      country: profile.country ?? "",
-      experience_level: profile.experience_level ?? "",
-      learning_goal: profile.learning_goal ?? "",
-      interests: (profile.interests ?? []).join(", "),
-      linkedin_url: profile.linkedin_url ?? "",
-      github_url: profile.github_url ?? "",
-      website_url: profile.website_url ?? "",
+      headline: p.headline ?? "",
+      bio: p.bio ?? "",
+      current_title: p.current_title ?? "",
+      current_organization: p.current_organization ?? "",
+      years_of_experience:
+        p.years_of_experience != null ? String(p.years_of_experience) : "",
+      specialization: (p.specialization ?? []).join(", "),
+      city: p.city ?? "",
+      state: p.state ?? "",
+      country: p.country ?? "",
+      linkedin_url: p.linkedin_url ?? "",
+      github_url: p.github_url ?? "",
+      website_url: p.website_url ?? "",
     });
     setErrors({});
   };
 
-  // Populate everything from the full GET response ({ user, profile, ... }).
-  const hydrate = (data: MyProfileResponse) => {
-    setUser(data.user);
-    hydrateProfile(data.profile);
-  };
-
   useEffect(() => {
     let active = true;
-    getMyProfile()
+    getMyInstructorProfile()
       .then((data) => {
-        if (active) hydrate(data);
+        if (!active) return;
+        setUser(data.user);
+        hydrateProfile(data.profile);
       })
       .catch((err) => {
         notify.error(
@@ -130,22 +120,16 @@ export function ProfileTab() {
     return () => {
       active = false;
     };
-    // Run once on mount; hydrate is a stable local setter wrapper.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const set =
     (k: keyof typeof form) =>
-    (
-      e: React.ChangeEvent<
-        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-      >,
-    ) => {
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setForm((f) => ({ ...f, [k]: e.target.value }));
       setErrors((prev) => ({ ...prev, [k]: "" }));
     };
 
-  const handleSave = async (section: SaveSection) => {
+  const handleSave = async (section: "professional" | "social") => {
     const found = validate(form);
     if (Object.keys(found).length > 0) {
       setErrors(found);
@@ -154,24 +138,26 @@ export function ProfileTab() {
     }
     setSavingSection(section);
     try {
-      const data = await updateMyProfile({
+      const p = await updateInstructorProfile({
         headline: form.headline,
         bio: form.bio,
-        date_of_birth: form.date_of_birth || null,
-        city: form.city,
-        state: form.state,
-        country: form.country,
-        experience_level: form.experience_level || undefined,
-        learning_goal: form.learning_goal,
-        interests: form.interests
+        current_title: form.current_title,
+        current_organization: form.current_organization,
+        years_of_experience: form.years_of_experience
+          ? Number(form.years_of_experience)
+          : undefined,
+        specialization: form.specialization
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean),
+        city: form.city,
+        state: form.state,
+        country: form.country,
         linkedin_url: form.linkedin_url,
         github_url: form.github_url,
         website_url: form.website_url,
       });
-      hydrateProfile(data);
+      hydrateProfile(p);
       notify.success("Profile updated.");
       setSavedSection(section);
       setTimeout(
@@ -197,8 +183,8 @@ export function ProfileTab() {
     }
     setUploading(true);
     try {
-      const data = await updateProfilePhoto(file);
-      hydrateProfile(data);
+      const p = await updateInstructorPhoto(file);
+      hydrateProfile(p);
       notify.success("Photo updated.");
     } catch (err) {
       notify.error(
@@ -226,11 +212,11 @@ export function ProfileTab() {
       <SectionCard title="Profile Photo">
         <div className="flex items-center gap-5">
           <div className="relative">
-            <div className="w-18 h-18 rounded-full bg-(--primary-100) text-(--primary-700) text-[22px] font-semibold flex items-center justify-center shrink-0 overflow-hidden">
+            <div className="w-18 h-18 rounded-full bg-(--primary-100) text-(--primary-700) text-[22px] font-bold flex items-center justify-center shrink-0 overflow-hidden">
               {photoUrl ? (
                 <Image
                   src={photoUrl}
-                  alt={user?.full_name ?? "Profile"}
+                  alt={user?.full_name ?? "Instructor"}
                   width={72}
                   height={72}
                   unoptimized
@@ -261,7 +247,7 @@ export function ProfileTab() {
             />
           </div>
           <div>
-            <p className="text-[14px] font-semibold text-(--text-title)">
+            <p className="text-[14px] font-medium text-(--text-title)">
               {user?.full_name}
             </p>
             <p className="text-[12px] text-(--gray-500) mt-0.5">
@@ -279,52 +265,83 @@ export function ProfileTab() {
         </div>
       </SectionCard>
 
-      {/* Personal info */}
+      {/* Professional info */}
       <SectionCard
-        title="Personal Information"
-        description="This is displayed on your public learner profile."
+        title="Professional Information"
+        description="This is displayed on your public instructor profile."
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Full name">
             <Input icon={User} value={user?.full_name ?? ""} disabled />
           </Field>
           <Field label="Email">
-            <Input
-              icon={Mail}
-              type="email"
-              value={user?.email ?? ""}
-              disabled
-            />
+            <Input icon={Mail} value={user?.email ?? ""} disabled />
           </Field>
           <Field label="Headline" error={errors.headline}>
             <Input
               value={form.headline}
               onChange={set("headline")}
-              placeholder="e.g. Data Analyst at Google"
+              placeholder="e.g. Senior ML Engineer at Meta"
             />
           </Field>
-          <Field label="Date of birth">
-            <DatePicker
-              value={isoToDate(form.date_of_birth)}
-              onChange={(d) =>
-                setForm((f) => ({ ...f, date_of_birth: dateToIso(d) }))
-              }
-              placeholder="Select your date of birth"
-              disablePast={false}
-              disableFuture
-              captionDropdown
-              fromYear={new Date().getFullYear() - 100}
-              toYear={new Date().getFullYear() - 10}
+          <Field label="Years of experience" error={errors.years_of_experience}>
+            <Input
+              type="number"
+              min={0}
+              value={form.years_of_experience}
+              onChange={set("years_of_experience")}
+              placeholder="e.g. 10"
             />
           </Field>
-          <Field label="Experience level">
-            <SelectDropdown
-              value={form.experience_level}
-              onChange={(v) => setForm((f) => ({ ...f, experience_level: v }))}
-              options={EXPERIENCE_LEVELS}
-              placeholder="Select experience level"
+          <Field label="Current title">
+            <Input
+              value={form.current_title}
+              onChange={set("current_title")}
+              placeholder="e.g. Senior ML Engineer"
             />
           </Field>
+          <Field label="Current organization">
+            <Input
+              value={form.current_organization}
+              onChange={set("current_organization")}
+              placeholder="e.g. Meta"
+            />
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Specialization (comma separated)">
+              <Input
+                value={form.specialization}
+                onChange={set("specialization")}
+                placeholder="Deep Learning, NLP, Computer Vision"
+              />
+            </Field>
+          </div>
+          <div className="sm:col-span-2">
+            <Field label="Bio" error={errors.bio}>
+              <RichTextEditor
+                value={form.bio}
+                onChange={(html) => {
+                  setForm((f) => ({ ...f, bio: html }));
+                  setErrors((prev) => ({ ...prev, bio: "" }));
+                }}
+                placeholder="Tell students about your background and expertise..."
+                minHeight="120px"
+              />
+            </Field>
+          </div>
+        </div>
+        <div className="flex justify-start pt-2">
+          <AsyncSaveButton
+            onClick={() => handleSave("professional")}
+            saving={savingSection === "professional"}
+            saved={savedSection === "professional"}
+          />
+        </div>
+      </SectionCard>
+
+      {/* Location */}
+      <SectionCard title="Location">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <LocationSelect
             value={{
               country: form.country,
@@ -340,46 +357,18 @@ export function ProfileTab() {
               }))
             }
           />
-          <Field label="Learning goal" error={errors.learning_goal}>
-            <Input
-              value={form.learning_goal}
-              onChange={set("learning_goal")}
-              placeholder="e.g. Switch to a data science career"
-            />
-          </Field>
-          <Field label="Interests (comma separated)">
-            <Input
-              value={form.interests}
-              onChange={set("interests")}
-              placeholder="Python, Machine Learning, Design"
-            />
-          </Field>
-
-          <div className="sm:col-span-2">
-            <Field label="Bio" error={errors.bio}>
-              <RichTextEditor
-                value={form.bio}
-                onChange={(html) => {
-                  setForm((f) => ({ ...f, bio: html }));
-                  setErrors((prev) => ({ ...prev, bio: "" }));
-                }}
-                placeholder="Tell us a little about yourself..."
-                minHeight="120px"
-              />
-            </Field>
-          </div>
         </div>
         <div className="flex justify-start pt-2">
           <AsyncSaveButton
-            onClick={() => handleSave("personal")}
-            saving={savingSection === "personal"}
-            saved={savedSection === "personal"}
+            onClick={() => handleSave("professional")}
+            saving={savingSection === "professional"}
+            saved={savedSection === "professional"}
           />
         </div>
       </SectionCard>
 
       {/* Social links */}
-      <SectionCard title="Social Links">
+      <SectionCard title="Links">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="LinkedIn" error={errors.linkedin_url}>
             <Input
@@ -414,8 +403,9 @@ export function ProfileTab() {
         </div>
       </SectionCard>
 
-      {/* Education & Work Experience (guide §17 / §18) */}
+      {/* Education & Work Experience (guide §17 / §18 — instructors too) */}
       <EducationAndExperience />
     </div>
   );
 }
+

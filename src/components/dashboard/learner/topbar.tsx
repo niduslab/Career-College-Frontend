@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { getMyProfile } from "@/lib/profile-api";
 import { useAuth } from "@/lib/use-auth";
-import { mediaUrl, initialsOf } from "./settings/helpers";
+import { mediaUrl, initialsOf } from "../settings-shared/helpers";
 
 // Map a backend user_type.
 const ROLE_LABELS: Record<string, string> = {
