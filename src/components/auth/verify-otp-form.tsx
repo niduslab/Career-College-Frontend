@@ -94,7 +94,7 @@ export function VerifyOtpForm() {
     } catch (err) {
       notify.error(
         err instanceof ApiError
-          ? err.message
+          ? err.detail
           : "Couldn't resend the code. Please try again.",
       );
     } finally {
@@ -131,7 +131,7 @@ export function VerifyOtpForm() {
     } catch (err) {
       notify.error(
         err instanceof ApiError
-          ? err.message
+          ? err.detail
           : "Verification failed. Please try again.",
       );
       setOtp(Array(OTP_LENGTH).fill(""));

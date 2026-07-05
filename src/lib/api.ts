@@ -2,7 +2,9 @@ import { config } from "./config";
 
 export interface ApiEnvelope<T = unknown> {
   success: boolean;
-  message?: string;
+  // The backend is inconsistent: `message` is usually a string, but some
+  // endpoints return a field-keyed object (e.g. { otp: "Invalid OTP." }).
+  message?: string | Record<string, string | string[]>;
   data?: T;
   errors?: Record<string, string | string[]>;
 }
@@ -19,6 +21,11 @@ export class ApiError extends Error {
     this.name = "ApiError";
     this.status = status;
     this.fieldErrors = fieldErrors;
+  }
+
+  get detail(): string {
+    const first = Object.values(this.fieldErrors)[0];
+    return first || this.message;
   }
 }
 
@@ -45,11 +52,19 @@ async function handleResponse<T>(res: Response): Promise<ApiEnvelope<T>> {
   }
 
   if (!res.ok || json.success === false) {
-    throw new ApiError(
-      json.message || "Something went wrong. Please try again.",
-      res.status,
-      flattenErrors(json.errors),
-    );
+    // Normalize `message` (string OR field-keyed object) + `errors` into one
+    // flat map, and pick a human string for the top-level message.
+    const fieldErrors: FieldErrors = { ...flattenErrors(json.errors) };
+    let message: string;
+    if (json.message && typeof json.message === "object") {
+      Object.assign(fieldErrors, flattenErrors(json.message));
+      message =
+        Object.values(fieldErrors)[0] ||
+        "Something went wrong. Please try again.";
+    } else {
+      message = json.message || "Something went wrong. Please try again.";
+    }
+    throw new ApiError(message, res.status, fieldErrors);
   }
 
   return json;
@@ -141,7 +156,7 @@ export async function apiDelete(path: string): Promise<void> {
     let message = "Delete failed. Please try again.";
     try {
       const json = (await res.json()) as ApiEnvelope;
-      if (json.message) message = json.message;
+      if (typeof json.message === "string") message = json.message;
     } catch {
       /* empty body — keep default */
     }

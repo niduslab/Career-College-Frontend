@@ -84,6 +84,60 @@ export interface InstructorProfileUpdate {
   is_profile_public?: boolean;
 }
 
+/** Partner-institution profile. */
+export interface PartnerProfile {
+  id: number;
+  logo: string | null;
+  cover_image: string | null;
+  institution_name: string;
+  institution_type: string;
+  tagline: string;
+  description: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  founded_year: number | null;
+  contact_email: string;
+  contact_phone: string;
+  website_url: string;
+  linkedin_url: string;
+  is_verified?: boolean;
+  is_profile_public: boolean;
+}
+
+/** Same endpoint as `MyProfileResponse` but typed for a partner institution. */
+export interface MyPartnerProfileResponse {
+  user: ProfileUser;
+  profile: PartnerProfile;
+}
+
+/** Fields a partner institution may update. */
+export interface PartnerProfileUpdate {
+  tagline?: string;
+  description?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  founded_year?: number | null;
+  contact_email?: string;
+  contact_phone?: string;
+  website_url?: string;
+  linkedin_url?: string;
+  is_profile_public?: boolean;
+}
+
+/** `institution_type` options. */
+export const INSTITUTION_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: "university", label: "University" },
+  { value: "college", label: "College" },
+  { value: "training_center", label: "Training Center" },
+  { value: "corporate", label: "Corporate Training" },
+  { value: "nonprofit", label: "Non-Profit" },
+  { value: "other", label: "Other" },
+];
+
 /** Fields a learner may update via PATCH   */
 export interface LearnerProfileUpdate {
   headline?: string;
@@ -171,6 +225,42 @@ export async function updateInstructorPhoto(
   form.append("profile_photo", file ?? "");
   const res = await apiPatch("/auth/profile/me/", form);
   return extractInstructorProfile(res.data);
+}
+
+// Partner institution profile
+
+export async function getMyPartnerProfile(): Promise<MyPartnerProfileResponse> {
+  const res = await apiGet<MyPartnerProfileResponse>("/auth/profile/me/");
+  return res.data as MyPartnerProfileResponse;
+}
+
+/** PATCH response returns the profile directly; GET nests it under `profile`. */
+function extractPartnerProfile(data: unknown): PartnerProfile {
+  const obj = data as { profile?: PartnerProfile } & Partial<PartnerProfile>;
+  return (obj?.profile ?? obj) as PartnerProfile;
+}
+
+export async function updatePartnerProfile(
+  patch: PartnerProfileUpdate,
+): Promise<PartnerProfile> {
+  const res = await apiPatch("/auth/profile/me/", patch);
+  return extractPartnerProfile(res.data);
+}
+
+/**
+ * Upload/replace the institution logo and/or cover image.
+ * Pass `null` for a field to skip it.
+ */
+export async function updatePartnerImages(args: {
+  logo?: File | null;
+  cover_image?: File | null;
+}): Promise<PartnerProfile> {
+  const form = new FormData();
+  if (args.logo !== undefined) form.append("logo", args.logo ?? "");
+  if (args.cover_image !== undefined)
+    form.append("cover_image", args.cover_image ?? "");
+  const res = await apiPatch("/auth/profile/me/", form);
+  return extractPartnerProfile(res.data);
 }
 
 // Education

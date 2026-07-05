@@ -62,7 +62,7 @@ export function LoginForm({ onUserTypeChange }: LoginFormProps = {}) {
             err.fieldErrors as Partial<Record<keyof LoginFormData, string>>,
           );
         }
-        notify.error(err.message);
+        notify.error(err.detail);
       } else {
         notify.error("Something went wrong. Please try again.");
       }
