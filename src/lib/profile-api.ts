@@ -380,3 +380,77 @@ export async function updateWorkExperience(
 export async function deleteWorkExperience(id: number): Promise<void> {
   await apiDelete(`/auth/profile/me/work-experience/${id}/`);
 }
+
+// Public profiles (no auth required)
+
+/** `GET /auth/profiles/<slug>/` response for a learner. */
+export interface PublicLearnerProfile {
+  user_type: "learner";
+  full_name: string;
+  slug: string;
+  profile_photo: string | null;
+  headline: string;
+  bio: string;
+  city: string;
+  state: string;
+  country: string;
+  experience_level: string;
+  learning_goal: string;
+  interests: string[];
+  linkedin_url: string;
+  github_url: string;
+  website_url: string;
+  education: Education[];
+  work_experience: WorkExperience[];
+}
+
+/** A single row from `GET /auth/profiles/learners/` */
+export interface PublicLearnerListItem {
+  full_name: string;
+  slug: string;
+  profile_photo: string | null;
+  headline: string;
+  country: string;
+  experience_level: string;
+}
+
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+/** Fetch a learner's public profile by slug.   */
+export async function getPublicLearnerProfile(
+  slug: string,
+): Promise<PublicLearnerProfile> {
+  const res = await apiGet<PublicLearnerProfile>(
+    `/auth/profiles/${encodeURIComponent(slug)}/`,
+  );
+  return res.data as PublicLearnerProfile;
+}
+
+export interface BrowseLearnersParams {
+  page?: number;
+  page_size?: number;
+  country?: string;
+  experience_level?: string;
+}
+
+/** Browse publicly-visible, verified learners (guide §20.1). */
+export async function browsePublicLearners(
+  params: BrowseLearnersParams = {},
+): Promise<PaginatedResponse<PublicLearnerListItem>> {
+  const query = new URLSearchParams();
+  if (params.page) query.set("page", String(params.page));
+  if (params.page_size) query.set("page_size", String(params.page_size));
+  if (params.country) query.set("country", params.country);
+  if (params.experience_level)
+    query.set("experience_level", params.experience_level);
+  const qs = query.toString();
+  const res = await apiGet<PaginatedResponse<PublicLearnerListItem>>(
+    `/auth/profiles/learners/${qs ? `?${qs}` : ""}`,
+  );
+  return res.data as PaginatedResponse<PublicLearnerListItem>;
+}
