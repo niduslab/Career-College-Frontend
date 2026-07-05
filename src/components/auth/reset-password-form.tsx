@@ -86,7 +86,7 @@ export function ResetPasswordForm() {
           fieldErrors.confirm_password = err.fieldErrors.confirm_password;
         }
         if (Object.keys(fieldErrors).length > 0) setErrors(fieldErrors);
-        notify.error(err.message);
+        notify.error(err.detail);
       } else {
         notify.error("Something went wrong. Please try again.");
       }

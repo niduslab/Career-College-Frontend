@@ -127,7 +127,7 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
             fieldErrors as Partial<Record<keyof SignUpFormData, string>>,
           );
         }
-        notify.error(err.message);
+        notify.error(err.detail);
       } else {
         notify.error("Something went wrong. Please try again.");
       }
@@ -269,12 +269,12 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
                   onClick={() =>
                     setShowInstitutionDropdown(!showInstitutionDropdown)
                   }
-                  className="w-full  h-12 px-3 py-2 rounded-lg border border-(--gray-200) bg-(--text-white) text-(--gray-500) focus:outline-none focus:ring-2 focus:ring-(--primary-500) focus:border-transparent text-left flex items-center justify-between sg-p-default"
+                  className="w-full h-12 cursor-pointer px-3 py-2 rounded-lg border border-(--gray-200) bg-(--text-white) text-(--gray-500) focus:outline-none focus:ring-2 focus:ring-(--primary-500) focus:border-transparent text-left flex items-center justify-between sg-p-default"
                 >
                   <span>
                     {selectedInstitutionLabel || "Select institution type"}
                   </span>
-                  <div className="text-(--gray-500) pointer-events-none">
+                  <div className="text-(--gray-500) cursor-pointer">
                     {showInstitutionDropdown ? (
                       <ChevronUp size={18} />
                     ) : (
@@ -285,13 +285,13 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
 
                 {/* Dropdown */}
                 {showInstitutionDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-(--text-white) border border-(--gray-300) rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                  <div className="absolute top-full  left-0 right-0 mt-2 bg-(--text-white) border border-(--gray-300) rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
                     {INSTITUTION_TYPES.map((type) => (
                       <button
                         key={type.value}
                         type="button"
                         onClick={() => handleInstitutionSelect(type.value)}
-                        className="w-full px-3 py-2.5 hover:bg-(--primary-50) transition-colors text-left border-b border-(--gray-200) last:border-b-0 sg-p-default text-(--text-title)"
+                        className="w-full cursor-pointer px-3 py-2.5 hover:bg-(--primary-50) transition-colors text-left border-b border-(--gray-200) last:border-b-0 sg-p-default text-(--text-title)"
                       >
                         {type.label}
                       </button>

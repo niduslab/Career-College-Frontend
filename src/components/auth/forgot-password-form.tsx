@@ -54,7 +54,7 @@ export function ForgotPasswordForm() {
         if (err.fieldErrors.email) {
           setErrors({ email: err.fieldErrors.email });
         }
-        notify.error(err.message);
+        notify.error(err.detail);
       } else {
         notify.error("Something went wrong. Please try again.");
       }
