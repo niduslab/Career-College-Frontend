@@ -33,10 +33,10 @@ const INSTITUTION_TYPE_LABEL = (v: string) =>
 export function ProfileTab() {
   const [loading, setLoading] = useState(true);
   const [savingSection, setSavingSection] = useState<
-    "institution" | "contact" | null
+    "institution" | "location" | "contact" | null
   >(null);
   const [savedSection, setSavedSection] = useState<
-    "institution" | "contact" | null
+    "institution" | "location" | "contact" | null
   >(null);
   const [uploading, setUploading] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -142,7 +142,7 @@ export function ProfileTab() {
       setErrors((prev) => ({ ...prev, [k]: "" }));
     };
 
-  const handleSave = async (section: "institution" | "contact") => {
+  const handleSave = async (section: "institution" | "location" | "contact") => {
     const found = validate(form);
     if (Object.keys(found).length > 0) {
       setErrors(found);
@@ -415,9 +415,9 @@ export function ProfileTab() {
         </div>
         <div className="flex justify-start pt-2">
           <AsyncSaveButton
-            onClick={() => handleSave("institution")}
-            saving={savingSection === "institution"}
-            saved={savedSection === "institution"}
+            onClick={() => handleSave("location")}
+            saving={savingSection === "location"}
+            saved={savedSection === "location"}
           />
         </div>
       </SectionCard>

@@ -22,7 +22,7 @@ export function Breadcrumb({
         aria-label="Breadcrumb"
       >
         {items.map((item, idx) => (
-          <span key={item.label} className="flex items-center gap-2 whitespace-nowrap">
+          <span key={`${item.label}-${idx}`} className="flex items-center gap-2 whitespace-nowrap">
             {item.href && !item.active ? (
               <a
                 href={item.href}
