@@ -454,3 +454,73 @@ export async function browsePublicLearners(
   );
   return res.data as PaginatedResponse<PublicLearnerListItem>;
 }
+
+/**
+ * `GET /auth/profiles/<slug>/` response for an instructor.
+ */
+export interface PublicInstructorProfile {
+  user_type: "instructor";
+  full_name: string;
+  slug: string;
+  profile_photo: string | null;
+  headline: string;
+  bio: string;
+  city: string;
+  state: string;
+  country: string;
+  specialization: string[];
+  years_of_experience: number | null;
+  current_title: string;
+  current_organization: string;
+  linkedin_url: string;
+  github_url: string;
+  website_url: string;
+  is_verified?: boolean;
+  education: Education[];
+  work_experience: WorkExperience[];
+}
+
+/** A single row from `GET /auth/profiles/instructors/`. */
+export interface PublicInstructorListItem {
+  full_name: string;
+  slug: string;
+  profile_photo: string | null;
+  headline: string;
+  country: string;
+  specialization: string[];
+  is_verified: boolean;
+}
+
+/** Fetch an instructor's public profile by slug. */
+export async function getPublicInstructorProfile(
+  slug: string,
+): Promise<PublicInstructorProfile> {
+  const res = await apiGet<PublicInstructorProfile>(
+    `/auth/profiles/${encodeURIComponent(slug)}/`,
+  );
+  return res.data as PublicInstructorProfile;
+}
+
+export interface BrowseInstructorsParams {
+  page?: number;
+  page_size?: number;
+  country?: string;
+  is_verified?: boolean;
+}
+
+/** Browse publicly-visible instructors. */
+export async function browsePublicInstructors(
+  params: BrowseInstructorsParams = {},
+): Promise<PaginatedResponse<PublicInstructorListItem>> {
+  const query = new URLSearchParams();
+  if (params.page) query.set("page", String(params.page));
+  if (params.page_size) query.set("page_size", String(params.page_size));
+  if (params.country) query.set("country", params.country);
+  if (params.is_verified !== undefined)
+    query.set("is_verified", String(params.is_verified));
+  const qs = query.toString();
+  const res = await apiGet<PaginatedResponse<PublicInstructorListItem>>(
+    `/auth/profiles/instructors/${qs ? `?${qs}` : ""}`,
+  );
+  return res.data as PaginatedResponse<PublicInstructorListItem>;
+}

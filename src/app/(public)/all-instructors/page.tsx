@@ -1,8 +1,8 @@
 import { BreadcrumbHero } from "@/components/common/breadcrumb-hero";
-import { InstructorsGridSection } from "@/components/all-instructor/instructors-grid-section";
+import { InstructorsGridSection } from "@/components/all-instructors/instructors-grid-section";
 import { DreamCareerCta } from "@/components/common/dream-career-cta";
 
-export default function AllInstructorPage() {
+export default function AllInstructorsPage() {
   return (
     <div className="min-h-screen">
       <BreadcrumbHero
