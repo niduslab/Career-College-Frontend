@@ -1,17 +1,26 @@
 "use client";
 
 import React, { useState } from "react";
-import { User, Shield, Bell, CreditCard, ChevronRight } from "lucide-react";
+import {
+  User,
+  Shield,
+  Bell,
+  CreditCard,
+  ShieldCheck,
+  ChevronRight,
+} from "lucide-react";
 import { ProfileTab } from "./profile-tab";
 import { AccountTab } from "./account-tab";
 import { NotificationsTab } from "./notifications-tab";
 import { BillingTab } from "./billing-tab";
+import { VerificationTab } from "./verification-tab";
 
-type Tab = "profile" | "account" | "notifications" | "billing";
+type Tab = "profile" | "account" | "verification" | "notifications" | "billing";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "profile", label: "Profile", icon: User },
   { id: "account", label: "Account & Security", icon: Shield },
+  { id: "verification", label: "Verification", icon: ShieldCheck },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "billing", label: "Billing", icon: CreditCard },
 ];
@@ -22,6 +31,7 @@ export default function PartnershipSettingsPage() {
   const ActiveContent = {
     profile: ProfileTab,
     account: AccountTab,
+    verification: VerificationTab,
     notifications: NotificationsTab,
     billing: BillingTab,
   }[activeTab];
