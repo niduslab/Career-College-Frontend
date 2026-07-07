@@ -12,10 +12,16 @@ import {
 } from "@/lib/profile-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import { notifyProfileUpdated } from "@/lib/profile-events";
 import { validateUrl, validateMaxLength } from "@/lib/validation";
 import { LocationSelect } from "@/components/common/location-select";
 import RichTextEditor from "@/components/common/rich-text-editor";
-import { SectionCard, Field, Input, AsyncSaveButton } from "../../settings-shared/ui";
+import {
+  SectionCard,
+  Field,
+  Input,
+  AsyncSaveButton,
+} from "../../settings-shared/ui";
 import { mediaUrl, initialsOf } from "../../settings-shared/helpers";
 import { EducationAndExperience } from "../../settings-shared/education-experience";
 
@@ -40,7 +46,7 @@ export function ProfileTab() {
     current_title: "",
     current_organization: "",
     years_of_experience: "",
-    specialization: "", // comma-separated in UI, split on save
+    specialization: "",
     city: "",
     state: "",
     country: "",
@@ -185,6 +191,7 @@ export function ProfileTab() {
     try {
       const p = await updateInstructorPhoto(file);
       hydrateProfile(p);
+      notifyProfileUpdated();
       notify.success("Photo updated.");
     } catch (err) {
       notify.error(
@@ -408,4 +415,3 @@ export function ProfileTab() {
     </div>
   );
 }
-

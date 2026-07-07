@@ -1,43 +1,39 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { gsap, prepareGsap } from "@/lib/gsap";
-import image1 from "@/assets/images/instructors/image1.webp";
-import image2 from "@/assets/images/instructors/image2.webp";
-import image3 from "@/assets/images/instructors/image3.webp";
-import image4 from "@/assets/images/instructors/image4.webp";
-
-const INSTRUCTORS = [
-  {
-    name: "Zubair Mahmud",
-    role: "Sr. Seniar UI/UX Designer",
-    image: image1,
-  },
-  {
-    name: "Mahmudul Karim",
-    role: "Full-Stack Developer",
-    image: image2,
-  },
-  {
-    name: "Rafia Siddique",
-    role: "Digital Marketing Expert",
-    image: image3,
-  },
-  {
-    name: "Saif Islam",
-    role: "Sr. Python & AI Expert",
-    image: image4,
-  },
-];
+import {
+  browsePublicInstructors,
+  type PublicInstructorListItem,
+} from "@/lib/profile-api";
+import {
+  mediaUrl,
+  initialsOf,
+} from "@/components/dashboard/settings-shared/helpers";
 
 export function InstructorsSection() {
   const sectionRef = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const cardsRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLAnchorElement | null>(null);
+  const [instructors, setInstructors] = useState<PublicInstructorListItem[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    browsePublicInstructors({ page: 1, page_size: 4 })
+      .then((res) => {
+        if (active) setInstructors(res.results);
+      })
+      .catch(() => {
+        /* section just renders empty on failure */
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!sectionRef.current) {
@@ -157,37 +153,48 @@ export function InstructorsSection() {
           ref={cardsRef}
           className="mt-8 grid gap-4 md:mt-10 md:grid-cols-2 lg:mt-12 lg:grid-cols-3 xl:grid-cols-4 lg:gap-5"
         >
-          {INSTRUCTORS.map((instructor) => (
-            <article
-              key={instructor.name}
-              data-instructor-card
-              className="group"
-            >
-              <div className="relative h-64 overflow-hidden rounded-2xl sm:h-72 md:h-80 lg:h-87.5 transition-transform duration-300 group-hover:scale-[1.02]">
-                <Image
-                  src={instructor.image}
-                  alt={instructor.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                  loading="eager"
-                  priority
-                  className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
-                />
-              </div>
-              <h3 className="mt-4 lg:sg-h5 sg-p-big font-semibold text-(--text-white)">
-                {instructor.name}
-              </h3>
-              <p className="lg:mt-1 mt-2 sg-p-small lg:sg-p-default text-(--text-white) font-normal">
-                {instructor.role}
-              </p>
-            </article>
-          ))}
+          {instructors.map((instructor) => {
+            const photoUrl = mediaUrl(instructor.profile_photo);
+            return (
+              <Link
+                key={instructor.slug}
+                href={`/all-instructors-details/${instructor.slug}`}
+                data-instructor-card
+                className="group block"
+              >
+                <div className="relative h-64 overflow-hidden rounded-2xl bg-white/10 sm:h-72 md:h-80 lg:h-87.5 transition-transform duration-300 group-hover:scale-[1.02] flex items-center justify-center">
+                  {photoUrl ? (
+                    <Image
+                      src={photoUrl}
+                      alt={instructor.full_name}
+                      fill
+                      unoptimized
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      loading="eager"
+                      priority
+                      className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <span className="text-[40px] font-semibold text-(--text-white)">
+                      {initialsOf(instructor.full_name)}
+                    </span>
+                  )}
+                </div>
+                <h3 className="mt-4 lg:sg-h5 sg-p-big font-semibold text-(--text-white)">
+                  {instructor.full_name}
+                </h3>
+                <p className="lg:mt-1 mt-2 sg-p-small lg:sg-p-default text-(--text-white) font-normal truncate">
+                  {instructor.headline || instructor.specialization.join(", ")}
+                </p>
+              </Link>
+            );
+          })}
         </div>
 
         <div className="mt-8 flex justify-center md:mt-10">
           <Link
             ref={buttonRef}
-            href="/all-instructor"
+            href="/all-instructors"
             className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-md bg-(--text-white) px-6 sg-p-default font-semibold text-(--primary-700) transition-transform duration-300 hover:-translate-y-px"
           >
             View All Instructors
