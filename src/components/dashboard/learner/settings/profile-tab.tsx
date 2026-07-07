@@ -13,6 +13,7 @@ import {
 } from "@/lib/profile-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import { notifyProfileUpdated } from "@/lib/profile-events";
 import { validateUrl, validateMaxLength } from "@/lib/validation";
 import { LocationSelect } from "@/components/common/location-select";
 import { SelectDropdown } from "@/components/common/select-dropdown";
@@ -199,6 +200,7 @@ export function ProfileTab() {
     try {
       const data = await updateProfilePhoto(file);
       hydrateProfile(data);
+      notifyProfileUpdated();
       notify.success("Photo updated.");
     } catch (err) {
       notify.error(

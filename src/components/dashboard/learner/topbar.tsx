@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { getMyProfile } from "@/lib/profile-api";
 import { useAuth } from "@/lib/use-auth";
+import { onProfileUpdated } from "@/lib/profile-events";
 import { mediaUrl, initialsOf } from "../settings-shared/helpers";
 
 // Map a backend user_type.
@@ -35,21 +36,26 @@ export default function LearnerTopbar() {
     window.dispatchEvent(new Event("toggleLearnerSidebar"));
   };
 
-  // Load the current user's name / role / photo for the header.
+  // re-load whenever the settings page reports a profile change.
   useEffect(() => {
     let active = true;
-    getMyProfile()
-      .then((data) => {
-        if (!active) return;
-        setName(data.user.full_name);
-        setRole(ROLE_LABELS[data.user.user_type] ?? data.user.user_type);
-        setPhoto(data.profile.profile_photo);
-      })
-      .catch(() => {
-        /* header just falls back to initials/empty */
-      });
+    const load = () => {
+      getMyProfile()
+        .then((data) => {
+          if (!active) return;
+          setName(data.user.full_name);
+          setRole(ROLE_LABELS[data.user.user_type] ?? data.user.user_type);
+          setPhoto(data.profile.profile_photo);
+        })
+        .catch(() => {
+          /* header just falls back to initials/empty */
+        });
+    };
+    load();
+    const unsubscribe = onProfileUpdated(load);
     return () => {
       active = false;
+      unsubscribe();
     };
   }, []);
 
@@ -107,6 +113,7 @@ export default function LearnerTopbar() {
                   width={36}
                   height={36}
                   unoptimized
+                  priority
                   className="w-full h-full object-cover"
                 />
               ) : (

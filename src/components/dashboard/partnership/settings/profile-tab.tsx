@@ -12,6 +12,7 @@ import {
 } from "@/lib/profile-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import { notifyProfileUpdated } from "@/lib/profile-events";
 import {
   validateUrl,
   validateEmail,
@@ -192,6 +193,7 @@ export function ProfileTab() {
     try {
       const p = await updatePartnerImages({ logo: file });
       hydrate(p);
+      notifyProfileUpdated();
       notify.success("Logo updated.");
     } catch (err) {
       notify.error(

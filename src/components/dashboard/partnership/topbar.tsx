@@ -16,6 +16,7 @@ import {
   INSTITUTION_TYPE_OPTIONS,
 } from "@/lib/profile-api";
 import { useAuth } from "@/lib/use-auth";
+import { onProfileUpdated } from "@/lib/profile-events";
 import { mediaUrl, initialsOf } from "../settings-shared/helpers";
 
 const INSTITUTION_TYPE_LABEL = (v: string) =>
@@ -34,21 +35,26 @@ export default function PartnershipTopbar() {
     window.dispatchEvent(new Event("togglePartnershipSidebar"));
   };
 
-  // Load the institution's name / type / logo for the header.
+  // re-load whenever the settings page reports a profile change.
   useEffect(() => {
     let active = true;
-    getMyPartnerProfile()
-      .then((data) => {
-        if (!active) return;
-        setName(data.profile.institution_name);
-        setRole(INSTITUTION_TYPE_LABEL(data.profile.institution_type));
-        setLogo(data.profile.logo);
-      })
-      .catch(() => {
-        /* header just falls back to initials/empty */
-      });
+    const load = () => {
+      getMyPartnerProfile()
+        .then((data) => {
+          if (!active) return;
+          setName(data.profile.institution_name);
+          setRole(INSTITUTION_TYPE_LABEL(data.profile.institution_type));
+          setLogo(data.profile.logo);
+        })
+        .catch(() => {
+          /* header just falls back to initials/empty */
+        });
+    };
+    load();
+    const unsubscribe = onProfileUpdated(load);
     return () => {
       active = false;
+      unsubscribe();
     };
   }, []);
 
@@ -106,6 +112,7 @@ export default function PartnershipTopbar() {
                   width={36}
                   height={36}
                   unoptimized
+                  priority
                   className="w-full h-full object-cover"
                 />
               ) : (
