@@ -9,23 +9,18 @@ import { FaLinkedin } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { LoginFormData, UserType } from "@/types/auth";
+import type { LoginFormData } from "@/types/auth";
 import { login, dashboardPathFor } from "@/lib/auth-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 import { validateEmail, validateRequired } from "@/lib/validation";
 
-interface LoginFormProps {
-  onUserTypeChange?: (type: UserType) => void;
-}
-
-export function LoginForm({ onUserTypeChange }: LoginFormProps = {}) {
+export function LoginForm() {
   const router = useRouter();
 
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: "",
-    user_type: "learner",
   });
 
   const [errors, setErrors] = useState<
@@ -74,7 +69,6 @@ export function LoginForm({ onUserTypeChange }: LoginFormProps = {}) {
   const updateField = (field: keyof LoginFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
-    if (field === "user_type") onUserTypeChange?.(value as UserType);
   };
 
   return (
@@ -87,30 +81,6 @@ export function LoginForm({ onUserTypeChange }: LoginFormProps = {}) {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* User Type Selection */}
-        <div>
-          <div className="grid grid-cols-3 gap-2 mt-2">
-            {(
-              ["learner", "instructor", "partner_institution"] as UserType[]
-            ).map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => updateField("user_type", type)}
-                className={` px-5 py-2 cursor-pointer h-10  rounded-md sg-p-default  whitespace-nowrap transition-all duration-200 ${
-                  formData.user_type === type
-                    ? "bg-(--primary-700) text-white font-semibold shadow-sm"
-                    : "border border-gray-200 text-(--text-paragraph) bg-white"
-                }`}
-              >
-                {type === "partner_institution"
-                  ? "Institution"
-                  : type.charAt(0).toUpperCase() + type.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Email */}
         <div>
           <Label
