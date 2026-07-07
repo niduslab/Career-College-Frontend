@@ -15,5 +15,4 @@ export interface SignUpFormData {
 export interface LoginFormData {
   email: string;
   password: string;
-  user_type: UserType;
 }
