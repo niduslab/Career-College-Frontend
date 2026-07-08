@@ -95,11 +95,6 @@ const navSections = [
     label: "System",
     items: [
       {
-        icon: Activity,
-        label: "Platform Health",
-        href: "/dashboard/admin/health",
-      },
-      {
         icon: Settings,
         label: "Settings",
         href: "/dashboard/admin/settings",
