@@ -39,7 +39,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-5">
       {/* Tab bar */}
-      <div className="bg-white border border-(--gray-200) rounded-lg px-4 py-3">
+      <div className="sticky top-14 lg:top-16 z-10 bg-white border border-(--gray-200) rounded-lg px-4 py-3">
         <div className="flex items-center gap-1 overflow-x-auto">
           {TABS.map(({ id, label, icon: Icon }, i) => {
             const active = activeTab === id;

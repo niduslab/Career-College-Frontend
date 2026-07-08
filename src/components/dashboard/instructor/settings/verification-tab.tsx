@@ -26,6 +26,7 @@ import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 import { mediaUrl } from "../../settings-shared/helpers";
 import { SelectDropdown } from "@/components/common/select-dropdown";
+import { CountrySelect } from "@/components/common/country-select";
 import DatePicker from "@/components/common/date-picker";
 import {
   SectionCard,
@@ -268,6 +269,11 @@ export function VerificationTab() {
     issuing_country: "",
     expiry_date: "",
   });
+  const [errors, setErrors] = useState<
+    Partial<
+      Record<"document_type" | "document_number" | "issuing_country", string>
+    >
+  >({});
 
   const load = () => {
     setLoading(true);
@@ -366,6 +372,21 @@ export function VerificationTab() {
 
   const handleSubmit = async () => {
     if (!verification) return;
+
+    const nextErrors: typeof errors = {};
+    if (!form.document_type)
+      nextErrors.document_type = "Document type is required.";
+    if (!form.document_number.trim())
+      nextErrors.document_number = "Document number is required.";
+    if (!form.issuing_country.trim())
+      nextErrors.issuing_country = "Issuing country is required.";
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      notify.error("Please fill in all required fields before submitting.");
+      return;
+    }
+    setErrors({});
+
     setSubmitting(true);
     try {
       const v = await submitVerification(verification.id);
@@ -376,6 +397,12 @@ export function VerificationTab() {
         notify.error(
           "Please complete your profile (headline, bio, specialization, experience, title) before submitting.",
         );
+      } else if (
+        err instanceof ApiError &&
+        Object.keys(err.fieldErrors).length > 0
+      ) {
+        setErrors(err.fieldErrors as typeof errors);
+        notify.error(err.detail);
       } else {
         notify.error(
           err instanceof ApiError
@@ -508,11 +535,21 @@ export function VerificationTab() {
           }
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Document type">
+            <Field
+              label="Document type"
+              required={editable}
+              error={errors.document_type}
+            >
               {editable ? (
                 <SelectDropdown
                   value={form.document_type}
-                  onChange={(v) => setForm((f) => ({ ...f, document_type: v }))}
+                  onChange={(v) => {
+                    setForm((f) => ({ ...f, document_type: v }));
+                    setErrors((prev) => ({
+                      ...prev,
+                      document_type: undefined,
+                    }));
+                  }}
                   options={DOCUMENT_TYPE_OPTIONS}
                   placeholder="Select document type"
                 />
@@ -527,24 +564,40 @@ export function VerificationTab() {
                 />
               )}
             </Field>
-            <Field label="Document number">
+            <Field
+              label="Document number"
+              required={editable}
+              error={errors.document_number}
+            >
               <Input
                 value={form.document_number}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, document_number: e.target.value }))
-                }
+                onChange={(e) => {
+                  setForm((f) => ({ ...f, document_number: e.target.value }));
+                  setErrors((prev) => ({
+                    ...prev,
+                    document_number: undefined,
+                  }));
+                }}
                 disabled={!editable}
                 placeholder="e.g. AB1234567"
               />
             </Field>
-            <Field label="Issuing country">
-              <Input
+            <Field
+              label="Issuing country"
+              required={editable}
+              error={errors.issuing_country}
+            >
+              <CountrySelect
                 value={form.issuing_country}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, issuing_country: e.target.value }))
-                }
+                onChange={(country) => {
+                  setForm((f) => ({ ...f, issuing_country: country }));
+                  setErrors((prev) => ({
+                    ...prev,
+                    issuing_country: undefined,
+                  }));
+                }}
                 disabled={!editable}
-                placeholder="e.g. Bangladesh"
+                placeholder="Search issuing country..."
               />
             </Field>
             <Field label="Expiry date (optional)">
