@@ -30,15 +30,18 @@ export function Field({
   label,
   children,
   error,
+  required,
 }: {
   label: string;
   children: React.ReactNode;
   error?: string;
+  required?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-[14px] font-normal text-(--text-title)">
         {label}
+        {required && <span className="text-red-500"> *</span>}
       </label>
       {children}
       {error && <p className="text-red-600 text-[12px] mt-0.5">{error}</p>}
