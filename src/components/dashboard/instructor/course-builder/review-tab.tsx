@@ -34,7 +34,6 @@ interface ReviewData {
   level: string;
   language: string;
   title: string;
-  tagline: string;
   description: string;
   modules: ReviewModule[];
   totalLessons: number;
@@ -116,14 +115,9 @@ export default function ReviewTab({
               <p className="text-[12px] text-(--gray-400)">
                 {data.category} · {data.level} · {data.language}
               </p>
-              <div>
-                <h3 className="text-[18px] font-bold text-(--text-title) leading-snug">
-                  {data.title || "Untitled Course"}
-                </h3>
-                <p className="text-[13px] text-(--primary-600) mt-0.5">
-                  {data.tagline}
-                </p>
-              </div>
+              <h3 className="text-[18px] font-bold text-(--text-title) leading-snug">
+                {data.title || "Untitled Course"}
+              </h3>
               <p className="text-[13px] text-(--gray-500) leading-relaxed">
                 {data.description}
               </p>
@@ -192,7 +186,7 @@ export default function ReviewTab({
             className="flex items-center gap-2 px-5 h-12 text-[14px] cursor-pointer font-medium border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
-            Pricing
+            Curriculum
           </button>
           <button
             onClick={onPublish}

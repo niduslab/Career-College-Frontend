@@ -4,7 +4,6 @@ import {
   Code2,
   ClipboardList,
   Settings,
-  DollarSign,
   Rocket,
 } from "lucide-react";
 import type { Step, LessonType, Module } from "./types";
@@ -12,18 +11,10 @@ import type { Step, LessonType, Module } from "./types";
 export const steps: { key: Step; icon: React.ElementType }[] = [
   { key: "Setup", icon: Settings },
   { key: "Curriculum", icon: BookOpen },
-  { key: "Pricing", icon: DollarSign },
   { key: "Review", icon: Rocket },
 ];
 
-export const CATEGORIES = [
-  "Design",
-  "Development",
-  "Marketing",
-  "Business",
-  "Photography",
-];
-export const LEVELS = ["Beginner", "Intermediate", "Advanced", "All Levels"];
+export const LEVELS = ["Beginner", "Intermediate", "Advanced"];
 export const LANGUAGES = ["English", "Spanish", "French", "German", "Arabic"];
 export const VIDEO_TYPES = ["Free Preview", "Paid"];
 

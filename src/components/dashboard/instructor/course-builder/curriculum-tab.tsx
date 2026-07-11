@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -11,6 +11,7 @@ import {
   ArrowDown,
   GripVertical,
   Sparkles,
+  Loader2,
 } from "lucide-react";
 import {
   DndContext,
@@ -27,21 +28,62 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { Module, Lesson } from "./types";
-import { SEED_MODULES, uid, totalLessons } from "./constants";
+import type { Lesson } from "./types";
 import ModuleModal from "./module-modal";
 import LessonModal from "./lesson-modal";
+import {
+  createSection,
+  updateSection,
+  deleteSection,
+  listSections,
+  listSectionContents,
+  createArticleLecture,
+  createVideoLecture,
+  updateLecture,
+  deleteLecture,
+  reorderSectionContent,
+  getLecture,
+  type SectionContentItem,
+  type LectureContent,
+} from "@/lib/course-api";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
+
+interface UiModule {
+  id: number;
+  title: string;
+  summary: string;
+  expanded: boolean;
+  loadingLessons: boolean;
+  contents: SectionContentItem[];
+}
+
+function contentToLesson(item: SectionContentItem): Lesson {
+  const content = item.content as LectureContent;
+  const isVideo = content.lecture_type === "video";
+  return {
+    id: String(item.id),
+    type: "Lecture",
+    title: content.title,
+    videoType:
+      item.content && "is_preview" in content && content.is_preview
+        ? "Free Preview"
+        : "Paid",
+    duration: content.active_video_asset?.duration_seconds
+      ? String(Math.round(content.active_video_asset.duration_seconds / 60))
+      : "",
+    description: isVideo ? "" : (content.article_content ?? ""),
+    isFreePreview: !!(content as LectureContent).is_preview,
+  };
+}
 
 function SortableLesson({
   lesson,
-
+  processing,
   onEdit,
 }: {
   lesson: Lesson;
-  isFirst: boolean;
-  isLast: boolean;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
+  processing?: boolean;
   onEdit: () => void;
 }) {
   const {
@@ -61,7 +103,7 @@ function SortableLesson({
         transition,
         opacity: isDragging ? 0.5 : 1,
       }}
-      className="flex   items-center gap-2 px-3 py-3 border border-(--gray-200) rounded-lg bg-white hover:bg-(--gray-50) transition-colors"
+      className="flex items-center gap-2 px-3 py-3 border border-(--gray-200) rounded-lg bg-white hover:bg-(--gray-50) transition-colors"
     >
       <button
         {...attributes}
@@ -76,14 +118,21 @@ function SortableLesson({
       <span className="flex-1 min-w-0 text-[14px] text-(--text-paragraph) leading-snug truncate">
         {lesson.title}
       </span>
+      {processing && (
+        <span className="flex items-center gap-1.5 text-[13px] font-medium text-amber-600 shrink-0 whitespace-nowrap">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing…
+        </span>
+      )}
       {lesson.isFreePreview && (
         <span className="text-[14px] font-medium text-(--primary-700) underline shrink-0 whitespace-nowrap">
           Free Preview
         </span>
       )}
-      <span className="text-[14px] text-(--text-paragraph) font-normal shrink-0 whitespace-nowrap">
-        {lesson.duration} min
-      </span>
+      {lesson.duration && (
+        <span className="text-[14px] text-(--text-paragraph) font-normal shrink-0 whitespace-nowrap">
+          {lesson.duration} min
+        </span>
+      )}
       <button
         onClick={onEdit}
         className="p-1 shrink-0 cursor-pointer transition-colors"
@@ -94,34 +143,34 @@ function SortableLesson({
   );
 }
 
-// Sortable Module Card
-
 function SortableModule({
   mod,
   modIndex,
   totalModules,
+  processingLectureIds,
   onToggle,
   onEditModule,
   onAddLesson,
+  onEditLesson,
+  onReorderLessons,
   onMoveModuleUp,
   onMoveModuleDown,
-  onReorderLessons,
-  onMoveLessonUp,
-  onMoveLessonDown,
-  onEditLesson,
 }: {
-  mod: Module;
+  mod: UiModule;
   modIndex: number;
   totalModules: number;
+  processingLectureIds: Set<number>;
   onToggle: () => void;
   onEditModule: () => void;
   onAddLesson: () => void;
+  onEditLesson: (content: SectionContentItem) => void;
+  onReorderLessons: (
+    moduleId: number,
+    oldIndex: number,
+    newIndex: number,
+  ) => void;
   onMoveModuleUp: () => void;
   onMoveModuleDown: () => void;
-  onReorderLessons: (lessons: Lesson[]) => void;
-  onMoveLessonUp: (lessonId: string) => void;
-  onMoveLessonDown: (lessonId: string) => void;
-  onEditLesson: (lesson: Lesson) => void;
 }) {
   const {
     attributes,
@@ -133,13 +182,15 @@ function SortableModule({
   } = useSortable({ id: mod.id });
 
   const lessonSensors = useSensors(useSensor(PointerSensor));
+  const lessons = mod.contents.map(contentToLesson);
 
   const handleLessonDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIdx = mod.lessons.findIndex((l) => l.id === active.id);
-    const newIdx = mod.lessons.findIndex((l) => l.id === over.id);
-    onReorderLessons(arrayMove(mod.lessons, oldIdx, newIdx));
+    const oldIndex = lessons.findIndex((l) => l.id === active.id);
+    const newIndex = lessons.findIndex((l) => l.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    onReorderLessons(mod.id, oldIndex, newIndex);
   };
 
   return (
@@ -178,7 +229,8 @@ function SortableModule({
 
         <div className="flex items-center gap-2 shrink-0 ml-auto">
           <span className="hidden sm:inline-flex items-center justify-center rounded-full bg-(--gray-100) px-2.5 py-1 text-[14px] font-normal text-(--text-paragraph)">
-            {mod.lessons.length} Lesson{mod.lessons.length !== 1 ? "s" : ""}
+            {mod.loadingLessons ? "…" : lessons.length} Lesson
+            {lessons.length !== 1 ? "s" : ""}
           </span>
           <button
             onClick={onMoveModuleUp}
@@ -207,28 +259,33 @@ function SortableModule({
       {mod.expanded && (
         <>
           <div className="flex flex-col gap-2 p-3 border-t border-(--gray-200)">
-            <DndContext
-              sensors={lessonSensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleLessonDragEnd}
-            >
-              <SortableContext
-                items={mod.lessons.map((l) => l.id)}
-                strategy={verticalListSortingStrategy}
+            {mod.loadingLessons ? (
+              <div className="flex items-center gap-2 text-(--gray-500) text-[13px] py-3">
+                <Loader2 className="w-4 h-4 animate-spin" /> Loading lessons…
+              </div>
+            ) : (
+              <DndContext
+                sensors={lessonSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleLessonDragEnd}
               >
-                {mod.lessons.map((lesson, lIdx) => (
-                  <SortableLesson
-                    key={lesson.id}
-                    lesson={lesson}
-                    isFirst={lIdx === 0}
-                    isLast={lIdx === mod.lessons.length - 1}
-                    onMoveUp={() => onMoveLessonUp(lesson.id)}
-                    onMoveDown={() => onMoveLessonDown(lesson.id)}
-                    onEdit={() => onEditLesson(lesson)}
-                  />
-                ))}
-              </SortableContext>
-            </DndContext>
+                <SortableContext
+                  items={lessons.map((l) => l.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {lessons.map((lesson, i) => (
+                    <SortableLesson
+                      key={lesson.id}
+                      lesson={lesson}
+                      processing={processingLectureIds.has(
+                        mod.contents[i]?.object_id,
+                      )}
+                      onEdit={() => onEditLesson(mod.contents[i])}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            )}
           </div>
 
           <div className="px-4 py-3">
@@ -246,41 +303,127 @@ function SortableModule({
   );
 }
 
-// Curriculum Tab
-
 export default function CurriculumTab({
+  courseId,
   onContinue,
 }: {
+  courseId: number;
   onContinue?: () => void;
 }) {
-  const [modules, setModules] = useState<Module[]>(SEED_MODULES);
-
-  const [moduleModal, setModuleModal] = useState<{
-    mode: "add" | "edit";
-    moduleId?: string;
-  } | null>(null);
-
-  const [lessonModalModuleId, setLessonModalModuleId] = useState<string | null>(
+  const [modules, setModules] = useState<UiModule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [moduleModal, setModuleModal] = useState<
+    { mode: "add" } | { mode: "edit"; moduleId: number } | null
+  >(null);
+  const [savingModule, setSavingModule] = useState(false);
+  const [lessonModalModuleId, setLessonModalModuleId] = useState<number | null>(
     null,
   );
+  const [savingLesson, setSavingLesson] = useState(false);
+  const [deletingLesson, setDeletingLesson] = useState(false);
   const [editingLesson, setEditingLesson] = useState<{
-    moduleId: string;
-    lesson: Lesson;
+    moduleId: number;
+    content: SectionContentItem;
   } | null>(null);
+  const [processingLectureIds, setProcessingLectureIds] = useState<Set<number>>(
+    new Set(),
+  );
 
   const moduleSensors = useSensors(useSensor(PointerSensor));
 
+  /** Poll a just-created video lecture until transcoding finishes (ready/failed). */
+  const pollVideoStatus = (lectureId: number, moduleId: number) => {
+    setProcessingLectureIds((prev) => new Set(prev).add(lectureId));
+    const interval = setInterval(async () => {
+      try {
+        const lecture = await getLecture(lectureId);
+        const status = lecture.active_video_asset?.status;
+        if (status === "ready" || status === "failed") {
+          clearInterval(interval);
+          setProcessingLectureIds((prev) => {
+            const next = new Set(prev);
+            next.delete(lectureId);
+            return next;
+          });
+          if (status === "failed") {
+            notify.error(`Video processing failed for "${lecture.title}".`);
+          } else {
+            notify.success(`"${lecture.title}" is ready.`);
+          }
+          await loadLessonsFor(moduleId);
+        }
+      } catch {
+        clearInterval(interval);
+        setProcessingLectureIds((prev) => {
+          const next = new Set(prev);
+          next.delete(lectureId);
+          return next;
+        });
+      }
+    }, 3000);
+  };
+
+  const loadLessonsFor = async (sectionId: number) => {
+    try {
+      const contents = await listSectionContents(sectionId);
+      setModules((prev) =>
+        prev.map((m) =>
+          m.id === sectionId ? { ...m, contents, loadingLessons: false } : m,
+        ),
+      );
+    } catch {
+      setModules((prev) =>
+        prev.map((m) =>
+          m.id === sectionId ? { ...m, loadingLessons: false } : m,
+        ),
+      );
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    listSections(courseId)
+      .then((sections) => {
+        if (!active) return;
+        const uiModules: UiModule[] = sections.map((s) => ({
+          id: s.id,
+          title: s.title,
+          summary: s.description,
+          expanded: false,
+          loadingLessons: true,
+          contents: [],
+        }));
+        setModules(uiModules);
+        sections.forEach((s) => loadLessonsFor(s.id));
+      })
+      .catch((err) => {
+        notify.error(
+          err instanceof ApiError ? err.message : "Failed to load curriculum.",
+        );
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [courseId]);
+
+  const totalLessonsCount = modules.reduce((s, m) => s + m.contents.length, 0);
   const totalVideos = modules.reduce(
-    (s, m) => s + m.lessons.filter((l) => l.type === "Lecture").length,
+    (s, m) =>
+      s +
+      m.contents.filter(
+        (c) => (c.content as LectureContent).lecture_type === "video",
+      ).length,
     0,
   );
 
-  // Module actions
-
-  const toggleExpand = (id: string) =>
+  const toggleExpand = (id: number) => {
     setModules((prev) =>
       prev.map((m) => (m.id === id ? { ...m, expanded: !m.expanded } : m)),
     );
+  };
 
   const handleModuleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -292,7 +435,7 @@ export default function CurriculumTab({
     });
   };
 
-  const moveModule = (id: string, dir: -1 | 1) => {
+  const moveModule = (id: number, dir: -1 | 1) => {
     setModules((prev) => {
       const idx = prev.findIndex((m) => m.id === id);
       if (idx + dir < 0 || idx + dir >= prev.length) return prev;
@@ -300,81 +443,205 @@ export default function CurriculumTab({
     });
   };
 
-  const saveModule = (title: string, summary: string) => {
-    if (!moduleModal) return;
-    if (moduleModal.mode === "add") {
-      setModules((prev) => [
-        ...prev,
-        { id: uid(), title, summary, expanded: true, lessons: [] },
-      ]);
-    } else {
+  const handleReorderLessons = async (
+    moduleId: number,
+    oldIndex: number,
+    newIndex: number,
+  ) => {
+    const targetModule = modules.find((m) => m.id === moduleId);
+    if (!targetModule) return;
+    const reordered = arrayMove(targetModule.contents, oldIndex, newIndex);
+    const movedContent = targetModule.contents[oldIndex];
+
+    // Optimistic local reorder so the drag feels instant.
+    setModules((prev) =>
+      prev.map((m) => (m.id === moduleId ? { ...m, contents: reordered } : m)),
+    );
+
+    try {
+      await reorderSectionContent(movedContent.id, newIndex + 1);
+    } catch (err) {
+      // Roll back on failure.
       setModules((prev) =>
         prev.map((m) =>
-          m.id === moduleModal.moduleId ? { ...m, title, summary } : m,
+          m.id === moduleId ? { ...m, contents: targetModule.contents } : m,
         ),
       );
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to reorder lesson.",
+      );
     }
-    setModuleModal(null);
   };
 
-  const deleteModule = (id: string) => {
-    setModules((prev) => prev.filter((m) => m.id !== id));
-    setModuleModal(null);
+  const saveModule = async (title: string, summary: string) => {
+    if (!moduleModal) return;
+    setSavingModule(true);
+    try {
+      if (moduleModal.mode === "edit") {
+        const { data: section, message } = await updateSection(
+          moduleModal.moduleId,
+          { title, description: summary },
+        );
+        setModules((prev) =>
+          prev.map((m) =>
+            m.id === section.id
+              ? { ...m, title: section.title, summary: section.description }
+              : m,
+          ),
+        );
+        notify.success(message ?? "Section updated.");
+      } else {
+        const { data: section, message } = await createSection(courseId, {
+          title,
+          description: summary,
+          position: modules.length + 1,
+        });
+        setModules((prev) => [
+          ...prev,
+          {
+            id: section.id,
+            title: section.title,
+            summary: section.description,
+            expanded: true,
+            loadingLessons: false,
+            contents: [],
+          },
+        ]);
+        notify.success(message ?? "Section added.");
+      }
+      setModuleModal(null);
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to save section.",
+      );
+    } finally {
+      setSavingModule(false);
+    }
   };
 
-  // Lesson actions
-
-  const addLesson = (moduleId: string, lesson: Omit<Lesson, "id">) => {
-    setModules((prev) =>
-      prev.map((m) =>
-        m.id === moduleId
-          ? { ...m, lessons: [...m.lessons, { ...lesson, id: uid() }] }
-          : m,
-      ),
-    );
-    setLessonModalModuleId(null);
+  const deleteModule = async (moduleId: number) => {
+    setSavingModule(true);
+    try {
+      const message = await deleteSection(moduleId);
+      setModules((prev) => prev.filter((m) => m.id !== moduleId));
+      notify.success(message ?? "Section deleted.");
+      setModuleModal(null);
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to delete section.",
+      );
+    } finally {
+      setSavingModule(false);
+    }
   };
 
-  const reorderLessons = (moduleId: string, lessons: Lesson[]) =>
-    setModules((prev) =>
-      prev.map((m) => (m.id === moduleId ? { ...m, lessons } : m)),
-    );
-
-  const moveLesson = (moduleId: string, lessonId: string, dir: -1 | 1) => {
-    setModules((prev) =>
-      prev.map((m) => {
-        if (m.id !== moduleId) return m;
-        const idx = m.lessons.findIndex((l) => l.id === lessonId);
-        if (idx + dir < 0 || idx + dir >= m.lessons.length) return m;
-        return { ...m, lessons: arrayMove(m.lessons, idx, idx + dir) };
-      }),
-    );
-  };
-
-  const updateLesson = (
-    moduleId: string,
-    lessonId: string,
-    updated: Omit<Lesson, "id">,
+  const handleAddLecture = async (
+    moduleId: number,
+    lesson: Omit<Lesson, "id"> & { articleContent?: string; videoFile?: File },
   ) => {
-    setModules((prev) =>
-      prev.map((m) =>
-        m.id !== moduleId
-          ? m
-          : {
-              ...m,
-              lessons: m.lessons.map((l) =>
-                l.id === lessonId ? { ...updated, id: lessonId } : l,
-              ),
-            },
-      ),
-    );
-    setEditingLesson(null);
+    setSavingLesson(true);
+    try {
+      const position =
+        (modules.find((m) => m.id === moduleId)?.contents.length ?? 0) + 1;
+
+      if (lesson.videoFile) {
+        const { data: created, message } = await createVideoLecture(moduleId, {
+          title: lesson.title,
+          video_file: lesson.videoFile,
+          position,
+          is_preview: lesson.isFreePreview,
+        });
+        notify.success(message ?? "Video uploaded — processing started.");
+        setModules((prev) =>
+          prev.map((m) =>
+            m.id === moduleId ? { ...m, loadingLessons: true } : m,
+          ),
+        );
+        await loadLessonsFor(moduleId);
+        pollVideoStatus(created.object_id, moduleId);
+      } else {
+        const { message } = await createArticleLecture(moduleId, {
+          title: lesson.title,
+          article_content: lesson.articleContent ?? "",
+          position,
+          is_preview: lesson.isFreePreview,
+        });
+        notify.success(message ?? "Lesson added.");
+        setModules((prev) =>
+          prev.map((m) =>
+            m.id === moduleId ? { ...m, loadingLessons: true } : m,
+          ),
+        );
+        await loadLessonsFor(moduleId);
+      }
+      setLessonModalModuleId(null);
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to add lesson.",
+      );
+    } finally {
+      setSavingLesson(false);
+    }
   };
 
-  const editingModule =
-    moduleModal?.mode === "edit"
-      ? modules.find((m) => m.id === moduleModal.moduleId)
-      : null;
+  const handleEditLecture = async (
+    moduleId: number,
+    lectureId: number,
+    lesson: Omit<Lesson, "id"> & { articleContent?: string },
+  ) => {
+    setSavingLesson(true);
+    try {
+      const { message } = await updateLecture(lectureId, {
+        title: lesson.title,
+        article_content: lesson.articleContent,
+        is_preview: lesson.isFreePreview,
+      });
+      notify.success(message ?? "Lesson updated.");
+      setModules((prev) =>
+        prev.map((m) =>
+          m.id === moduleId ? { ...m, loadingLessons: true } : m,
+        ),
+      );
+      await loadLessonsFor(moduleId);
+      setEditingLesson(null);
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to update lesson.",
+      );
+    } finally {
+      setSavingLesson(false);
+    }
+  };
+
+  const handleDeleteLecture = async (moduleId: number, lectureId: number) => {
+    setDeletingLesson(true);
+    try {
+      const message = await deleteLecture(lectureId);
+      notify.success(message ?? "Lesson deleted.");
+      setModules((prev) =>
+        prev.map((m) =>
+          m.id === moduleId ? { ...m, loadingLessons: true } : m,
+        ),
+      );
+      await loadLessonsFor(moduleId);
+      setEditingLesson(null);
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to delete lesson.",
+      );
+    } finally {
+      setDeletingLesson(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-(--gray-500)">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+        Loading curriculum…
+      </div>
+    );
+  }
 
   return (
     <>
@@ -386,7 +653,7 @@ export default function CurriculumTab({
               Curriculum Architecture
             </h2>
             <p className="text-[14px] text-(--text-paragraph) mt-0.5">
-              {modules.length} modules · {totalLessons(modules)} lessons ·{" "}
+              {modules.length} modules · {totalLessonsCount} lessons ·{" "}
               {totalVideos} videos
             </p>
           </div>
@@ -407,25 +674,18 @@ export default function CurriculumTab({
                     mod={mod}
                     modIndex={mIdx}
                     totalModules={modules.length}
+                    processingLectureIds={processingLectureIds}
                     onToggle={() => toggleExpand(mod.id)}
                     onEditModule={() =>
                       setModuleModal({ mode: "edit", moduleId: mod.id })
                     }
                     onAddLesson={() => setLessonModalModuleId(mod.id)}
+                    onEditLesson={(content) =>
+                      setEditingLesson({ moduleId: mod.id, content })
+                    }
+                    onReorderLessons={handleReorderLessons}
                     onMoveModuleUp={() => moveModule(mod.id, -1)}
                     onMoveModuleDown={() => moveModule(mod.id, 1)}
-                    onReorderLessons={(lessons) =>
-                      reorderLessons(mod.id, lessons)
-                    }
-                    onMoveLessonUp={(lessonId) =>
-                      moveLesson(mod.id, lessonId, -1)
-                    }
-                    onMoveLessonDown={(lessonId) =>
-                      moveLesson(mod.id, lessonId, 1)
-                    }
-                    onEditLesson={(lesson) =>
-                      setEditingLesson({ moduleId: mod.id, lesson })
-                    }
                   />
                 ))}
               </div>
@@ -443,11 +703,7 @@ export default function CurriculumTab({
 
         {/* Right — footer (mobile/md) + AI Outline Generator + How It Works */}
         <div className="w-full xl:w-82.5 shrink-0 space-y-5">
-          {/* Footer buttons — shown above AI panel on mobile/md, hidden on lg (rendered below instead) */}
           <div className="flex justify-start gap-3 xl:hidden">
-            <button className="px-5 h-11 text-[14px] cursor-pointer font-normal border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
-              Save Draft
-            </button>
             <button
               onClick={onContinue}
               className="px-5 h-11 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors flex items-center gap-2"
@@ -484,22 +740,14 @@ export default function CurriculumTab({
             <ol className="space-y-2.5 list-none">
               {[
                 <>
-                  {/*  to create a section. */}
                   Click{" "}
-                  <strong className="text-(--text-title)">
-                    Add New Module
-                  </strong>{" "}
-                  to create a section.
+                  <strong className="text-(--text-title)">Add Module</strong> to
+                  create a section.
                 </>,
                 <>
                   Inside each module, click{" "}
                   <strong className="text-(--text-title)">Add Lesson</strong> to
-                  upload a video, document, or quiz.
-                </>,
-                <>
-                  Use the{" "}
-                  <strong className="text-(--text-title)">pencil</strong> icon
-                  to rename or describe a module or lesson.
+                  upload a video or write an article.
                 </>,
                 <>Drag handles or use the up/down arrows to reorder.</>,
               ].map((item, i) => (
@@ -520,9 +768,6 @@ export default function CurriculumTab({
 
       {/* Footer buttons — only on lg and above */}
       <div className="hidden xl:flex justify-start gap-3">
-        <button className="px-5 h-11 text-[14px] cursor-pointer font-normal border border-(--gray-200) rounded-lg text-(--gray-600) hover:bg-(--gray-50) transition-colors">
-          Save Draft
-        </button>
         <button
           onClick={onContinue}
           className="px-5 h-11 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors flex items-center gap-2"
@@ -532,40 +777,67 @@ export default function CurriculumTab({
         </button>
       </div>
 
-      {moduleModal && (
-        <ModuleModal
-          module={
-            editingModule
-              ? { title: editingModule.title, summary: editingModule.summary }
-              : null
-          }
-          lessonCount={editingModule?.lessons.length}
-          onSave={saveModule}
-          onDelete={
-            editingModule ? () => deleteModule(editingModule.id) : undefined
-          }
-          onClose={() => setModuleModal(null)}
-        />
-      )}
+      {moduleModal &&
+        (() => {
+          const editingModule =
+            moduleModal.mode === "edit"
+              ? modules.find((m) => m.id === moduleModal.moduleId)
+              : null;
+          return (
+            <ModuleModal
+              module={
+                editingModule
+                  ? {
+                      title: editingModule.title,
+                      summary: editingModule.summary,
+                    }
+                  : null
+              }
+              lessonCount={editingModule?.contents.length}
+              onSave={saveModule}
+              onDelete={
+                editingModule ? () => deleteModule(editingModule.id) : undefined
+              }
+              onClose={() => !savingModule && setModuleModal(null)}
+            />
+          );
+        })()}
 
-      {lessonModalModuleId && (
+      {lessonModalModuleId !== null && (
         <LessonModal
-          onSave={(lesson) => addLesson(lessonModalModuleId, lesson)}
-          onClose={() => setLessonModalModuleId(null)}
+          saving={savingLesson}
+          onSave={(lesson) => handleAddLecture(lessonModalModuleId, lesson)}
+          onClose={() => !savingLesson && setLessonModalModuleId(null)}
         />
       )}
 
       {editingLesson && (
         <LessonModal
-          initialLesson={editingLesson.lesson}
-          onSave={(updated) =>
-            updateLesson(
+          initialLesson={contentToLesson(editingLesson.content)}
+          initialLectureType={
+            (editingLesson.content.content as LectureContent).lecture_type ===
+            "video"
+              ? "Video"
+              : "Article"
+          }
+          saving={savingLesson}
+          deleting={deletingLesson}
+          onSave={(lesson) =>
+            handleEditLecture(
               editingLesson.moduleId,
-              editingLesson.lesson.id,
-              updated,
+              editingLesson.content.object_id,
+              lesson,
             )
           }
-          onClose={() => setEditingLesson(null)}
+          onDelete={() =>
+            handleDeleteLecture(
+              editingLesson.moduleId,
+              editingLesson.content.object_id,
+            )
+          }
+          onClose={() =>
+            !savingLesson && !deletingLesson && setEditingLesson(null)
+          }
         />
       )}
     </>

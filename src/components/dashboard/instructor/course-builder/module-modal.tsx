@@ -95,7 +95,7 @@ export default function ModuleModal({
               }}
               className="px-4 h-10 text-[14px] font-semibold bg-(--primary-700) hover:bg-(--primary-900) text-white rounded-md cursor-pointer transition-colors"
             >
-              Save module
+              {module ? "Update module" : "Save module"}
             </button>
           </div>
         </div>

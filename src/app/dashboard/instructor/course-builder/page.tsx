@@ -4,27 +4,75 @@ import { useState } from "react";
 import { ChevronRight, Eye } from "lucide-react";
 import type { Step } from "@/components/dashboard/instructor/course-builder/types";
 import { steps } from "@/components/dashboard/instructor/course-builder/constants";
-import SetupTab from "@/components/dashboard/instructor/course-builder/setup-tab";
+import SetupTab, {
+  type SetupForm,
+} from "@/components/dashboard/instructor/course-builder/setup-tab";
 import CurriculumTab from "@/components/dashboard/instructor/course-builder/curriculum-tab";
-import PricingTab from "@/components/dashboard/instructor/course-builder/pricing-tab";
 import ReviewTab from "@/components/dashboard/instructor/course-builder/review-tab";
 import PreviewDrawer from "@/components/dashboard/instructor/course-builder/preview-drawer";
 import { SEED_MODULES } from "@/components/dashboard/instructor/course-builder/constants";
+import { createCourse, updateCourse } from "@/lib/course-api";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
 
-const INITIAL_FORM = {
-  title: "Advanced UI/UX Course",
-  category: "Design",
+const INITIAL_FORM: SetupForm = {
+  title: "",
+  categoryId: null,
+  category: "",
   level: "Intermediate",
   language: "English",
-  tagline: "Working Draft",
-  description:
-    "A studio course on shaping narrative through architectural form, light, and material.",
+  description: "",
+  price: "",
+  learningObjectives: "",
+  prerequisites: "",
+  audiences: "",
+  thumbnailFile: null,
+  thumbnailUrl: null,
 };
 
 export default function CourseBuilderPage() {
   const [activeStep, setActiveStep] = useState<Step>("Setup");
-  const [form, setForm] = useState(INITIAL_FORM);
+  const [form, setForm] = useState<SetupForm>(INITIAL_FORM);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [courseId, setCourseId] = useState<number | null>(null);
+  const [savingCourse, setSavingCourse] = useState(false);
+
+  const handleSetupContinue = async () => {
+    if (!form.categoryId) {
+      notify.error("Please select a category.");
+      return;
+    }
+    setSavingCourse(true);
+    try {
+      const payload = {
+        title: form.title,
+        description: form.description,
+        category: form.categoryId,
+        language: form.language,
+        level: form.level.toLowerCase() as "beginner" | "intermediate" | "advanced",
+        price: form.price || "0",
+        learning_objectives: form.learningObjectives,
+        prerequisites: form.prerequisites,
+        audiences: form.audiences,
+        thumbnail: form.thumbnailFile,
+      };
+      if (courseId === null) {
+        const { data: course, message } = await createCourse(payload);
+        setCourseId(course.id);
+        notify.success(message ?? "Course created.");
+      } else {
+        const { message } = await updateCourse(courseId, payload);
+        notify.success(message ?? "Course updated.");
+      }
+      setActiveStep("Curriculum");
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to save course.",
+      );
+    } finally {
+      setSavingCourse(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -80,20 +128,22 @@ export default function CourseBuilderPage() {
         <SetupTab
           form={form}
           setForm={setForm}
-          onContinue={() => setActiveStep("Curriculum")}
+          onContinue={handleSetupContinue}
+          saving={savingCourse}
         />
       )}
 
-      {activeStep === "Curriculum" && (
-        <CurriculumTab onContinue={() => setActiveStep("Pricing")} />
-      )}
-
-      {activeStep === "Pricing" && (
-        <PricingTab
-          onBack={() => setActiveStep("Curriculum")}
-          onContinue={() => setActiveStep("Review")}
-        />
-      )}
+      {activeStep === "Curriculum" &&
+        (courseId !== null ? (
+          <CurriculumTab
+            courseId={courseId}
+            onContinue={() => setActiveStep("Review")}
+          />
+        ) : (
+          <div className="bg-white border border-(--gray-200) rounded-xl p-10 text-center text-(--gray-500) text-[14px]">
+            Please complete Course Setup first to unlock the curriculum builder.
+          </div>
+        ))}
 
       <PreviewDrawer
         open={previewOpen}
@@ -109,7 +159,6 @@ export default function CourseBuilderPage() {
             level: form.level,
             language: form.language,
             title: form.title,
-            tagline: form.tagline,
             description: form.description,
             modules: SEED_MODULES.map((m) => ({
               title: m.title,
@@ -124,9 +173,9 @@ export default function CourseBuilderPage() {
               (s, m) => s + m.lessons.filter((l) => l.type === "Lecture").length,
               0,
             ),
-            price: "149",
+            price: form.price,
           }}
-          onBack={() => setActiveStep("Pricing")}
+          onBack={() => setActiveStep("Curriculum")}
         />
       )}
     </div>
