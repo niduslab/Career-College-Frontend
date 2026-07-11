@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { X, Upload, ChevronDown, Trash2, Video, FileText } from "lucide-react";
+import { useRef, useState } from "react";
+import { X, Upload, ChevronDown, Trash2, Video, FileText, Loader2 } from "lucide-react";
 import RichTextEditor from "@/components/common/rich-text-editor";
 import type { Lesson, LessonType, LectureType } from "./types";
 import { LESSON_TYPES } from "./constants";
@@ -10,28 +10,53 @@ import CodingExerciseModal from "./coding-exercise-modal";
 import AssignmentQuestionModal from "./assignment-question-modal";
 import type { AssignmentQuestion } from "./assignment-question-modal";
 
+export type LectureSavePayload = Omit<Lesson, "id"> & {
+  articleContent?: string;
+  videoFile?: File;
+};
+
 export default function LessonModal({
   initialLesson,
+  initialLectureType,
+  saving,
+  deleting,
   onSave,
+  onDelete,
   onClose,
 }: {
   initialLesson?: Omit<Lesson, "id">;
-  onSave: (lesson: Omit<Lesson, "id">) => void;
+  /** For an existing Lecture, whether it's a video or article — determines which fields render in edit mode. */
+  initialLectureType?: LectureType;
+  saving?: boolean;
+  deleting?: boolean;
+  onSave: (lesson: LectureSavePayload) => void;
+  onDelete?: () => void;
   onClose: () => void;
 }) {
   const [lessonType, setLessonType] = useState<LessonType>(
     initialLesson?.type ?? "Lecture",
   );
-  const [lectureType, setLectureType] = useState<LectureType>("Video");
+  const [lectureType, setLectureType] = useState<LectureType>(
+    initialLectureType ?? "Video",
+  );
   const [title, setTitle] = useState(initialLesson?.title ?? "");
-  const [duration, setDuration] = useState(initialLesson?.duration ?? "");
   const [description, setDescription] = useState(
-    initialLesson?.description ?? "Follow my instruction",
+    initialLectureType ? "" : (initialLesson?.description ?? ""),
   );
   const [isFreePreview, setIsFreePreview] = useState(
     initialLesson?.isFreePreview ?? false,
   );
-  const [articleContent, setArticleContent] = useState("");
+  const [articleContent, setArticleContent] = useState(
+    initialLectureType === "Article" ? (initialLesson?.description ?? "") : "",
+  );
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const [errors, setErrors] = useState<{
+    title?: string;
+    videoFile?: string;
+    articleContent?: string;
+  }>({});
+  const isEditingLecture = !!initialLesson && !!initialLectureType;
 
   // Quiz fields
   const [quizTitle, setQuizTitle] = useState(
@@ -79,14 +104,30 @@ export default function LessonModal({
       if (passingScoreError) return;
       setAssignmentQuestionsOpen(true);
     } else {
-      if (!title.trim()) return;
+      const nextErrors: typeof errors = {};
+      if (!title.trim()) {
+        nextErrors.title = "Lesson title is required.";
+      }
+      if (lectureType === "Video" && !videoFile && !isEditingLecture) {
+        nextErrors.videoFile = "Please upload a video file.";
+      }
+      if (lectureType === "Article" && !articleContent.trim()) {
+        nextErrors.articleContent = "Article content is required.";
+      }
+      if (Object.keys(nextErrors).length > 0) {
+        setErrors(nextErrors);
+        return;
+      }
+      setErrors({});
       onSave({
         type: lessonType,
         title: title.trim(),
-        videoType: lectureType,
-        duration,
-        description,
+        videoType: "",
+        duration: "",
+        description: "",
         isFreePreview,
+        articleContent: lectureType === "Article" ? articleContent : undefined,
+        videoFile: lectureType === "Video" ? (videoFile ?? undefined) : undefined,
       });
     }
   };
@@ -279,19 +320,29 @@ export default function LessonModal({
               {/* Lesson Title */}
               <div className="space-y-1.5">
                 <label className="text-[14px] font-normal text-(--text-title)">
-                  Lesson Title
+                  Lesson Title <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    setErrors((prev) => ({ ...prev, title: undefined }));
+                  }}
                   placeholder={
                     lectureType === "Video"
                       ? "Write video title"
                       : "Write article title"
                   }
-                  className="w-full h-12 px-3 text-[14px] mt-1 border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+                  className={`w-full h-12 px-3 text-[14px] mt-1 border rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 transition-shadow ${
+                    errors.title
+                      ? "border-red-400 focus:ring-red-400"
+                      : "border-(--gray-200) focus:ring-(--primary-700)"
+                  }`}
                 />
+                {errors.title && (
+                  <p className="text-[12px] text-red-500 mt-1">{errors.title}</p>
+                )}
               </div>
 
               {/* Free Preview checkbox */}
@@ -311,50 +362,51 @@ export default function LessonModal({
                 </label>
               </div>
 
-              {/* Description */}
-              <div className="space-y-1.5">
-                <label className="text-[14px] font-normal text-(--text-title)">
-                  Description
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={3}
-                  placeholder="Write description"
-                  className="w-full px-3 py-2.5 mt-1 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
-                />
-              </div>
-
               {lectureType === "Video" && (
                 <>
-                  {/* Video Duration */}
-                  <div className="space-y-1.5">
-                    <label className="text-[14px] font-normal text-(--text-title)">
-                      Video Duration
-                    </label>
-                    <input
-                      type="text"
-                      value={duration}
-                      onChange={(e) => setDuration(e.target.value)}
-                      placeholder="Write video duration"
-                      className="w-full h-12 px-3 mt-1 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
-                    />
-                  </div>
-
                   {/* Upload Video */}
                   <div className="space-y-1.5">
                     <label className="text-[14px] font-normal text-(--text-title)">
-                      Upload Video
+                      Upload Video{" "}
+                      {!isEditingLecture && (
+                        <span className="text-red-500">*</span>
+                      )}
                     </label>
-                    <div className="w-full rounded-lg border mt-1 border-dashed border-(--gray-200) bg-(--gray-50) flex flex-col items-center justify-center gap-2 py-8 cursor-pointer hover:border-(--primary-300) hover:bg-(--primary-50) transition-colors">
+                    {isEditingLecture && (
+                      <p className="text-[12px] text-(--gray-500)">
+                        Leave empty to keep the current video.
+                      </p>
+                    )}
+                    <div
+                      onClick={() => videoInputRef.current?.click()}
+                      className={`w-full rounded-lg border mt-1 border-dashed bg-(--gray-50) flex flex-col items-center justify-center gap-2 py-8 cursor-pointer hover:border-(--primary-300) hover:bg-(--primary-50) transition-colors ${
+                        errors.videoFile ? "border-red-400" : "border-(--gray-200)"
+                      }`}
+                    >
                       <Upload className="w-5 h-5 text-(--gray-400)" />
                       <p className="text-[12px] text-(--gray-500)">
-                        Upload mp4 Video
+                        {videoFile ? videoFile.name : "Upload mp4 Video"}
                       </p>
                     </div>
+                    <input
+                      ref={videoInputRef}
+                      type="file"
+                      accept="video/mp4,video/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        setVideoFile(e.target.files?.[0] ?? null);
+                        setErrors((prev) => ({ ...prev, videoFile: undefined }));
+                      }}
+                    />
+                    {errors.videoFile && (
+                      <p className="text-[12px] text-red-500 mt-1">
+                        {errors.videoFile}
+                      </p>
+                    )}
                     <p className="text-[12px] text-(--gray-500)">
                       Note: All files should be at least 720p and less than 4.0
-                      GB.
+                      GB. The video will be processed after saving — this can
+                      take a few minutes.
                     </p>
                   </div>
                 </>
@@ -363,16 +415,27 @@ export default function LessonModal({
               {lectureType === "Article" && (
                 <div className="space-y-1.5">
                   <label className="text-[14px] font-normal text-(--text-title)">
-                    Article Content
+                    Article Content <span className="text-red-500">*</span>
                   </label>
                   <div className="mt-1">
                     <RichTextEditor
                       value={articleContent}
-                      onChange={setArticleContent}
+                      onChange={(html) => {
+                        setArticleContent(html);
+                        setErrors((prev) => ({
+                          ...prev,
+                          articleContent: undefined,
+                        }));
+                      }}
                       placeholder="Write your article content here..."
                       minHeight="100px"
                     />
                   </div>
+                  {errors.articleContent && (
+                    <p className="text-[12px] text-red-500 mt-1">
+                      {errors.articleContent}
+                    </p>
+                  )}
                 </div>
               )}
             </>
@@ -462,45 +525,64 @@ export default function LessonModal({
 
         {/* Footer */}
         <div className="flex flex-col gap-3 px-6 py-4 border-t border-(--gray-200) bg-(--gray-100) rounded-b-2xl sm:flex-row sm:items-center sm:justify-between">
-          {isEdit && (
-            <button className="flex items-center gap-2 text-[14px] font-medium text-red-500 hover:text-red-600 cursor-pointer transition-colors">
-              <Trash2 className="w-4 h-4" />
-              Delete Lesson
+          {isEdit && onDelete && (
+            <button
+              onClick={onDelete}
+              disabled={deleting || saving}
+              className="flex items-center gap-2 text-[14px] font-medium text-red-500 hover:text-red-600 cursor-pointer transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {deleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              {deleting ? "Deleting…" : "Delete Lesson"}
             </button>
           )}
-          <div className={`flex items-center gap-2 ${isEdit ? "sm:ml-auto" : "ml-auto"}`}>
+          <div
+            className={`flex items-center gap-2 ${isEdit ? "sm:ml-auto" : "ml-auto"}`}
+          >
             <button
               onClick={onClose}
               className="px-4 h-9 text-[12px]  md:text-[14px] lg:text-[14px] font-normal border border-(--gray-200) rounded-md text-(--gray-600) hover:bg-(--gray-50) cursor-pointer transition-colors"
             >
               Cancel
             </button>
-            {lessonType !== "Quiz" && (
+            {/* {lessonType !== "Quiz" && (
               <button
                 onClick={onClose}
                 className="px-4 h-9 text-[12px]  md:text-[14px] lg:text-[14px] font-normal border border-(--gray-200) rounded-md text-(--gray-600) hover:bg-(--gray-50) cursor-pointer transition-colors"
               >
                 Save Draft
               </button>
-            )}
+            )} */}
             {(() => {
               const isAssignment = lessonType === "Assignment";
-              const disabled = isAssignment && !title.trim();
+              const disabled =
+                (isAssignment && !title.trim()) ||
+                passingScoreError ||
+                !!saving ||
+                !!deleting;
               return (
                 <button
                   onClick={handleSave}
                   disabled={disabled}
-                  className={`px-4 h-9 text-[12px] md:text-[14px] lg:text-[14px] font-semibold rounded-md transition-colors ${
+                  className={`flex items-center gap-2 px-4 h-9 text-[12px] md:text-[14px] lg:text-[14px] font-semibold rounded-md transition-colors ${
                     disabled
                       ? "bg-(--gray-200) text-(--gray-400) cursor-not-allowed"
                       : "bg-(--primary-700) hover:bg-(--primary-900) text-white cursor-pointer"
                   }`}
                 >
-                  {lessonType === "Quiz" ||
-                  lessonType === "Coding Exercise" ||
-                  lessonType === "Assignment"
-                    ? "Next"
-                    : "Save Lesson"}
+                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {saving
+                    ? "Saving…"
+                    : lessonType === "Quiz" ||
+                        lessonType === "Coding Exercise" ||
+                        lessonType === "Assignment"
+                      ? "Next"
+                      : isEdit
+                        ? "Update Lesson"
+                        : "Save Lesson"}
                 </button>
               );
             })()}

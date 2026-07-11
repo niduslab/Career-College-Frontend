@@ -21,7 +21,6 @@ interface PreviewDrawerProps {
     category: string;
     level: string;
     language: string;
-    tagline: string;
     description: string;
   };
   modules: Module[];
@@ -106,13 +105,6 @@ export default function PreviewDrawer({
               ) : null,
             )}
           </div>
-
-          {/* Tagline */}
-          {form.tagline && (
-            <p className="text-[14px] font-medium text-(--primary-600)">
-              {form.tagline}
-            </p>
-          )}
 
           {/* Description */}
           {form.description ? (

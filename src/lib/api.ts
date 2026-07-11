@@ -7,6 +7,7 @@ export interface ApiEnvelope<T = unknown> {
   message?: string | Record<string, string | string[]>;
   data?: T;
   errors?: Record<string, string | string[]>;
+  detail?: string;
 }
 
 /** Field-level validation errors, flattened to one message per field. */
@@ -62,7 +63,12 @@ async function handleResponse<T>(res: Response): Promise<ApiEnvelope<T>> {
         Object.values(fieldErrors)[0] ||
         "Something went wrong. Please try again.";
     } else {
-      message = json.message || "Something went wrong. Please try again.";
+      // DRF's own permission/exception responses skip our envelope and
+      // return { detail: "..." } instead of { message: "..." }.
+      message =
+        json.message ||
+        json.detail ||
+        "Something went wrong. Please try again.";
     }
     throw new ApiError(message, res.status, fieldErrors);
   }
@@ -74,13 +80,16 @@ export async function apiPost<T = unknown>(
   path: string,
   body: unknown,
 ): Promise<ApiEnvelope<T>> {
+  const isFormData =
+    typeof FormData !== "undefined" && body instanceof FormData;
+
   let res: Response;
   try {
     res = await fetch(`${config.apiBaseUrl}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: isFormData ? undefined : { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(body),
+      body: isFormData ? (body as FormData) : JSON.stringify(body),
     });
   } catch {
     throw new ApiError(
@@ -136,8 +145,12 @@ export async function apiPatch<T = unknown>(
   return handleResponse<T>(res);
 }
 
-/** DELETE a resource. Tolerates an empty (204) body. */
-export async function apiDelete(path: string): Promise<void> {
+/**
+ * DELETE a resource. Tolerates an empty (204) body.
+ * Returns the backend's success message when present, so callers can surface
+ * it verbatim instead of a hardcoded string.
+ */
+export async function apiDelete(path: string): Promise<string | undefined> {
   let res: Response;
   try {
     res = await fetch(`${config.apiBaseUrl}${path}`, {
@@ -151,15 +164,20 @@ export async function apiDelete(path: string): Promise<void> {
     );
   }
 
+  let json: ApiEnvelope | undefined;
+  try {
+    json = (await res.json()) as ApiEnvelope;
+  } catch {
+    /* empty body (e.g. 204) — tolerated */
+  }
+
   if (!res.ok) {
-    // Try to surface a message if the server sent one.
-    let message = "Delete failed. Please try again.";
-    try {
-      const json = (await res.json()) as ApiEnvelope;
-      if (typeof json.message === "string") message = json.message;
-    } catch {
-      /* empty body — keep default */
-    }
+    const message =
+      (typeof json?.message === "string" ? json.message : undefined) ??
+      json?.detail ??
+      "Delete failed. Please try again.";
     throw new ApiError(message, res.status);
   }
+
+  return typeof json?.message === "string" ? json.message : undefined;
 }
