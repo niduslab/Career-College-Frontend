@@ -1,417 +1,360 @@
 "use client";
 
 import { useState } from "react";
-import { X, Trash2, Plus, ChevronDown } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import type { Lesson } from "./types";
+import type {
+  CodingDifficulty,
+  CodingLanguage,
+} from "@/lib/course-api";
+import CodingExerciseBuilder from "./coding-exercise-builder";
 
-const CODING_LANGUAGES = ["JavaScript", "Python", "C++", "Java"];
+const DIFFICULTIES: CodingDifficulty[] = ["easy", "medium", "hard"];
 
-const STARTER_TEMPLATES: Record<string, string> = {
-  JavaScript: "function solution(input) {\n  // your code here\n}",
-  Python: "def solution(input):\n    # your code here\n    pass",
-  "C++":
-    "#include <iostream>\nusing namespace std;\n\nint solution(int input) {\n    // your code here\n    return 0;\n}",
-  Java: "public class Solution {\n    public int solution(int input) {\n        // your code here\n        return 0;\n    }\n}",
-};
+const LANGUAGE_OPTIONS: { value: CodingLanguage; label: string }[] = [
+  { value: "python", label: "Python" },
+  { value: "javascript", label: "JavaScript" },
+  { value: "cpp", label: "C++" },
+  { value: "java", label: "Java" },
+];
 
-interface TestCase {
-  id: number;
-  input: string;
-  expectedOutput: string;
+export interface CreateCodingExercisePayload {
+  title: string;
+  description: string;
+  problem_statement: string;
+  difficulty: CodingDifficulty;
+  default_language: CodingLanguage;
+  supported_languages: CodingLanguage[];
+  time_limit_ms?: number;
 }
 
-function TestCaseModal({
-  testCases,
-  onClose,
+export default function CodingExerciseModal({
+  initialLesson,
+  initialExerciseId,
   onSave,
+  onClose,
+  onCreateCodingExercise,
+  onCodingExerciseDeleted,
 }: {
-  testCases: TestCase[];
+  initialLesson?: Omit<Lesson, "id">;
+  /** For an existing coding exercise, its real backend id — skips shell creation and opens the builder directly. */
+  initialExerciseId?: number;
+  onSave: (lesson: Omit<Lesson, "id">) => void;
   onClose: () => void;
-  onSave: (cases: TestCase[]) => void;
+  /** Create the coding exercise shell and return its real id. Required to author a new exercise. */
+  onCreateCodingExercise?: (
+    input: CreateCodingExercisePayload,
+  ) => Promise<number | null>;
+  /** Called after the exercise is deleted from within the builder, so the caller can refresh/close. */
+  onCodingExerciseDeleted?: () => void;
 }) {
-  const [cases, setCases] = useState<TestCase[]>(
-    testCases.length ? testCases : [{ id: 1, input: "", expectedOutput: "" }],
+  const [exerciseId, setExerciseId] = useState<number | null>(
+    initialLesson?.type === "Coding Exercise"
+      ? (initialExerciseId ?? null)
+      : null,
   );
 
-  const addCase = () =>
-    setCases((prev) => [
-      ...prev,
-      { id: Date.now(), input: "", expectedOutput: "" },
-    ]);
+  const [title, setTitle] = useState(initialLesson?.title ?? "");
+  const [description, setDescription] = useState(
+    initialLesson?.description ?? "",
+  );
+  const [problemStatement, setProblemStatement] = useState("");
+  const [difficulty, setDifficulty] = useState<CodingDifficulty>("easy");
+  const [supportedLanguages, setSupportedLanguages] = useState<
+    CodingLanguage[]
+  >([]);
+  const [defaultLanguage, setDefaultLanguage] =
+    useState<CodingLanguage | null>(null);
+  const [timeLimitMs, setTimeLimitMs] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [errors, setErrors] = useState<{
+    title?: string;
+    problemStatement?: string;
+    supportedLanguages?: string;
+    defaultLanguage?: string;
+  }>({});
 
-  const removeCase = (id: number) =>
-    setCases((prev) => prev.filter((c) => c.id !== id));
+  const toggleLanguage = (lang: CodingLanguage) => {
+    setSupportedLanguages((prev) => {
+      const next = prev.includes(lang)
+        ? prev.filter((l) => l !== lang)
+        : [...prev, lang];
+      if (!next.includes(lang) && defaultLanguage === lang) {
+        setDefaultLanguage(next.length > 0 ? next[0] : null);
+      }
+      return next;
+    });
+    setErrors((prev) => ({ ...prev, supportedLanguages: undefined }));
+  };
 
-  const updateCase = (
-    id: number,
-    field: "input" | "expectedOutput",
-    value: string,
-  ) =>
-    setCases((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, [field]: value } : c)),
+  const handleCreate = async () => {
+    const nextErrors: typeof errors = {};
+    if (!title.trim()) nextErrors.title = "Lesson title is required.";
+    if (!problemStatement.trim())
+      nextErrors.problemStatement = "Problem statement is required.";
+    if (supportedLanguages.length === 0)
+      nextErrors.supportedLanguages = "Select at least one language.";
+    if (!defaultLanguage || !supportedLanguages.includes(defaultLanguage))
+      nextErrors.defaultLanguage = "Select a default language.";
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+    setErrors({});
+    if (!onCreateCodingExercise || !defaultLanguage) return;
+    setCreating(true);
+    try {
+      const parsedTimeLimit = timeLimitMs.trim()
+        ? Number(timeLimitMs)
+        : undefined;
+      const createdId = await onCreateCodingExercise({
+        title: title.trim(),
+        description: description.trim(),
+        problem_statement: problemStatement.trim(),
+        difficulty,
+        default_language: defaultLanguage,
+        supported_languages: supportedLanguages,
+        time_limit_ms: parsedTimeLimit,
+      });
+      if (createdId !== null) setExerciseId(createdId);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  if (exerciseId !== null) {
+    return (
+      <CodingExerciseBuilder
+        exerciseId={exerciseId}
+        onDone={() =>
+          onSave({
+            type: "Coding Exercise",
+            title: title.trim(),
+            videoType: "",
+            duration: "",
+            description: "",
+            isFreePreview: false,
+          })
+        }
+        onDelete={() => {
+          setExerciseId(null);
+          onCodingExerciseDeleted?.();
+          onClose();
+        }}
+        onClose={onClose}
+      />
     );
+  }
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 px-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-xl flex flex-col max-h-[94vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-(--gray-100)">
-          <h3 className="text-[16px] font-semibold text-(--text-title)">
-            Test Cases
+          <h3 className="text-[16px] lg:text-[20px] font-semibold text-(--text-title)">
+            Add Coding Exercise
           </h3>
           <button
             onClick={onClose}
             className="text-(--gray-500) hover:text-(--gray-600) cursor-pointer transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto px-6 py-5 space-y-4 flex-1">
-          {cases.map((c, i) => (
-            <div
-              key={c.id}
-              className="border border-(--gray-200) rounded-xl p-4 space-y-3"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[13px] font-semibold text-(--text-title)">
-                  Test Case {i + 1}
-                </span>
-                {cases.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeCase(c.id)}
-                    className="text-red-400 hover:text-red-500 cursor-pointer transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[13px] font-normal text-(--text-title)">
-                  Input
-                </label>
-                <textarea
-                  value={c.input}
-                  onChange={(e) => updateCase(c.id, "input", e.target.value)}
-                  rows={2}
-                  placeholder="e.g. [1, 2, 3]"
-                  spellCheck={false}
-                  className="w-full px-3 py-2 mt-1 text-[13px] font-mono border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[13px] font-normal text-(--text-title)">
-                  Expected Output
-                </label>
-                <textarea
-                  value={c.expectedOutput}
-                  onChange={(e) =>
-                    updateCase(c.id, "expectedOutput", e.target.value)
-                  }
-                  rows={2}
-                  placeholder="e.g. 6"
-                  spellCheck={false}
-                  className="w-full px-3 py-2 mt-1 text-[13px] font-mono border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
-                />
-              </div>
-            </div>
-          ))}
+        <div className="overflow-y-auto px-6 py-5 space-y-5 flex-1">
+          {/* Lesson Title */}
+          <div className="space-y-1.5">
+            <label className="text-[14px] font-normal text-(--text-title)">
+              Lesson Title <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                setErrors((prev) => ({ ...prev, title: undefined }));
+              }}
+              placeholder="New Coding Exercise"
+              className={`w-full h-12 px-3 text-[14px] mt-1 border rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 transition-shadow ${
+                errors.title
+                  ? "border-red-400 focus:ring-red-400"
+                  : "border-(--gray-200) focus:ring-(--primary-700)"
+              }`}
+            />
+            {errors.title && (
+              <p className="text-[12px] text-red-500 mt-1">{errors.title}</p>
+            )}
+          </div>
 
-          <button
-            type="button"
-            onClick={addCase}
-            className="flex items-center gap-2 text-[13px] font-medium text-(--primary-700) hover:text-(--primary-900) cursor-pointer transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add Test Case
-          </button>
+          {/* Description */}
+          <div className="space-y-1.5">
+            <label className="text-[14px] font-normal text-(--text-title)">
+              Description
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              placeholder="What will the student learn in this lesson"
+              className="w-full px-3 py-3 mt-1 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
+            />
+          </div>
+
+          {/* Problem Statement */}
+          <div className="space-y-1.5">
+            <label className="text-[14px] font-normal text-(--text-title)">
+              Problem Statement <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={problemStatement}
+              onChange={(e) => {
+                setProblemStatement(e.target.value);
+                setErrors((prev) => ({ ...prev, problemStatement: undefined }));
+              }}
+              rows={6}
+              placeholder="Describe the problem the student needs to solve..."
+              className={`w-full px-3 py-3 mt-1 text-[14px] border rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 transition-shadow resize-none ${
+                errors.problemStatement
+                  ? "border-red-400 focus:ring-red-400"
+                  : "border-(--gray-200) focus:ring-(--primary-700)"
+              }`}
+            />
+            {errors.problemStatement && (
+              <p className="text-[12px] text-red-500 mt-1">
+                {errors.problemStatement}
+              </p>
+            )}
+          </div>
+
+          {/* Difficulty */}
+          <div className="space-y-2">
+            <label className="text-[14px] font-normal text-(--text-title)">
+              Difficulty
+            </label>
+            <div className="flex gap-2 mt-1">
+              {DIFFICULTIES.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDifficulty(d)}
+                  className={`flex items-center gap-2 px-4 h-9 rounded-md text-[13px] border transition-colors cursor-pointer capitalize ${
+                    difficulty === d
+                      ? "bg-(--primary-700) text-white border-(--primary-700) font-semibold"
+                      : "border-(--gray-200) text-(--text-paragraph) hover:border-(--primary-300) hover:bg-(--primary-50)"
+                  }`}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Supported Languages */}
+          <div className="space-y-2">
+            <label className="text-[14px] font-normal text-(--text-title)">
+              Supported Languages <span className="text-red-500">*</span>
+            </label>
+            <div className="flex flex-wrap gap-3 mt-1">
+              {LANGUAGE_OPTIONS.map((opt) => (
+                <label
+                  key={opt.value}
+                  className="flex items-center gap-2 px-3 h-10 border border-(--gray-200) rounded-lg cursor-pointer hover:bg-(--gray-50) transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={supportedLanguages.includes(opt.value)}
+                    onChange={() => toggleLanguage(opt.value)}
+                    className="w-4 h-4 rounded border-(--gray-300) accent-(--primary-700) cursor-pointer"
+                  />
+                  <span className="text-[14px] text-(--text-title)">
+                    {opt.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+            {errors.supportedLanguages && (
+              <p className="text-[12px] text-red-500 mt-1">
+                {errors.supportedLanguages}
+              </p>
+            )}
+          </div>
+
+          {/* Default Language */}
+          <div className="space-y-2">
+            <label className="text-[14px] font-normal text-(--text-title)">
+              Default Language <span className="text-red-500">*</span>
+            </label>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {LANGUAGE_OPTIONS.filter((opt) =>
+                supportedLanguages.includes(opt.value),
+              ).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    setDefaultLanguage(opt.value);
+                    setErrors((prev) => ({ ...prev, defaultLanguage: undefined }));
+                  }}
+                  className={`px-4 h-9 rounded-md text-[13px] border transition-colors cursor-pointer ${
+                    defaultLanguage === opt.value
+                      ? "bg-(--primary-700) text-white border-(--primary-700) font-semibold"
+                      : "border-(--gray-200) text-(--text-paragraph) hover:border-(--primary-300) hover:bg-(--primary-50)"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+              {supportedLanguages.length === 0 && (
+                <p className="text-[12px] text-(--gray-500)">
+                  Select supported languages first.
+                </p>
+              )}
+            </div>
+            {errors.defaultLanguage && (
+              <p className="text-[12px] text-red-500 mt-1">
+                {errors.defaultLanguage}
+              </p>
+            )}
+          </div>
+
+          {/* Time Limit */}
+          <div className="space-y-1.5">
+            <label className="text-[14px] font-normal text-(--text-title)">
+              Time Limit (ms)
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={timeLimitMs}
+              onChange={(e) => setTimeLimitMs(e.target.value)}
+              placeholder="e.g. 2000"
+              className="w-full h-12 px-3 text-[14px] mt-1 border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+            />
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-(--gray-100)">
-          <button
-            onClick={onClose}
-            className="px-5 h-10 text-[14px] font-normal border border-(--gray-200) rounded-md text-(--gray-600) hover:bg-(--gray-50) cursor-pointer transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => {
-              onSave(cases);
-              onClose();
-            }}
-            className="px-5 h-10 text-[14px] font-semibold bg-(--primary-700) hover:bg-(--primary-900) text-white rounded-md cursor-pointer transition-colors"
-          >
-            Save Test Cases
-          </button>
+        <div className="flex flex-col gap-3 px-6 py-4 border-t border-(--gray-100) sm:flex-row sm:items-center sm:justify-end">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="px-4 h-9 text-[13px] font-normal border border-(--gray-200) rounded-md text-(--gray-600) hover:bg-(--gray-50) cursor-pointer transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreate}
+              disabled={creating}
+              className="flex items-center gap-2 px-4 h-9 text-[13px] font-semibold bg-(--primary-700) hover:bg-(--primary-900) text-white rounded-md cursor-pointer transition-colors disabled:opacity-60"
+            >
+              {creating && <Loader2 className="w-4 h-4 animate-spin" />}
+              {creating ? "Creating…" : "Next"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  );
-}
-
-export default function CodingExerciseModal({
-  initialLesson,
-  onSave,
-  onClose,
-}: {
-  initialLesson?: Omit<Lesson, "id">;
-  onSave: (lesson: Omit<Lesson, "id">) => void;
-  onClose: () => void;
-}) {
-  const [title, setTitle] = useState(initialLesson?.title ?? "");
-  const [duration, setDuration] = useState(initialLesson?.duration ?? "");
-  const [description, setDescription] = useState(
-    initialLesson?.description ?? "",
-  );
-  const [language, setLanguage] = useState("JavaScript");
-  const [langDropOpen, setLangDropOpen] = useState(false);
-  const [starterCode, setStarterCode] = useState(
-    STARTER_TEMPLATES["JavaScript"],
-  );
-  const [solutionCode, setSolutionCode] = useState("");
-  const [testCases, setTestCases] = useState<TestCase[]>([]);
-  const [testCaseModalOpen, setTestCaseModalOpen] = useState(false);
-
-  const isEdit = !!initialLesson;
-
-  const handleLanguageSelect = (lang: string) => {
-    setLanguage(lang);
-    setStarterCode(STARTER_TEMPLATES[lang]);
-    setLangDropOpen(false);
-  };
-
-  const handleSave = () => {
-    if (!title.trim()) return;
-    onSave({
-      type: "Coding Exercise",
-      title: title.trim(),
-      videoType: language,
-      duration,
-      description,
-      isFreePreview: false,
-    });
-  };
-
-  return (
-    <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-        <div className="bg-white rounded-2xl w-full max-w-2xl shadow-xl flex flex-col max-h-[94vh]">
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-(--gray-100)">
-            <h3 className="text-[16px] lg:text-[20px] font-semibold text-(--text-title)">
-              {isEdit ? "Edit Coding Exercise" : "Add Coding Exercise"}
-            </h3>
-            <button
-              onClick={onClose}
-              className="text-(--gray-500) hover:text-(--gray-600) cursor-pointer transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-
-          {/* Body */}
-          <div className="overflow-y-auto px-6 py-5 space-y-5 flex-1">
-            {/* Lesson Title + Duration */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[14px] font-normal text-(--text-title)">
-                  Lesson Title
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="New Coding Exercise"
-                  className="w-full h-12 px-3 text-[14px] mt-1 border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[14px] font-normal text-(--text-title)">
-                  Duration
-                </label>
-                <input
-                  type="text"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  placeholder="12.10"
-                  className="w-full h-12 px-3 text-[14px] mt-1 border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
-                />
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="space-y-1.5">
-              <label className="text-[14px] font-normal text-(--text-title)">
-                Description
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                placeholder="What will the student learn in this lesson"
-                className="w-full px-3 py-3 mt-1 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
-              />
-            </div>
-
-            {/* Coding Language */}
-            <div className="space-y-1.5">
-              <label className="text-[14px] font-normal text-(--text-title)">
-                Coding Language
-              </label>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setLangDropOpen((v) => !v)}
-                  className="flex items-center w-full h-12 mt-1 px-3 border border-(--gray-200) rounded-lg bg-white text-[14px] cursor-pointer hover:bg-(--gray-50) transition-colors"
-                >
-                  <span className="flex-1 text-left text-(--text-title)">
-                    {language}
-                  </span>
-                  <ChevronDown
-                    className={`w-4 h-4 text-(--gray-500) transition-transform duration-200 ${langDropOpen ? "rotate-180" : ""}`}
-                  />
-                </button>
-                {langDropOpen && (
-                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-50 py-1">
-                    {CODING_LANGUAGES.map((lang) => (
-                      <button
-                        key={lang}
-                        type="button"
-                        onClick={() => handleLanguageSelect(lang)}
-                        className={`w-full text-left cursor-pointer px-4 py-2 text-[14px] transition-colors ${lang === language ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
-                      >
-                        {lang}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Starter Code */}
-            <div className="space-y-1.5">
-              <label className="text-[14px] font-normal text-(--text-title)">
-                Starter Code
-              </label>
-              <textarea
-                value={starterCode}
-                onChange={(e) => setStarterCode(e.target.value)}
-                rows={5}
-                spellCheck={false}
-                className="w-full px-3 py-3 mt-1 text-[13px] font-mono border border-(--gray-200) rounded-lg bg-white text-(--text-title) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
-              />
-            </div>
-
-            {/* Solution Code */}
-            <div className="space-y-1.5">
-              <label className="text-[14px] font-normal text-(--text-title)">
-                Solution Code
-              </label>
-              <textarea
-                value={solutionCode}
-                onChange={(e) => setSolutionCode(e.target.value)}
-                rows={5}
-                spellCheck={false}
-                placeholder="Write the complete solution code here..."
-                className="w-full px-3 py-3 mt-1 text-[13px] font-mono border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
-              />
-            </div>
-
-            {/* Test Cases */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-[14px] font-normal text-(--text-title)">
-                  Test Cases
-                  {testCases.length > 0 && (
-                    <span className="ml-2 text-[12px] text-(--primary-700) font-semibold">
-                      ({testCases.length} added)
-                    </span>
-                  )}
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setTestCaseModalOpen(true)}
-                  className="flex items-center gap-1.5 text-[13px] font-medium text-(--primary-700) hover:text-(--primary-900) cursor-pointer transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  {testCases.length > 0 ? "Edit Test Cases" : "Add Test Cases"}
-                </button>
-              </div>
-              {testCases.length === 0 ? (
-                <div
-                  onClick={() => setTestCaseModalOpen(true)}
-                  className="w-full mt-1 rounded-lg border border-dashed border-(--gray-200) bg-(--gray-50) flex items-center justify-center gap-2 py-5 cursor-pointer hover:border-(--primary-300) hover:bg-(--primary-50) transition-colors"
-                >
-                  <Plus className="w-4 h-4 text-(--gray-400)" />
-                  <p className="text-[13px] text-(--gray-500)">
-                    No test cases yet — click to add
-                  </p>
-                </div>
-              ) : (
-                <div className="mt-1 space-y-2">
-                  {testCases.map((c, i) => (
-                    <div
-                      key={c.id}
-                      className="flex items-center gap-3 px-4 py-2.5 border border-(--gray-200) rounded-lg bg-(--gray-50) text-[13px] font-mono text-(--text-title)"
-                    >
-                      <span className="text-(--gray-400) shrink-0">
-                        #{i + 1}
-                      </span>
-                      <span className="truncate flex-1">
-                        Input: {c.input || "—"}
-                      </span>
-                      <span className="truncate text-(--gray-500)">
-                        → {c.expectedOutput || "—"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="flex flex-col gap-3 px-6 py-4 border-t border-(--gray-100) sm:flex-row sm:items-center sm:justify-between">
-            {isEdit && (
-              <button className="flex items-center gap-2 text-[14px] font-medium text-red-500 hover:text-red-600 cursor-pointer transition-colors">
-                <Trash2 className="w-4 h-4" />
-                Delete Exercise
-              </button>
-            )}
-            <div className={`flex items-center gap-2 ${isEdit ? "sm:ml-auto" : "ml-auto"}`}>
-              <button
-                onClick={onClose}
-                className="px-4 h-9 text-[13px] font-normal border border-(--gray-200) rounded-md text-(--gray-600) hover:bg-(--gray-50) cursor-pointer transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={onClose}
-                className="px-4 h-9 text-[13px] font-normal border border-(--gray-200) rounded-md text-(--gray-600) hover:bg-(--gray-50) cursor-pointer transition-colors"
-              >
-                Save Draft
-              </button>
-              <button
-                onClick={handleSave}
-                className="px-4 h-9 text-[13px] font-semibold bg-(--primary-700) hover:bg-(--primary-900) text-white rounded-md cursor-pointer transition-colors"
-              >
-                Save Lesson
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {testCaseModalOpen && (
-        <TestCaseModal
-          testCases={testCases}
-          onClose={() => setTestCaseModalOpen(false)}
-          onSave={setTestCases}
-        />
-      )}
-    </>
   );
 }

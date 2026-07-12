@@ -1,45 +1,41 @@
 "use client";
 
 import { useState } from "react";
-import {
-  GripVertical,
-  ChevronDown,
-  ArrowUp,
-  ArrowDown,
-  Copy,
-  Trash2,
-} from "lucide-react";
+import { GripVertical, Plus, Trash2, Loader2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { QuizQuestion } from "./quiz-types";
-import { QTYPES } from "./quiz-types";
+import type { UiQuizQuestion } from "./quiz-types";
 
 export default function QuestionCard({
   question,
   index,
-  total,
-  onUpdate,
-  onUpdateOption,
-  onSetCorrect,
-  onMoveUp,
-  onMoveDown,
-  onDuplicate,
-  onDelete,
+  saving,
+  onUpdateText,
+  onDeleteQuestion,
+  onAddAnswer,
+  onUpdateAnswerText,
+  onSetCorrectAnswer,
+  onDeleteAnswer,
 }: {
-  question: QuizQuestion;
+  question: UiQuizQuestion;
   index: number;
-  total: number;
-  onUpdate: (patch: Partial<QuizQuestion>) => void;
-  onUpdateOption: (oid: string, text: string) => void;
-  onSetCorrect: (oid: string) => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  onDuplicate: () => void;
-  onDelete: () => void;
+  saving?: boolean;
+  onUpdateText: (text: string) => void;
+  onDeleteQuestion: () => void;
+  onAddAnswer: (text: string) => void;
+  onUpdateAnswerText: (answerId: number, text: string) => void;
+  onSetCorrectAnswer: (answerId: number) => void;
+  onDeleteAnswer: (answerId: number) => void;
 }) {
-  const [qtypeDropOpen, setQtypeDropOpen] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: question.id });
+  const [newAnswerText, setNewAnswerText] = useState("");
+
+  const handleAddAnswer = () => {
+    if (!newAnswerText.trim()) return;
+    onAddAnswer(newAnswerText.trim());
+    setNewAnswerText("");
+  };
 
   return (
     <div
@@ -52,163 +48,104 @@ export default function QuestionCard({
       className="border border-(--gray-200) rounded-xl overflow-visible"
     >
       {/* Header */}
-      <div className="flex flex-col border-b border-(--gray-100) bg-(--gray-50) rounded-t-xl">
-        {/* Row 1 — grip + badge + dropdown + points */}
-        <div className="flex items-center gap-2 px-3 pt-2 pb-2">
-          <button
-            {...attributes}
-            {...listeners}
-            className="cursor-grab active:cursor-grabbing touch-none shrink-0"
-          >
-            <GripVertical className="w-4 h-4 text-(--gray-400)" />
-          </button>
-
-          <div className="w-6 h-6 rounded-full bg-(--primary-700) text-white text-[12px] font-bold flex items-center justify-center shrink-0">
-            {String(index + 1).padStart(2, "0")}
-          </div>
-
-          {/* Type dropdown */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setQtypeDropOpen((v) => !v)}
-              className="flex items-center gap-1.5 h-8 px-3 border border-(--gray-200) rounded-md bg-white text-[13px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors whitespace-nowrap"
-            >
-              {question.type}
-              <ChevronDown
-                className={`w-3.5 h-3.5 text-(--gray-400) transition-transform duration-200 ${qtypeDropOpen ? "rotate-180" : ""}`}
-              />
-            </button>
-            {qtypeDropOpen && (
-              <div className="absolute left-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-50 py-1 min-w-40">
-                {QTYPES.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => { onUpdate({ type: t }); setQtypeDropOpen(false); }}
-                    className={`w-full text-left cursor-pointer px-4 py-2 text-[13px] transition-colors ${
-                      t === question.type
-                        ? "bg-(--primary-50) text-(--primary-600) font-semibold"
-                        : "text-(--gray-600) hover:bg-(--gray-50)"
-                    }`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1" />
-
-          {/* Points stepper */}
-          <div className="flex items-center h-8 border border-(--gray-200) rounded-md bg-white overflow-hidden shrink-0">
-            <input
-              type="number"
-              value={question.points}
-              onChange={(e) => onUpdate({ points: Math.max(1, Number(e.target.value)) })}
-              className="w-10 h-full px-2 text-[13px] text-(--text-title) outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
-            <span className="pr-2 text-[13px] text-(--gray-500)">pts</span>
-            <div className="flex flex-col h-full border-l border-(--gray-200) divide-y divide-(--gray-200) shrink-0">
-              <button
-                type="button"
-                onClick={() => onUpdate({ points: question.points + 1 })}
-                className="flex-1 flex items-center justify-center px-1.5 hover:bg-(--gray-50) cursor-pointer"
-              >
-                <ChevronDown className="w-3 h-3 text-(--gray-400) rotate-180" />
-              </button>
-              <button
-                type="button"
-                onClick={() => onUpdate({ points: Math.max(1, question.points - 1) })}
-                className="flex-1 flex items-center justify-center px-1.5 hover:bg-(--gray-50) cursor-pointer"
-              >
-                <ChevronDown className="w-3 h-3 text-(--gray-400)" />
-              </button>
-            </div>
-          </div>
-
-          {/* Actions — only on sm+ in row 1 */}
-          <div className="hidden sm:flex items-center gap-1 shrink-0">
-            <button type="button" onClick={onMoveUp} disabled={index === 0}
-              className="p-1 text-(--gray-400) hover:text-(--gray-600) disabled:opacity-30 cursor-pointer transition-colors">
-              <ArrowUp className="w-4 h-4" />
-            </button>
-            <button type="button" onClick={onMoveDown} disabled={index === total - 1}
-              className="p-1 text-(--gray-400) hover:text-(--gray-600) disabled:opacity-30 cursor-pointer transition-colors">
-              <ArrowDown className="w-4 h-4" />
-            </button>
-            <button type="button" onClick={onDuplicate}
-              className="p-1 text-(--gray-400) hover:text-(--gray-600) cursor-pointer transition-colors">
-              <Copy className="w-4 h-4" />
-            </button>
-            <div className="w-px h-4 bg-(--gray-200) mx-1" />
-            <button type="button" onClick={onDelete}
-              className="p-1 text-red-400 hover:text-red-600 cursor-pointer transition-colors">
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-(--gray-100) bg-(--gray-50) rounded-t-xl">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing touch-none shrink-0"
+        >
+          <GripVertical className="w-4 h-4 text-(--gray-400)" />
+        </button>
+        <div className="w-6 h-6 rounded-full bg-(--primary-700) text-white text-[12px] font-bold flex items-center justify-center shrink-0">
+          {String(index + 1).padStart(2, "0")}
         </div>
-
-        {/* Row 2 — actions row on mobile, hidden on sm+ (actions live in row 1 on sm+) */}
-        <div className="flex items-center justify-end gap-1 px-3 pb-2 border-t border-(--gray-100) sm:hidden">
-          <button type="button" onClick={onMoveUp} disabled={index === 0}
-            className="p-1.5 text-(--gray-400) hover:text-(--gray-600) disabled:opacity-30 cursor-pointer transition-colors">
-            <ArrowUp className="w-4 h-4" />
-          </button>
-          <button type="button" onClick={onMoveDown} disabled={index === total - 1}
-            className="p-1.5 text-(--gray-400) hover:text-(--gray-600) disabled:opacity-30 cursor-pointer transition-colors">
-            <ArrowDown className="w-4 h-4" />
-          </button>
-          <button type="button" onClick={onDuplicate}
-            className="p-1.5 text-(--gray-400) hover:text-(--gray-600) cursor-pointer transition-colors">
-            <Copy className="w-4 h-4" />
-          </button>
-          <div className="w-px h-4 bg-(--gray-200) mx-1" />
-          <button type="button" onClick={onDelete}
-            className="p-1.5 text-red-400 hover:text-red-600 cursor-pointer transition-colors">
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
+        <div className="flex-1" />
+        <button
+          type="button"
+          onClick={onDeleteQuestion}
+          disabled={saving}
+          className="p-1 text-red-400 hover:text-red-600 cursor-pointer transition-colors disabled:opacity-50"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* Prompt */}
+      {/* Question text */}
       <div className="px-4 py-3">
         <input
           type="text"
-          value={question.prompt}
-          onChange={(e) => onUpdate({ prompt: e.target.value })}
-          placeholder="What is Primary Color?"
+          value={question.question_text}
+          onChange={(e) => onUpdateText(e.target.value)}
+          placeholder="Write the question..."
           className="w-full h-10 px-3 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
         />
       </div>
 
-      {/* Options */}
+      {/* Answers */}
       <div className="px-4 pb-4 space-y-2">
-        {question.options.map((opt) => (
-          <label
-            key={opt.id}
-            className={`flex items-center gap-3 h-11 px-3 border rounded-lg cursor-pointer transition-colors ${
-              opt.correct
-                ? "border-(--primary-300) bg-(--primary-50)"
-                : "border-(--gray-200) bg-white hover:bg-(--gray-50)"
-            }`}
-          >
-            <input
-              type="radio"
-              name={`correct-${question.id}`}
-              checked={opt.correct}
-              onChange={() => onSetCorrect(opt.id)}
-              className="accent-(--primary-700) shrink-0 cursor-pointer"
-            />
-            <input
-              type="text"
-              value={opt.text}
-              onChange={(e) => onUpdateOption(opt.id, e.target.value)}
-              className="flex-1 text-[14px] text-(--text-title) bg-transparent outline-none"
-            />
-          </label>
-        ))}
+        {question.loadingAnswers ? (
+          <div className="flex items-center gap-2 text-(--gray-500) text-[13px] py-2">
+            <Loader2 className="w-4 h-4 animate-spin" /> Loading answers…
+          </div>
+        ) : (
+          <>
+            {question.answers.map((a) => (
+              <div
+                key={a.id}
+                className={`flex items-center gap-3 h-11 px-3 border rounded-lg transition-colors ${
+                  a.is_correct
+                    ? "border-(--primary-300) bg-(--primary-50)"
+                    : "border-(--gray-200) bg-white"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name={`correct-${question.id}`}
+                  checked={a.is_correct}
+                  onChange={() => onSetCorrectAnswer(a.id)}
+                  className="accent-(--primary-700) shrink-0 cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={a.answer_text}
+                  onChange={(e) => onUpdateAnswerText(a.id, e.target.value)}
+                  className="flex-1 text-[14px] text-(--text-title) bg-transparent outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => onDeleteAnswer(a.id)}
+                  className="text-(--gray-400) hover:text-red-500 cursor-pointer transition-colors shrink-0"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newAnswerText}
+                onChange={(e) => setNewAnswerText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddAnswer();
+                  }
+                }}
+                placeholder="Add an answer option..."
+                className="flex-1 h-10 px-3 text-[13px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+              />
+              <button
+                type="button"
+                onClick={handleAddAnswer}
+                className="flex items-center gap-1 h-10 px-3 border border-(--gray-200) rounded-lg text-[13px] font-medium text-(--gray-600) hover:bg-(--gray-50) cursor-pointer transition-colors shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                Add
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
