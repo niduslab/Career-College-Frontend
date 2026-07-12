@@ -19,7 +19,9 @@ export function InstructorsSection() {
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const cardsRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLAnchorElement | null>(null);
-  const [instructors, setInstructors] = useState<PublicInstructorListItem[]>([]);
+  const [instructors, setInstructors] = useState<PublicInstructorListItem[]>(
+    [],
+  );
 
   useEffect(() => {
     let active = true;
@@ -37,6 +39,10 @@ export function InstructorsSection() {
 
   useEffect(() => {
     if (!sectionRef.current) {
+      return;
+    }
+    // Cards render only after `instructors` loads — skip until they exist
+    if (instructors.length === 0) {
       return;
     }
 
@@ -106,7 +112,7 @@ export function InstructorsSection() {
     return () => {
       ctx.revert();
     };
-  }, []);
+  }, [instructors]);
 
   return (
     <section

@@ -1,37 +1,67 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { X, Upload, ChevronDown, Trash2, Video, FileText, Loader2 } from "lucide-react";
+import { X, Upload, Trash2, Video, FileText, Loader2 } from "lucide-react";
 import RichTextEditor from "@/components/common/rich-text-editor";
 import type { Lesson, LessonType, LectureType } from "./types";
 import { LESSON_TYPES } from "./constants";
 import QuizBuilder from "./quiz-builder";
 import CodingExerciseModal from "./coding-exercise-modal";
-import AssignmentQuestionModal from "./assignment-question-modal";
-import type { AssignmentQuestion } from "./assignment-question-modal";
+import type { CreateCodingExercisePayload } from "./coding-exercise-modal";
+import AssignmentBuilder from "./assignment-builder";
 
 export type LectureSavePayload = Omit<Lesson, "id"> & {
   articleContent?: string;
   videoFile?: File;
 };
 
+function isRichTextEmpty(html: string): boolean {
+  return !html.replace(/<[^>]*>/g, "").trim();
+}
+
 export default function LessonModal({
   initialLesson,
   initialLectureType,
+  initialQuizId,
+  initialCodingExerciseId,
+  initialAssignmentId,
   saving,
   deleting,
   onSave,
   onDelete,
   onClose,
+  onCreateQuiz,
+  onQuizDeleted,
+  onCreateCodingExercise,
+  onCodingExerciseDeleted,
+  onCreateAssignment,
+  onAssignmentDeleted,
 }: {
   initialLesson?: Omit<Lesson, "id">;
   /** For an existing Lecture, whether it's a video or article — determines which fields render in edit mode. */
   initialLectureType?: LectureType;
+  initialQuizId?: number;
+  initialCodingExerciseId?: number;
+  initialAssignmentId?: number;
   saving?: boolean;
   deleting?: boolean;
   onSave: (lesson: LectureSavePayload) => void;
   onDelete?: () => void;
   onClose: () => void;
+  onCreateQuiz?: (title: string) => Promise<number | null>;
+  onQuizDeleted?: () => void;
+  onCreateCodingExercise?: (
+    input: CreateCodingExercisePayload,
+  ) => Promise<number | null>;
+  onCodingExerciseDeleted?: () => void;
+  onCreateAssignment?: (input: {
+    title: string;
+    description?: string;
+    instructions?: string;
+    total_score: number;
+    passing_score: number;
+  }) => Promise<number | null>;
+  onAssignmentDeleted?: () => void;
 }) {
   const [lessonType, setLessonType] = useState<LessonType>(
     initialLesson?.type ?? "Lecture",
@@ -62,47 +92,63 @@ export default function LessonModal({
   const [quizTitle, setQuizTitle] = useState(
     initialLesson?.type === "Quiz" ? initialLesson.title : "",
   );
-  const [questionType, setQuestionType] = useState("Multiple Choice");
-  const [questionTypeDropOpen, setQuestionTypeDropOpen] = useState(false);
-  const [passMark, setPassMark] = useState(70);
-  const [quizBuilderOpen, setQuizBuilderOpen] = useState(
-    initialLesson?.type === "Quiz",
+  const [quizId, setQuizId] = useState<number | null>(
+    initialLesson?.type === "Quiz" ? (initialQuizId ?? null) : null,
   );
-  const [codingExerciseOpen, setCodingExerciseOpen] = useState(
-    initialLesson?.type === "Coding Exercise",
+  const [creatingQuiz, setCreatingQuiz] = useState(false);
+
+  // Coding Exercise fields
+  const [codingExerciseId, setCodingExerciseId] = useState<number | null>(
+    initialLesson?.type === "Coding Exercise"
+      ? (initialCodingExerciseId ?? null)
+      : null,
   );
 
   // Assignment fields
   const [instructions, setInstructions] = useState("");
   const [passingScore, setPassingScore] = useState("");
   const [totalScore, setTotalScore] = useState("");
-  const [assignmentQuestions, setAssignmentQuestions] = useState<
-    AssignmentQuestion[]
-  >([]);
-  const [assignmentQuestionsOpen, setAssignmentQuestionsOpen] = useState(false);
+  const [assignmentId, setAssignmentId] = useState<number | null>(
+    initialLesson?.type === "Assignment" ? (initialAssignmentId ?? null) : null,
+  );
+  const [creatingAssignment, setCreatingAssignment] = useState(false);
   const passingScoreError =
     passingScore !== "" &&
     totalScore !== "" &&
     parseFloat(passingScore) > parseFloat(totalScore);
 
-  const QUESTION_TYPES = [
-    "Multiple Choice",
-    "True / False",
-    "Short Answer",
-    "Essay",
-  ];
   const isEdit = !!initialLesson;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (lessonType === "Quiz") {
       if (!quizTitle.trim()) return;
-      setQuizBuilderOpen(true);
-    } else if (lessonType === "Coding Exercise") {
-      setCodingExerciseOpen(true);
+      if (quizId !== null) return;
+      if (!onCreateQuiz) return;
+      setCreatingQuiz(true);
+      try {
+        const createdId = await onCreateQuiz(quizTitle.trim());
+        if (createdId !== null) setQuizId(createdId);
+      } finally {
+        setCreatingQuiz(false);
+      }
     } else if (lessonType === "Assignment") {
       if (!title.trim()) return;
       if (passingScoreError) return;
-      setAssignmentQuestionsOpen(true);
+      if (assignmentId !== null) return;
+      if (!onCreateAssignment) return;
+      setCreatingAssignment(true);
+      try {
+        const createdId = await onCreateAssignment({
+          title: title.trim(),
+          description,
+          instructions,
+          total_score: parseFloat(totalScore),
+          passing_score: parseFloat(passingScore),
+        });
+        if (createdId !== null) setAssignmentId(createdId);
+      } finally {
+        setCreatingAssignment(false);
+      }
     } else {
       const nextErrors: typeof errors = {};
       if (!title.trim()) {
@@ -111,7 +157,7 @@ export default function LessonModal({
       if (lectureType === "Video" && !videoFile && !isEditingLecture) {
         nextErrors.videoFile = "Please upload a video file.";
       }
-      if (lectureType === "Article" && !articleContent.trim()) {
+      if (lectureType === "Article" && isRichTextEmpty(articleContent)) {
         nextErrors.articleContent = "Article content is required.";
       }
       if (Object.keys(nextErrors).length > 0) {
@@ -127,54 +173,59 @@ export default function LessonModal({
         description: "",
         isFreePreview,
         articleContent: lectureType === "Article" ? articleContent : undefined,
-        videoFile: lectureType === "Video" ? (videoFile ?? undefined) : undefined,
+        videoFile:
+          lectureType === "Video" ? (videoFile ?? undefined) : undefined,
       });
     }
   };
 
-  if (quizBuilderOpen) {
+  if (quizId !== null) {
     return (
       <QuizBuilder
+        quizId={quizId}
         quizTitle={quizTitle}
         setQuizTitle={setQuizTitle}
-        questionType={questionType}
-        setQuestionType={setQuestionType}
-        passMark={passMark}
-        setPassMark={setPassMark}
-        onBack={() => setQuizBuilderOpen(false)}
         onDone={() =>
           onSave({
             type: "Quiz",
             title: quizTitle.trim(),
-            videoType: questionType,
+            videoType: "",
             duration: "",
             description: "",
             isFreePreview: false,
           })
         }
+        onDelete={() => {
+          setQuizId(null);
+          onQuizDeleted?.();
+          onClose();
+        }}
         onClose={onClose}
       />
     );
   }
 
-  if (codingExerciseOpen) {
+  if (lessonType === "Coding Exercise") {
     return (
       <CodingExerciseModal
         initialLesson={initialLesson}
+        initialExerciseId={codingExerciseId ?? undefined}
+        onCreateCodingExercise={onCreateCodingExercise}
+        onCodingExerciseDeleted={() => {
+          setCodingExerciseId(null);
+          onCodingExerciseDeleted?.();
+        }}
         onSave={onSave}
         onClose={onClose}
       />
     );
   }
 
-  if (assignmentQuestionsOpen) {
+  if (assignmentId !== null) {
     return (
-      <AssignmentQuestionModal
-        questions={assignmentQuestions}
-        assignmentTitle={title}
-        onBack={() => setAssignmentQuestionsOpen(false)}
-        onDone={(questions) => {
-          setAssignmentQuestions(questions);
+      <AssignmentBuilder
+        assignmentId={assignmentId}
+        onDone={() =>
           onSave({
             type: "Assignment",
             title: title.trim(),
@@ -182,7 +233,12 @@ export default function LessonModal({
             duration: "",
             description,
             isFreePreview: false,
-          });
+          })
+        }
+        onDelete={() => {
+          setAssignmentId(null);
+          onAssignmentDeleted?.();
+          onClose();
         }}
         onClose={onClose}
       />
@@ -217,8 +273,11 @@ export default function LessonModal({
                 <button
                   key={key}
                   type="button"
+                  disabled={isEdit}
                   onClick={() => setLessonType(key)}
-                  className={`flex items-center gap-2 px-4 h-10 rounded-md text-[14px] cursor-pointer border transition-colors shrink-0 ${
+                  className={`flex items-center gap-2 px-4 h-10 rounded-md text-[14px] border transition-colors shrink-0 ${
+                    isEdit ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+                  } ${
                     lessonType === key
                       ? "bg-(--primary-700) text-white border-(--primary-700) font-semibold"
                       : "border-(--gray-200) text-(--text-paragraph) hover:border-(--primary-300) hover:bg-(--primary-50) font-normal"
@@ -229,61 +288,26 @@ export default function LessonModal({
                 </button>
               ))}
             </div>
+            {isEdit && (
+              <p className="text-[12px] text-(--gray-500)">
+                Lesson type can&apos;t be changed after creation.
+              </p>
+            )}
           </div>
 
           {/* Quiz setup */}
           {lessonType === "Quiz" && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[14px] font-normal text-(--text-title)">
-                  Quiz Title
-                </label>
-                <input
-                  type="text"
-                  value={quizTitle}
-                  onChange={(e) => setQuizTitle(e.target.value)}
-                  placeholder="Enter quiz title"
-                  className="w-full h-12 px-3 text-[14px] mt-1 border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[14px] font-normal text-(--text-title)">
-                  Question Type
-                </label>
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setQuestionTypeDropOpen((v) => !v)}
-                    className="flex items-center w-full h-12 mt-1 px-3 border border-(--gray-200) rounded-lg bg-white text-[14px] cursor-pointer hover:bg-(--gray-50) transition-colors"
-                  >
-                    <span
-                      className={`flex-1 text-left ${questionType ? "text-(--text-title)" : "text-(--gray-400)"}`}
-                    >
-                      {questionType || "Select question type"}
-                    </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-(--gray-500) transition-transform duration-200 ${questionTypeDropOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-                  {questionTypeDropOpen && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-50 py-1">
-                      {QUESTION_TYPES.map((t) => (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => {
-                            setQuestionType(t);
-                            setQuestionTypeDropOpen(false);
-                          }}
-                          className={`w-full text-left cursor-pointer px-4 py-2 text-[14px] transition-colors ${t === questionType ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
-                        >
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+            <div className="space-y-1.5">
+              <label className="text-[14px] font-normal text-(--text-title)">
+                Quiz Title <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={quizTitle}
+                onChange={(e) => setQuizTitle(e.target.value)}
+                placeholder="Enter quiz title"
+                className="w-full h-12 px-3 text-[14px] mt-1 border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+              />
             </div>
           )}
 
@@ -302,8 +326,13 @@ export default function LessonModal({
                       <button
                         key={t}
                         type="button"
+                        disabled={isEditingLecture}
                         onClick={() => setLectureType(t)}
-                        className={`flex items-center gap-2 px-4 h-9 rounded-md text-[13px] cursor-pointer border transition-colors ${
+                        className={`flex items-center gap-2 px-4 h-9 rounded-md text-[13px] border transition-colors ${
+                          isEditingLecture
+                            ? "cursor-not-allowed opacity-60"
+                            : "cursor-pointer"
+                        } ${
                           lectureType === t
                             ? "bg-(--primary-700) text-white border-(--primary-700) font-semibold"
                             : "border-(--gray-200) text-(--text-paragraph) hover:border-(--primary-300) hover:bg-(--primary-50)"
@@ -315,6 +344,11 @@ export default function LessonModal({
                     );
                   })}
                 </div>
+                {isEditingLecture && (
+                  <p className="text-[12px] text-(--gray-500)">
+                    Lecture type can&apos;t be changed after creation.
+                  </p>
+                )}
               </div>
 
               {/* Lesson Title */}
@@ -341,7 +375,9 @@ export default function LessonModal({
                   }`}
                 />
                 {errors.title && (
-                  <p className="text-[12px] text-red-500 mt-1">{errors.title}</p>
+                  <p className="text-[12px] text-red-500 mt-1">
+                    {errors.title}
+                  </p>
                 )}
               </div>
 
@@ -380,7 +416,9 @@ export default function LessonModal({
                     <div
                       onClick={() => videoInputRef.current?.click()}
                       className={`w-full rounded-lg border mt-1 border-dashed bg-(--gray-50) flex flex-col items-center justify-center gap-2 py-8 cursor-pointer hover:border-(--primary-300) hover:bg-(--primary-50) transition-colors ${
-                        errors.videoFile ? "border-red-400" : "border-(--gray-200)"
+                        errors.videoFile
+                          ? "border-red-400"
+                          : "border-(--gray-200)"
                       }`}
                     >
                       <Upload className="w-5 h-5 text-(--gray-400)" />
@@ -395,7 +433,10 @@ export default function LessonModal({
                       className="hidden"
                       onChange={(e) => {
                         setVideoFile(e.target.files?.[0] ?? null);
-                        setErrors((prev) => ({ ...prev, videoFile: undefined }));
+                        setErrors((prev) => ({
+                          ...prev,
+                          videoFile: undefined,
+                        }));
                       }}
                     />
                     {errors.videoFile && (
@@ -558,10 +599,14 @@ export default function LessonModal({
             )} */}
             {(() => {
               const isAssignment = lessonType === "Assignment";
+              const isQuiz = lessonType === "Quiz";
               const disabled =
                 (isAssignment && !title.trim()) ||
+                (isQuiz && !quizTitle.trim()) ||
                 passingScoreError ||
                 !!saving ||
+                !!creatingQuiz ||
+                !!creatingAssignment ||
                 !!deleting;
               return (
                 <button
@@ -573,16 +618,18 @@ export default function LessonModal({
                       : "bg-(--primary-700) hover:bg-(--primary-900) text-white cursor-pointer"
                   }`}
                 >
-                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {saving
-                    ? "Saving…"
-                    : lessonType === "Quiz" ||
-                        lessonType === "Coding Exercise" ||
-                        lessonType === "Assignment"
-                      ? "Next"
-                      : isEdit
-                        ? "Update Lesson"
-                        : "Save Lesson"}
+                  {(saving || creatingQuiz || creatingAssignment) && (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  )}
+                  {creatingQuiz || creatingAssignment
+                    ? "Creating…"
+                    : saving
+                      ? "Saving…"
+                      : isQuiz || isAssignment
+                        ? "Next"
+                        : isEdit
+                          ? "Update Lesson"
+                          : "Save Lesson"}
                 </button>
               );
             })()}

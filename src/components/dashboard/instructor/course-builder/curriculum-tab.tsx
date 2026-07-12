@@ -7,6 +7,10 @@ import {
   Plus,
   Pencil,
   TvMinimalPlay,
+  FileQuestion,
+  FileText,
+  Code2,
+  ClipboardList,
   ArrowUp,
   ArrowDown,
   GripVertical,
@@ -43,9 +47,13 @@ import {
   deleteLecture,
   reorderSectionContent,
   getLecture,
+  createQuiz,
+  createCodingExercise,
+  createAssignment,
   type SectionContentItem,
   type LectureContent,
 } from "@/lib/course-api";
+import type { CreateCodingExercisePayload } from "./coding-exercise-modal";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 
@@ -59,11 +67,48 @@ interface UiModule {
 }
 
 function contentToLesson(item: SectionContentItem): Lesson {
+  if (item.item_type === "quiz") {
+    const content = item.content as { title: string };
+    return {
+      id: String(item.id),
+      type: "Quiz",
+      title: content.title,
+      videoType: "",
+      duration: "",
+      description: "",
+      isFreePreview: false,
+    };
+  }
+  if (item.item_type === "coding") {
+    const content = item.content as { title: string };
+    return {
+      id: String(item.id),
+      type: "Coding Exercise",
+      title: content.title,
+      videoType: "",
+      duration: "",
+      description: "",
+      isFreePreview: false,
+    };
+  }
+  if (item.item_type === "assignment") {
+    const content = item.content as { title: string };
+    return {
+      id: String(item.id),
+      type: "Assignment",
+      title: content.title,
+      videoType: "",
+      duration: "",
+      description: "",
+      isFreePreview: false,
+    };
+  }
   const content = item.content as LectureContent;
   const isVideo = content.lecture_type === "video";
   return {
     id: String(item.id),
     type: "Lecture",
+    lectureType: isVideo ? "Video" : "Article",
     title: content.title,
     videoType:
       item.content && "is_preview" in content && content.is_preview
@@ -113,7 +158,17 @@ function SortableLesson({
         <GripVertical className="w-4 h-4 text-(--gray-500)" />
       </button>
       <div className="flex items-center justify-center shrink-0">
-        <TvMinimalPlay className="w-4 h-4 text-(--gray-500)" />
+        {lesson.type === "Quiz" ? (
+          <FileQuestion className="w-4 h-4 text-(--gray-500)" />
+        ) : lesson.type === "Coding Exercise" ? (
+          <Code2 className="w-4 h-4 text-(--gray-500)" />
+        ) : lesson.type === "Assignment" ? (
+          <ClipboardList className="w-4 h-4 text-(--gray-500)" />
+        ) : lesson.lectureType === "Article" ? (
+          <FileText className="w-4 h-4 text-(--gray-500)" />
+        ) : (
+          <TvMinimalPlay className="w-4 h-4 text-(--gray-500)" />
+        )}
       </div>
       <span className="flex-1 min-w-0 text-[14px] text-(--text-paragraph) leading-snug truncate">
         {lesson.title}
@@ -124,13 +179,8 @@ function SortableLesson({
         </span>
       )}
       {lesson.isFreePreview && (
-        <span className="text-[14px] font-medium text-(--primary-700) underline shrink-0 whitespace-nowrap">
+        <span className="inline-flex items-center rounded-full bg-(--primary-50) px-2.5 py-0.5 text-[12px] font-medium text-(--primary-700) shrink-0 whitespace-nowrap">
           Free Preview
-        </span>
-      )}
-      {lesson.duration && (
-        <span className="text-[14px] text-(--text-paragraph) font-normal shrink-0 whitespace-nowrap">
-          {lesson.duration} min
         </span>
       )}
       <button
@@ -414,7 +464,9 @@ export default function CurriculumTab({
     (s, m) =>
       s +
       m.contents.filter(
-        (c) => (c.content as LectureContent).lecture_type === "video",
+        (c) =>
+          c.item_type === "lecture" &&
+          (c.content as LectureContent).lecture_type === "video",
       ).length,
     0,
   );
@@ -582,6 +634,96 @@ export default function CurriculumTab({
     } finally {
       setSavingLesson(false);
     }
+  };
+
+  const handleCreateQuiz = async (
+    moduleId: number,
+    title: string,
+  ): Promise<number | null> => {
+    try {
+      const position =
+        (modules.find((m) => m.id === moduleId)?.contents.length ?? 0) + 1;
+      const { data: created, message } = await createQuiz(moduleId, {
+        title,
+        position,
+      });
+      notify.success(message ?? "Quiz created.");
+      setModules((prev) =>
+        prev.map((m) => (m.id === moduleId ? { ...m, loadingLessons: true } : m)),
+      );
+      await loadLessonsFor(moduleId);
+      return created.object_id;
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to create quiz.",
+      );
+      return null;
+    }
+  };
+
+  const handleCreateCodingExercise = async (
+    moduleId: number,
+    input: CreateCodingExercisePayload,
+  ): Promise<number | null> => {
+    try {
+      const position =
+        (modules.find((m) => m.id === moduleId)?.contents.length ?? 0) + 1;
+      const { data: created, message } = await createCodingExercise(
+        moduleId,
+        { ...input, position },
+      );
+      notify.success(message ?? "Coding exercise created.");
+      setModules((prev) =>
+        prev.map((m) => (m.id === moduleId ? { ...m, loadingLessons: true } : m)),
+      );
+      await loadLessonsFor(moduleId);
+      return created.object_id;
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError
+          ? err.message
+          : "Failed to create coding exercise.",
+      );
+      return null;
+    }
+  };
+
+  const handleCreateAssignment = async (
+    moduleId: number,
+    input: {
+      title: string;
+      description?: string;
+      instructions?: string;
+      total_score: number;
+      passing_score: number;
+    },
+  ): Promise<number | null> => {
+    try {
+      const position =
+        (modules.find((m) => m.id === moduleId)?.contents.length ?? 0) + 1;
+      const { data: created, message } = await createAssignment(moduleId, {
+        ...input,
+        position,
+      });
+      notify.success(message ?? "Assignment created.");
+      setModules((prev) =>
+        prev.map((m) => (m.id === moduleId ? { ...m, loadingLessons: true } : m)),
+      );
+      await loadLessonsFor(moduleId);
+      return created.object_id;
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to create assignment.",
+      );
+      return null;
+    }
+  };
+
+  const refreshModuleLessons = async (moduleId: number) => {
+    setModules((prev) =>
+      prev.map((m) => (m.id === moduleId ? { ...m, loadingLessons: true } : m)),
+    );
+    await loadLessonsFor(moduleId);
   };
 
   const handleEditLecture = async (
@@ -806,40 +948,106 @@ export default function CurriculumTab({
       {lessonModalModuleId !== null && (
         <LessonModal
           saving={savingLesson}
-          onSave={(lesson) => handleAddLecture(lessonModalModuleId, lesson)}
+          onSave={(lesson) => {
+            if (
+              lesson.type === "Quiz" ||
+              lesson.type === "Coding Exercise" ||
+              lesson.type === "Assignment"
+            ) {
+              setLessonModalModuleId(null);
+              refreshModuleLessons(lessonModalModuleId);
+            } else {
+              handleAddLecture(lessonModalModuleId, lesson);
+            }
+          }}
           onClose={() => !savingLesson && setLessonModalModuleId(null)}
+          onCreateQuiz={(title) =>
+            handleCreateQuiz(lessonModalModuleId, title)
+          }
+          onQuizDeleted={() => refreshModuleLessons(lessonModalModuleId)}
+          onCreateCodingExercise={(input) =>
+            handleCreateCodingExercise(lessonModalModuleId, input)
+          }
+          onCodingExerciseDeleted={() =>
+            refreshModuleLessons(lessonModalModuleId)
+          }
+          onCreateAssignment={(input) =>
+            handleCreateAssignment(lessonModalModuleId, input)
+          }
+          onAssignmentDeleted={() => refreshModuleLessons(lessonModalModuleId)}
         />
       )}
 
-      {editingLesson && (
-        <LessonModal
-          initialLesson={contentToLesson(editingLesson.content)}
-          initialLectureType={
-            (editingLesson.content.content as LectureContent).lecture_type ===
-            "video"
-              ? "Video"
-              : "Article"
-          }
-          saving={savingLesson}
-          deleting={deletingLesson}
-          onSave={(lesson) =>
-            handleEditLecture(
-              editingLesson.moduleId,
-              editingLesson.content.object_id,
-              lesson,
-            )
-          }
-          onDelete={() =>
-            handleDeleteLecture(
-              editingLesson.moduleId,
-              editingLesson.content.object_id,
-            )
-          }
-          onClose={() =>
-            !savingLesson && !deletingLesson && setEditingLesson(null)
-          }
-        />
-      )}
+      {editingLesson &&
+        (editingLesson.content.item_type === "quiz" ? (
+          <LessonModal
+            initialLesson={contentToLesson(editingLesson.content)}
+            initialQuizId={editingLesson.content.object_id}
+            onSave={() => {
+              const moduleId = editingLesson.moduleId;
+              setEditingLesson(null);
+              refreshModuleLessons(moduleId);
+            }}
+            onClose={() => setEditingLesson(null)}
+            onQuizDeleted={() => refreshModuleLessons(editingLesson.moduleId)}
+          />
+        ) : editingLesson.content.item_type === "coding" ? (
+          <LessonModal
+            initialLesson={contentToLesson(editingLesson.content)}
+            initialCodingExerciseId={editingLesson.content.object_id}
+            onSave={() => {
+              const moduleId = editingLesson.moduleId;
+              setEditingLesson(null);
+              refreshModuleLessons(moduleId);
+            }}
+            onClose={() => setEditingLesson(null)}
+            onCodingExerciseDeleted={() =>
+              refreshModuleLessons(editingLesson.moduleId)
+            }
+          />
+        ) : editingLesson.content.item_type === "assignment" ? (
+          <LessonModal
+            initialLesson={contentToLesson(editingLesson.content)}
+            initialAssignmentId={editingLesson.content.object_id}
+            onSave={() => {
+              const moduleId = editingLesson.moduleId;
+              setEditingLesson(null);
+              refreshModuleLessons(moduleId);
+            }}
+            onClose={() => setEditingLesson(null)}
+            onAssignmentDeleted={() =>
+              refreshModuleLessons(editingLesson.moduleId)
+            }
+          />
+        ) : (
+          <LessonModal
+            initialLesson={contentToLesson(editingLesson.content)}
+            initialLectureType={
+              (editingLesson.content.content as LectureContent)
+                .lecture_type === "video"
+                ? "Video"
+                : "Article"
+            }
+            saving={savingLesson}
+            deleting={deletingLesson}
+            onSave={(lesson) =>
+              handleEditLecture(
+                editingLesson.moduleId,
+                editingLesson.content.object_id,
+                lesson,
+              )
+            }
+            onDelete={() =>
+              handleDeleteLecture(
+                editingLesson.moduleId,
+                editingLesson.content.object_id,
+              )
+            }
+            onClose={() =>
+              !savingLesson && !deletingLesson && setEditingLesson(null)
+            }
+          />
+        ))}
     </>
   );
 }

@@ -325,3 +325,472 @@ export async function reorderSectionContent(
   );
   return withMessage(res);
 }
+
+// Quizzes
+
+export interface Quiz {
+  id: number;
+  title: string;
+  description: string;
+}
+
+export interface CreateQuizInput {
+  item_type: "quiz";
+  title: string;
+  description?: string;
+  position?: number;
+}
+
+/** Create a quiz (section-content). */
+export async function createQuiz(
+  sectionId: number,
+  input: Omit<CreateQuizInput, "item_type">,
+): Promise<WithMessage<SectionContentItem>> {
+  const res = await apiPost<SectionContentItem>(
+    `/courses/sections/${sectionId}/contents/`,
+    { item_type: "quiz", ...input },
+  );
+  return withMessage(res);
+}
+
+export interface QuizUpdateInput {
+  title?: string;
+  description?: string;
+}
+
+export async function updateQuiz(
+  quizId: number,
+  input: QuizUpdateInput,
+): Promise<WithMessage<Quiz>> {
+  const res = await apiPatch<Quiz>(`/courses/quizzes/${quizId}/`, input);
+  return withMessage(res);
+}
+
+export async function deleteQuiz(quizId: number): Promise<string | undefined> {
+  return apiDelete(`/courses/quizzes/${quizId}/`);
+}
+
+export interface QuizQuestion {
+  id: number;
+  question_text: string;
+  position: number;
+}
+
+export async function createQuizQuestion(
+  quizId: number,
+  input: { question_text: string; position?: number },
+): Promise<WithMessage<QuizQuestion>> {
+  const res = await apiPost<QuizQuestion>(
+    `/courses/quizzes/${quizId}/questions/`,
+    input,
+  );
+  return withMessage(res);
+}
+
+export async function listQuizQuestions(
+  quizId: number,
+): Promise<QuizQuestion[]> {
+  const res = await apiGet<QuizQuestion[]>(
+    `/courses/quizzes/${quizId}/questions/`,
+  );
+  return (res.data ?? []) as QuizQuestion[];
+}
+
+export async function updateQuizQuestion(
+  questionId: number,
+  input: { question_text?: string },
+): Promise<WithMessage<QuizQuestion>> {
+  const res = await apiPatch<QuizQuestion>(
+    `/courses/quiz-questions/${questionId}/`,
+    input,
+  );
+  return withMessage(res);
+}
+
+export async function deleteQuizQuestion(
+  questionId: number,
+): Promise<string | undefined> {
+  return apiDelete(`/courses/quiz-questions/${questionId}/`);
+}
+
+export interface QuizAnswer {
+  id: number;
+  answer_text: string;
+  is_correct: boolean;
+}
+
+export async function createQuizAnswer(
+  questionId: number,
+  input: { answer_text: string; is_correct: boolean },
+): Promise<WithMessage<QuizAnswer>> {
+  const res = await apiPost<QuizAnswer>(
+    `/courses/quiz-questions/${questionId}/answers/`,
+    input,
+  );
+  return withMessage(res);
+}
+
+export async function listQuizAnswers(
+  questionId: number,
+): Promise<QuizAnswer[]> {
+  const res = await apiGet<QuizAnswer[]>(
+    `/courses/quiz-questions/${questionId}/answers/`,
+  );
+  return (res.data ?? []) as QuizAnswer[];
+}
+
+export async function updateQuizAnswer(
+  answerId: number,
+  input: { answer_text?: string; is_correct?: boolean },
+): Promise<WithMessage<QuizAnswer>> {
+  const res = await apiPatch<QuizAnswer>(
+    `/courses/quiz-answers/${answerId}/`,
+    input,
+  );
+  return withMessage(res);
+}
+
+export async function deleteQuizAnswer(
+  answerId: number,
+): Promise<string | undefined> {
+  return apiDelete(`/courses/quiz-answers/${answerId}/`);
+}
+
+// Coding exercises
+
+export type CodingDifficulty = "easy" | "medium" | "hard";
+export type CodingLanguage = "python" | "javascript" | "cpp" | "java";
+
+export interface CodingExercise {
+  id: number;
+  title: string;
+  description: string;
+  problem_statement: string;
+  difficulty: CodingDifficulty;
+  default_language: CodingLanguage;
+  supported_languages: CodingLanguage[];
+  time_limit_ms: number;
+}
+
+export interface CreateCodingExerciseInput {
+  item_type: "coding";
+  title: string;
+  description?: string;
+  problem_statement: string;
+  difficulty: CodingDifficulty;
+  default_language: CodingLanguage;
+  supported_languages: CodingLanguage[];
+  time_limit_ms?: number;
+  position?: number;
+}
+
+/** Create a coding exercise (section-content). */
+export async function createCodingExercise(
+  sectionId: number,
+  input: Omit<CreateCodingExerciseInput, "item_type">,
+): Promise<WithMessage<SectionContentItem>> {
+  const res = await apiPost<SectionContentItem>(
+    `/courses/sections/${sectionId}/contents/`,
+    { item_type: "coding", ...input },
+  );
+  return withMessage(res);
+}
+
+export async function getCodingExercise(
+  exerciseId: number,
+): Promise<CodingExercise> {
+  const res = await apiGet<CodingExercise>(
+    `/courses/coding-exercises/${exerciseId}/`,
+  );
+  return res.data as CodingExercise;
+}
+
+export interface CodingExerciseUpdateInput {
+  title?: string;
+  description?: string;
+  problem_statement?: string;
+  difficulty?: CodingDifficulty;
+  default_language?: CodingLanguage;
+  supported_languages?: CodingLanguage[];
+  time_limit_ms?: number;
+}
+
+export async function updateCodingExercise(
+  exerciseId: number,
+  input: CodingExerciseUpdateInput,
+): Promise<WithMessage<CodingExercise>> {
+  const res = await apiPatch<CodingExercise>(
+    `/courses/coding-exercises/${exerciseId}/`,
+    input,
+  );
+  return withMessage(res);
+}
+
+export async function deleteCodingExercise(
+  exerciseId: number,
+): Promise<string | undefined> {
+  return apiDelete(`/courses/coding-exercises/${exerciseId}/`);
+}
+
+export interface CodingLanguageConfig {
+  id: number;
+  language: CodingLanguage;
+  starter_code: string;
+  solution_code: string;
+}
+
+export async function createCodingLanguageConfig(
+  exerciseId: number,
+  input: { language: CodingLanguage; starter_code: string; solution_code: string },
+): Promise<WithMessage<CodingLanguageConfig>> {
+  const res = await apiPost<CodingLanguageConfig>(
+    `/courses/coding-exercises/${exerciseId}/language-configs/`,
+    input,
+  );
+  return withMessage(res);
+}
+
+export async function listCodingLanguageConfigs(
+  exerciseId: number,
+): Promise<CodingLanguageConfig[]> {
+  const res = await apiGet<CodingLanguageConfig[]>(
+    `/courses/coding-exercises/${exerciseId}/language-configs/`,
+  );
+  return (res.data ?? []) as CodingLanguageConfig[];
+}
+
+export async function updateCodingLanguageConfig(
+  exerciseId: number,
+  configId: number,
+  input: { starter_code?: string; solution_code?: string },
+): Promise<WithMessage<CodingLanguageConfig>> {
+  const res = await apiPatch<CodingLanguageConfig>(
+    `/courses/coding-exercises/${exerciseId}/language-configs/${configId}/`,
+    input,
+  );
+  return withMessage(res);
+}
+
+export async function deleteCodingLanguageConfig(
+  exerciseId: number,
+  configId: number,
+): Promise<string | undefined> {
+  return apiDelete(
+    `/courses/coding-exercises/${exerciseId}/language-configs/${configId}/`,
+  );
+}
+
+export interface CodingTestCase {
+  id: number;
+  input_data: string;
+  expected_output: string;
+  is_hidden: boolean;
+  explanation: string;
+  position: number;
+}
+
+export async function createCodingTestCase(
+  exerciseId: number,
+  input: {
+    input_data: string;
+    expected_output: string;
+    is_hidden: boolean;
+    explanation?: string;
+    position?: number;
+  },
+): Promise<WithMessage<CodingTestCase>> {
+  const res = await apiPost<CodingTestCase>(
+    `/courses/coding-exercises/${exerciseId}/testcases/`,
+    input,
+  );
+  return withMessage(res);
+}
+
+export async function listCodingTestCases(
+  exerciseId: number,
+): Promise<CodingTestCase[]> {
+  const res = await apiGet<CodingTestCase[]>(
+    `/courses/coding-exercises/${exerciseId}/testcases/`,
+  );
+  return (res.data ?? []) as CodingTestCase[];
+}
+
+export async function updateCodingTestCase(
+  exerciseId: number,
+  tcId: number,
+  input: {
+    input_data?: string;
+    expected_output?: string;
+    is_hidden?: boolean;
+    explanation?: string;
+    position?: number;
+  },
+): Promise<WithMessage<CodingTestCase>> {
+  const res = await apiPatch<CodingTestCase>(
+    `/courses/coding-exercises/${exerciseId}/testcases/${tcId}/`,
+    input,
+  );
+  return withMessage(res);
+}
+
+export async function deleteCodingTestCase(
+  exerciseId: number,
+  tcId: number,
+): Promise<string | undefined> {
+  return apiDelete(`/courses/coding-exercises/${exerciseId}/testcases/${tcId}/`);
+}
+
+// Assignments
+
+export type RubricCriterionType =
+  | "keyword"
+  | "regex"
+  | "min_length"
+  | "max_length"
+  | "any_of"
+  | "all_of";
+
+export interface RubricCriterion {
+  type: RubricCriterionType;
+  value: string | number | string[];
+  points: number;
+  feedback_on_match?: string;
+  feedback_on_miss?: string;
+  case_sensitive?: boolean;
+}
+
+export interface AssignmentQuestion {
+  id: number;
+  question_text: string;
+  model_answer: string;
+  points: number;
+  hint: string;
+  rubric: RubricCriterion[];
+  position: number;
+}
+
+export interface Assignment {
+  id: number;
+  section_id: number;
+  title: string;
+  description: string;
+  instructions: string;
+  total_score: number;
+  passing_score: number;
+  max_score: number;
+  questions: AssignmentQuestion[];
+}
+
+export interface CreateAssignmentInput {
+  item_type: "assignment";
+  title: string;
+  description?: string;
+  instructions?: string;
+  total_score: number;
+  passing_score: number;
+  position?: number;
+}
+
+/** Create an assignment (section-content). */
+export async function createAssignment(
+  sectionId: number,
+  input: Omit<CreateAssignmentInput, "item_type">,
+): Promise<WithMessage<SectionContentItem>> {
+  const res = await apiPost<SectionContentItem>(
+    `/courses/sections/${sectionId}/contents/`,
+    { item_type: "assignment", ...input },
+  );
+  return withMessage(res);
+}
+
+export async function getAssignment(
+  assignmentId: number,
+): Promise<Assignment> {
+  const res = await apiGet<Assignment>(`/courses/assignments/${assignmentId}/`);
+  return res.data as Assignment;
+}
+
+export interface AssignmentUpdateInput {
+  title?: string;
+  description?: string;
+  instructions?: string;
+  total_score?: number;
+  passing_score?: number;
+}
+
+export async function updateAssignment(
+  assignmentId: number,
+  input: AssignmentUpdateInput,
+): Promise<WithMessage<Assignment>> {
+  const res = await apiPatch<Assignment>(
+    `/courses/assignments/${assignmentId}/`,
+    input,
+  );
+  return withMessage(res);
+}
+
+export async function deleteAssignment(
+  assignmentId: number,
+): Promise<string | undefined> {
+  return apiDelete(`/courses/assignments/${assignmentId}/`);
+}
+
+export async function createAssignmentQuestion(
+  assignmentId: number,
+  input: {
+    question_text: string;
+    model_answer?: string;
+    points: number;
+    hint?: string;
+    rubric?: RubricCriterion[];
+  },
+): Promise<WithMessage<AssignmentQuestion>> {
+  const res = await apiPost<AssignmentQuestion>(
+    `/courses/assignments/${assignmentId}/questions/`,
+    input,
+  );
+  return withMessage(res);
+}
+
+export async function listAssignmentQuestions(
+  assignmentId: number,
+): Promise<AssignmentQuestion[]> {
+  const res = await apiGet<AssignmentQuestion[]>(
+    `/courses/assignments/${assignmentId}/questions/`,
+  );
+  return (res.data ?? []) as AssignmentQuestion[];
+}
+
+/** Rubric is not patchable — delete and recreate the question to change it. */
+export async function updateAssignmentQuestion(
+  questionId: number,
+  input: {
+    question_text?: string;
+    model_answer?: string;
+    points?: number;
+    hint?: string;
+  },
+): Promise<WithMessage<AssignmentQuestion>> {
+  const res = await apiPatch<AssignmentQuestion>(
+    `/courses/assignment-questions/${questionId}/`,
+    input,
+  );
+  return withMessage(res);
+}
+
+export async function deleteAssignmentQuestion(
+  questionId: number,
+): Promise<string | undefined> {
+  return apiDelete(`/courses/assignment-questions/${questionId}/`);
+}
+
+export async function reorderAssignmentQuestions(
+  assignmentId: number,
+  orderedIds: number[],
+): Promise<WithMessage<AssignmentQuestion[]>> {
+  const res = await apiPatch<AssignmentQuestion[]>(
+    `/courses/assignments/${assignmentId}/questions/reorder/`,
+    { ordered_ids: orderedIds },
+  );
+  return withMessage(res);
+}
