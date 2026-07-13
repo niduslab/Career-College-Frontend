@@ -63,9 +63,8 @@ async function handleResponse<T>(res: Response): Promise<ApiEnvelope<T>> {
         Object.values(fieldErrors)[0] ||
         "Something went wrong. Please try again.";
     } else {
-      // DRF's own permission/exception responses skip our envelope and
-      // return { detail: "..." } instead of { message: "..." }.
       message =
+        Object.values(fieldErrors)[0] ||
         json.message ||
         json.detail ||
         "Something went wrong. Please try again.";

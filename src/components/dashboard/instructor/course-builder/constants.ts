@@ -15,7 +15,6 @@ export const steps: { key: Step; icon: React.ElementType }[] = [
 ];
 
 export const LEVELS = ["Beginner", "Intermediate", "Advanced"];
-export const LANGUAGES = ["English", "Spanish", "French", "German", "Arabic"];
 export const VIDEO_TYPES = ["Free Preview", "Paid"];
 
 export const LESSON_TYPES: { key: LessonType; icon: React.ElementType }[] = [

@@ -9,6 +9,7 @@ import QuizBuilder from "./quiz-builder";
 import CodingExerciseModal from "./coding-exercise-modal";
 import type { CreateCodingExercisePayload } from "./coding-exercise-modal";
 import AssignmentBuilder from "./assignment-builder";
+import { ApiError } from "@/lib/api";
 
 export type LectureSavePayload = Omit<Lesson, "id"> & {
   articleContent?: string;
@@ -17,6 +18,21 @@ export type LectureSavePayload = Omit<Lesson, "id"> & {
 
 function isRichTextEmpty(html: string): boolean {
   return !html.replace(/<[^>]*>/g, "").trim();
+}
+
+function currentVideoLabel(lesson?: Omit<Lesson, "id">): string {
+  const duration = lesson?.duration ? ` (${lesson.duration} min)` : "";
+  switch (lesson?.videoStatus) {
+    case "ready":
+      return `Current video: Ready${duration}`;
+    case "processing":
+    case "uploading":
+      return "Current video: Processing…";
+    case "failed":
+      return "Current video: Processing failed — please upload a new file.";
+    default:
+      return "Upload mp4 Video";
+  }
 }
 
 export default function LessonModal({
@@ -112,6 +128,11 @@ export default function LessonModal({
     initialLesson?.type === "Assignment" ? (initialAssignmentId ?? null) : null,
   );
   const [creatingAssignment, setCreatingAssignment] = useState(false);
+  const [assignmentErrors, setAssignmentErrors] = useState<{
+    title?: string;
+    total_score?: string;
+    passing_score?: string;
+  }>({});
   const passingScoreError =
     passingScore !== "" &&
     totalScore !== "" &&
@@ -137,6 +158,7 @@ export default function LessonModal({
       if (assignmentId !== null) return;
       if (!onCreateAssignment) return;
       setCreatingAssignment(true);
+      setAssignmentErrors({});
       try {
         const createdId = await onCreateAssignment({
           title: title.trim(),
@@ -146,6 +168,14 @@ export default function LessonModal({
           passing_score: parseFloat(passingScore),
         });
         if (createdId !== null) setAssignmentId(createdId);
+      } catch (err) {
+        if (err instanceof ApiError) {
+          setAssignmentErrors({
+            title: err.fieldErrors.title,
+            total_score: err.fieldErrors.total_score,
+            passing_score: err.fieldErrors.passing_score,
+          });
+        }
       } finally {
         setCreatingAssignment(false);
       }
@@ -423,7 +453,9 @@ export default function LessonModal({
                     >
                       <Upload className="w-5 h-5 text-(--gray-400)" />
                       <p className="text-[12px] text-(--gray-500)">
-                        {videoFile ? videoFile.name : "Upload mp4 Video"}
+                        {videoFile
+                          ? videoFile.name
+                          : currentVideoLabel(initialLesson)}
                       </p>
                     </div>
                     <input
@@ -492,10 +524,25 @@ export default function LessonModal({
                 <input
                   type="text"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    setAssignmentErrors((prev) => ({
+                      ...prev,
+                      title: undefined,
+                    }));
+                  }}
                   placeholder="Write assignment title"
-                  className="w-full h-12 px-3 text-[14px] mt-1 border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+                  className={`w-full h-12 px-3 text-[14px] mt-1 border rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 transition-shadow ${
+                    assignmentErrors.title
+                      ? "border-red-400 focus:ring-red-400"
+                      : "border-(--gray-200) focus:ring-(--primary-700)"
+                  }`}
                 />
+                {assignmentErrors.title && (
+                  <p className="text-[12px] text-red-500 mt-1">
+                    {assignmentErrors.title}
+                  </p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <label className="text-[14px] font-normal text-(--text-title)">
@@ -524,31 +571,52 @@ export default function LessonModal({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[14px] font-normal text-(--text-title)">
-                    Total Score
+                    Total Score <span className="text-red-400 ml-0.5">*</span>
                   </label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={totalScore}
-                    onChange={(e) => setTotalScore(e.target.value)}
+                    onChange={(e) => {
+                      setTotalScore(e.target.value);
+                      setAssignmentErrors((prev) => ({
+                        ...prev,
+                        total_score: undefined,
+                      }));
+                    }}
                     placeholder="e.g. 100"
-                    className="w-full h-12 px-3 text-[14px] mt-1 border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+                    className={`w-full h-12 px-3 text-[14px] mt-1 border rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 transition-shadow ${
+                      assignmentErrors.total_score
+                        ? "border-red-400 focus:ring-red-400"
+                        : "border-(--gray-200) focus:ring-(--primary-700)"
+                    }`}
                   />
+                  {assignmentErrors.total_score && (
+                    <p className="text-[12px] text-red-500 mt-1">
+                      {assignmentErrors.total_score}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[14px] font-normal text-(--text-title)">
-                    Passing Score
+                    Passing Score <span className="text-red-400 ml-0.5">*</span>
                   </label>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={passingScore}
-                    onChange={(e) => setPassingScore(e.target.value)}
+                    onChange={(e) => {
+                      setPassingScore(e.target.value);
+                      setAssignmentErrors((prev) => ({
+                        ...prev,
+                        passing_score: undefined,
+                      }));
+                    }}
                     placeholder="e.g. 70"
                     className={`w-full h-12 px-3 text-[14px] mt-1 border rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 transition-shadow ${
-                      passingScoreError
+                      passingScoreError || assignmentErrors.passing_score
                         ? "border-red-400 focus:ring-red-400"
                         : "border-(--gray-200) focus:ring-(--primary-700)"
                     }`}
@@ -556,6 +624,11 @@ export default function LessonModal({
                   {passingScoreError && (
                     <p className="text-[12px] text-red-500 mt-1">
                       Passing score must be ≤ total score ({totalScore})
+                    </p>
+                  )}
+                  {!passingScoreError && assignmentErrors.passing_score && (
+                    <p className="text-[12px] text-red-500 mt-1">
+                      {assignmentErrors.passing_score}
                     </p>
                   )}
                 </div>

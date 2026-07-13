@@ -46,6 +46,7 @@ import {
 } from "@/lib/course-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import { useDebouncedSave } from "@/lib/use-debounced-save";
 
 const CRITERION_TYPES: RubricCriterionType[] = [
   "keyword",
@@ -450,6 +451,7 @@ export default function AssignmentBuilder({
   const [deletingAssignment, setDeletingAssignment] = useState(false);
   const [savingRubricId, setSavingRubricId] = useState<number | null>(null);
   const sensors = useSensors(useSensor(PointerSensor));
+  const debounceSave = useDebouncedSave();
 
   const passingScoreError =
     passingScore !== "" &&
@@ -492,10 +494,7 @@ export default function AssignmentBuilder({
   const handleTitleBlur = async () => {
     if (!title.trim()) return;
     try {
-      const { message } = await updateAssignment(assignmentId, {
-        title: title.trim(),
-      });
-      notify.success(message ?? "Assignment updated.");
+      await updateAssignment(assignmentId, { title: title.trim() });
     } catch (err) {
       notify.error(
         err instanceof ApiError ? err.message : "Failed to update title.",
@@ -505,8 +504,7 @@ export default function AssignmentBuilder({
 
   const handleDescriptionBlur = async () => {
     try {
-      const { message } = await updateAssignment(assignmentId, { description });
-      notify.success(message ?? "Assignment updated.");
+      await updateAssignment(assignmentId, { description });
     } catch (err) {
       notify.error(
         err instanceof ApiError ? err.message : "Failed to update description.",
@@ -516,10 +514,7 @@ export default function AssignmentBuilder({
 
   const handleInstructionsBlur = async () => {
     try {
-      const { message } = await updateAssignment(assignmentId, {
-        instructions,
-      });
-      notify.success(message ?? "Assignment updated.");
+      await updateAssignment(assignmentId, { instructions });
     } catch (err) {
       notify.error(
         err instanceof ApiError
@@ -532,12 +527,11 @@ export default function AssignmentBuilder({
   const handleScoresBlur = async () => {
     if (passingScoreError || totalScore === "" || passingScore === "") return;
     try {
-      const { message, data } = await updateAssignment(assignmentId, {
+      const { data } = await updateAssignment(assignmentId, {
         total_score: parseFloat(totalScore),
         passing_score: parseFloat(passingScore),
       });
       setMaxScore(data.max_score);
-      notify.success(message ?? "Assignment updated.");
     } catch (err) {
       notify.error(
         err instanceof ApiError ? err.message : "Failed to update scores.",
@@ -548,7 +542,7 @@ export default function AssignmentBuilder({
   const addQuestion = async () => {
     setAddingQuestion(true);
     try {
-      const { data: question, message } = await createAssignmentQuestion(
+      const { data: question } = await createAssignmentQuestion(
         assignmentId,
         {
           question_text: "New question",
@@ -562,7 +556,6 @@ export default function AssignmentBuilder({
         ...prev,
         { ...question, saving: false, rubricDraft: [] },
       ]);
-      notify.success(message ?? "Question added.");
     } catch (err) {
       notify.error(
         err instanceof ApiError ? err.message : "Failed to add question.",
@@ -572,7 +565,7 @@ export default function AssignmentBuilder({
     }
   };
 
-  const updateQuestionField = async (
+  const updateQuestionField = (
     questionId: number,
     field: "question_text" | "model_answer" | "hint",
     value: string,
@@ -580,13 +573,16 @@ export default function AssignmentBuilder({
     setQuestions((prev) =>
       prev.map((q) => (q.id === questionId ? { ...q, [field]: value } : q)),
     );
-    try {
-      await updateAssignmentQuestion(questionId, { [field]: value });
-    } catch (err) {
-      notify.error(
-        err instanceof ApiError ? err.message : "Failed to save question.",
-      );
-    }
+    if (field === "question_text" && !value.trim()) return;
+    debounceSave(`question-${questionId}-${field}`, async () => {
+      try {
+        await updateAssignmentQuestion(questionId, { [field]: value });
+      } catch (err) {
+        notify.error(
+          err instanceof ApiError ? err.message : "Failed to save question.",
+        );
+      }
+    });
   };
 
   const updateQuestionPoints = async (questionId: number, value: string) => {

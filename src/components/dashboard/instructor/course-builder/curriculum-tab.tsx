@@ -109,6 +109,7 @@ function contentToLesson(item: SectionContentItem): Lesson {
     id: String(item.id),
     type: "Lecture",
     lectureType: isVideo ? "Video" : "Article",
+    videoStatus: isVideo ? content.active_video_asset?.status : undefined,
     title: content.title,
     videoType:
       item.content && "is_preview" in content && content.is_preview
@@ -125,10 +126,12 @@ function contentToLesson(item: SectionContentItem): Lesson {
 function SortableLesson({
   lesson,
   processing,
+  loadingEdit,
   onEdit,
 }: {
   lesson: Lesson;
   processing?: boolean;
+  loadingEdit?: boolean;
   onEdit: () => void;
 }) {
   const {
@@ -185,9 +188,14 @@ function SortableLesson({
       )}
       <button
         onClick={onEdit}
-        className="p-1 shrink-0 cursor-pointer transition-colors"
+        disabled={loadingEdit}
+        className="p-1 shrink-0 cursor-pointer transition-colors disabled:cursor-not-allowed"
       >
-        <Pencil className="w-4 h-4 text-(--gray-500)" />
+        {loadingEdit ? (
+          <Loader2 className="w-4 h-4 text-(--gray-500) animate-spin" />
+        ) : (
+          <Pencil className="w-4 h-4 text-(--gray-500)" />
+        )}
       </button>
     </div>
   );
@@ -198,6 +206,7 @@ function SortableModule({
   modIndex,
   totalModules,
   processingLectureIds,
+  loadingEditLessonId,
   onToggle,
   onEditModule,
   onAddLesson,
@@ -210,6 +219,7 @@ function SortableModule({
   modIndex: number;
   totalModules: number;
   processingLectureIds: Set<number>;
+  loadingEditLessonId: number | null;
   onToggle: () => void;
   onEditModule: () => void;
   onAddLesson: () => void;
@@ -273,7 +283,7 @@ function SortableModule({
             <ChevronRight className="w-4 h-4 text-(--gray-500) shrink-0" />
           )}
           <span className="text-[14px] lg:text-[16px] font-medium text-(--text-title) leading-snug">
-            {mod.title}
+            Module - {String(modIndex + 1).padStart(2, "0")}: {mod.title}
           </span>
         </button>
 
@@ -330,6 +340,7 @@ function SortableModule({
                       processing={processingLectureIds.has(
                         mod.contents[i]?.object_id,
                       )}
+                      loadingEdit={loadingEditLessonId === mod.contents[i]?.id}
                       onEdit={() => onEditLesson(mod.contents[i])}
                     />
                   ))}
@@ -375,21 +386,28 @@ export default function CurriculumTab({
     moduleId: number;
     content: SectionContentItem;
   } | null>(null);
+  const [loadingEditLessonId, setLoadingEditLessonId] = useState<number | null>(
+    null,
+  );
   const [processingLectureIds, setProcessingLectureIds] = useState<Set<number>>(
     new Set(),
   );
 
   const moduleSensors = useSensors(useSensor(PointerSensor));
 
-  /** Poll a just-created video lecture until transcoding finishes (ready/failed). */
+  /**
+   * Poll a just-created video lecture until transcoding finishes (ready/failed).
+  
+   */
   const pollVideoStatus = (lectureId: number, moduleId: number) => {
     setProcessingLectureIds((prev) => new Set(prev).add(lectureId));
-    const interval = setInterval(async () => {
+    let delay = 2000;
+
+    const tick = async () => {
       try {
         const lecture = await getLecture(lectureId);
         const status = lecture.active_video_asset?.status;
         if (status === "ready" || status === "failed") {
-          clearInterval(interval);
           setProcessingLectureIds((prev) => {
             const next = new Set(prev);
             next.delete(lectureId);
@@ -401,16 +419,20 @@ export default function CurriculumTab({
             notify.success(`"${lecture.title}" is ready.`);
           }
           await loadLessonsFor(moduleId);
+          return;
         }
+        delay = Math.min(delay * 2, 15000);
+        setTimeout(tick, delay);
       } catch {
-        clearInterval(interval);
         setProcessingLectureIds((prev) => {
           const next = new Set(prev);
           next.delete(lectureId);
           return next;
         });
       }
-    }, 3000);
+    };
+
+    setTimeout(tick, delay);
   };
 
   const loadLessonsFor = async (sectionId: number) => {
@@ -597,13 +619,12 @@ export default function CurriculumTab({
         (modules.find((m) => m.id === moduleId)?.contents.length ?? 0) + 1;
 
       if (lesson.videoFile) {
-        const { data: created, message } = await createVideoLecture(moduleId, {
+        const { data: created } = await createVideoLecture(moduleId, {
           title: lesson.title,
           video_file: lesson.videoFile,
           position,
           is_preview: lesson.isFreePreview,
         });
-        notify.success(message ?? "Video uploaded — processing started.");
         setModules((prev) =>
           prev.map((m) =>
             m.id === moduleId ? { ...m, loadingLessons: true } : m,
@@ -649,7 +670,9 @@ export default function CurriculumTab({
       });
       notify.success(message ?? "Quiz created.");
       setModules((prev) =>
-        prev.map((m) => (m.id === moduleId ? { ...m, loadingLessons: true } : m)),
+        prev.map((m) =>
+          m.id === moduleId ? { ...m, loadingLessons: true } : m,
+        ),
       );
       await loadLessonsFor(moduleId);
       return created.object_id;
@@ -668,13 +691,15 @@ export default function CurriculumTab({
     try {
       const position =
         (modules.find((m) => m.id === moduleId)?.contents.length ?? 0) + 1;
-      const { data: created, message } = await createCodingExercise(
-        moduleId,
-        { ...input, position },
-      );
+      const { data: created, message } = await createCodingExercise(moduleId, {
+        ...input,
+        position,
+      });
       notify.success(message ?? "Coding exercise created.");
       setModules((prev) =>
-        prev.map((m) => (m.id === moduleId ? { ...m, loadingLessons: true } : m)),
+        prev.map((m) =>
+          m.id === moduleId ? { ...m, loadingLessons: true } : m,
+        ),
       );
       await loadLessonsFor(moduleId);
       return created.object_id;
@@ -707,11 +732,21 @@ export default function CurriculumTab({
       });
       notify.success(message ?? "Assignment created.");
       setModules((prev) =>
-        prev.map((m) => (m.id === moduleId ? { ...m, loadingLessons: true } : m)),
+        prev.map((m) =>
+          m.id === moduleId ? { ...m, loadingLessons: true } : m,
+        ),
       );
       await loadLessonsFor(moduleId);
       return created.object_id;
     } catch (err) {
+      // Field-level errors (title/total_score/passing_score) are shown inline
+      // by the caller instead of a toast — only surface a toast for the rest.
+      const hasFieldErrors =
+        err instanceof ApiError &&
+        Object.keys(err.fieldErrors).some((k) =>
+          ["title", "total_score", "passing_score"].includes(k),
+        );
+      if (hasFieldErrors) throw err;
       notify.error(
         err instanceof ApiError ? err.message : "Failed to create assignment.",
       );
@@ -724,6 +759,36 @@ export default function CurriculumTab({
       prev.map((m) => (m.id === moduleId ? { ...m, loadingLessons: true } : m)),
     );
     await loadLessonsFor(moduleId);
+  };
+
+  /** The /contents/ list is lightweight and never includes article_content — fetch it before editing. */
+  const openEditLesson = async (
+    moduleId: number,
+    content: SectionContentItem,
+  ) => {
+    if (content.item_type !== "lecture") {
+      setEditingLesson({ moduleId, content });
+      return;
+    }
+    const lectureContent = content.content as LectureContent;
+    if (lectureContent.lecture_type !== "article") {
+      setEditingLesson({ moduleId, content });
+      return;
+    }
+    setLoadingEditLessonId(content.id);
+    try {
+      const fullLecture = await getLecture(content.object_id);
+      setEditingLesson({
+        moduleId,
+        content: { ...content, content: fullLecture },
+      });
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to load lesson.",
+      );
+    } finally {
+      setLoadingEditLessonId(null);
+    }
   };
 
   const handleEditLecture = async (
@@ -817,14 +882,13 @@ export default function CurriculumTab({
                     modIndex={mIdx}
                     totalModules={modules.length}
                     processingLectureIds={processingLectureIds}
+                    loadingEditLessonId={loadingEditLessonId}
                     onToggle={() => toggleExpand(mod.id)}
                     onEditModule={() =>
                       setModuleModal({ mode: "edit", moduleId: mod.id })
                     }
                     onAddLesson={() => setLessonModalModuleId(mod.id)}
-                    onEditLesson={(content) =>
-                      setEditingLesson({ moduleId: mod.id, content })
-                    }
+                    onEditLesson={(content) => openEditLesson(mod.id, content)}
                     onReorderLessons={handleReorderLessons}
                     onMoveModuleUp={() => moveModule(mod.id, -1)}
                     onMoveModuleDown={() => moveModule(mod.id, 1)}
@@ -961,9 +1025,7 @@ export default function CurriculumTab({
             }
           }}
           onClose={() => !savingLesson && setLessonModalModuleId(null)}
-          onCreateQuiz={(title) =>
-            handleCreateQuiz(lessonModalModuleId, title)
-          }
+          onCreateQuiz={(title) => handleCreateQuiz(lessonModalModuleId, title)}
           onQuizDeleted={() => refreshModuleLessons(lessonModalModuleId)}
           onCreateCodingExercise={(input) =>
             handleCreateCodingExercise(lessonModalModuleId, input)
@@ -1023,8 +1085,8 @@ export default function CurriculumTab({
           <LessonModal
             initialLesson={contentToLesson(editingLesson.content)}
             initialLectureType={
-              (editingLesson.content.content as LectureContent)
-                .lecture_type === "video"
+              (editingLesson.content.content as LectureContent).lecture_type ===
+              "video"
                 ? "Video"
                 : "Article"
             }
