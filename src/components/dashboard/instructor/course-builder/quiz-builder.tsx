@@ -31,6 +31,7 @@ import {
 } from "@/lib/course-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import { useDebouncedSave } from "@/lib/use-debounced-save";
 
 export default function QuizBuilder({
   quizId,
@@ -53,6 +54,7 @@ export default function QuizBuilder({
   const [addingQuestion, setAddingQuestion] = useState(false);
   const [deletingQuiz, setDeletingQuiz] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor));
+  const debounceSave = useDebouncedSave();
 
   useEffect(() => {
     let active = true;
@@ -101,8 +103,7 @@ export default function QuizBuilder({
     if (!quizTitle.trim()) return;
     setSavingTitle(true);
     try {
-      const { message } = await updateQuiz(quizId, { title: quizTitle.trim() });
-      notify.success(message ?? "Quiz updated.");
+      await updateQuiz(quizId, { title: quizTitle.trim() });
     } catch (err) {
       notify.error(
         err instanceof ApiError ? err.message : "Failed to update quiz title.",
@@ -115,7 +116,7 @@ export default function QuizBuilder({
   const addQuestion = async () => {
     setAddingQuestion(true);
     try {
-      const { data: question, message } = await createQuizQuestion(quizId, {
+      const { data: question } = await createQuizQuestion(quizId, {
         question_text: "New question",
         position: questions.length + 1,
       });
@@ -123,7 +124,6 @@ export default function QuizBuilder({
         ...prev,
         { ...question, answers: [], loadingAnswers: false },
       ]);
-      notify.success(message ?? "Question added.");
     } catch (err) {
       notify.error(
         err instanceof ApiError ? err.message : "Failed to add question.",
@@ -133,17 +133,22 @@ export default function QuizBuilder({
     }
   };
 
-  const updateQuestionText = async (questionId: number, text: string) => {
+  const updateQuestionText = (questionId: number, text: string) => {
     setQuestions((prev) =>
-      prev.map((q) => (q.id === questionId ? { ...q, question_text: text } : q)),
+      prev.map((q) =>
+        q.id === questionId ? { ...q, question_text: text } : q,
+      ),
     );
-    try {
-      await updateQuizQuestion(questionId, { question_text: text });
-    } catch (err) {
-      notify.error(
-        err instanceof ApiError ? err.message : "Failed to save question.",
-      );
-    }
+    if (!text.trim()) return;
+    debounceSave(`question-${questionId}`, async () => {
+      try {
+        await updateQuizQuestion(questionId, { question_text: text });
+      } catch (err) {
+        notify.error(
+          err instanceof ApiError ? err.message : "Failed to save question.",
+        );
+      }
+    });
   };
 
   const removeQuestion = async (questionId: number) => {
@@ -160,7 +165,7 @@ export default function QuizBuilder({
 
   const addAnswer = async (questionId: number, text: string) => {
     try {
-      const { data: answer, message } = await createQuizAnswer(questionId, {
+      const { data: answer } = await createQuizAnswer(questionId, {
         answer_text: text,
         is_correct: false,
       });
@@ -169,7 +174,6 @@ export default function QuizBuilder({
           q.id === questionId ? { ...q, answers: [...q.answers, answer] } : q,
         ),
       );
-      notify.success(message ?? "Answer added.");
     } catch (err) {
       notify.error(
         err instanceof ApiError ? err.message : "Failed to add answer.",
@@ -177,7 +181,7 @@ export default function QuizBuilder({
     }
   };
 
-  const updateAnswerText = async (
+  const updateAnswerText = (
     questionId: number,
     answerId: number,
     text: string,
@@ -194,13 +198,16 @@ export default function QuizBuilder({
           : q,
       ),
     );
-    try {
-      await updateQuizAnswer(answerId, { answer_text: text });
-    } catch (err) {
-      notify.error(
-        err instanceof ApiError ? err.message : "Failed to save answer.",
-      );
-    }
+    if (!text.trim()) return;
+    debounceSave(`answer-${answerId}`, async () => {
+      try {
+        await updateQuizAnswer(answerId, { answer_text: text });
+      } catch (err) {
+        notify.error(
+          err instanceof ApiError ? err.message : "Failed to save answer.",
+        );
+      }
+    });
   };
 
   const setCorrectAnswer = async (questionId: number, answerId: number) => {
@@ -229,7 +236,9 @@ export default function QuizBuilder({
       }
     } catch (err) {
       notify.error(
-        err instanceof ApiError ? err.message : "Failed to mark correct answer.",
+        err instanceof ApiError
+          ? err.message
+          : "Failed to mark correct answer.",
       );
     }
   };
@@ -366,7 +375,9 @@ export default function QuizBuilder({
                       onSetCorrectAnswer={(answerId) =>
                         setCorrectAnswer(q.id, answerId)
                       }
-                      onDeleteAnswer={(answerId) => removeAnswer(q.id, answerId)}
+                      onDeleteAnswer={(answerId) =>
+                        removeAnswer(q.id, answerId)
+                      }
                     />
                   ))}
                 </SortableContext>

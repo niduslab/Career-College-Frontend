@@ -8,6 +8,8 @@ export interface Lesson {
   type: LessonType;
   /** For a Lecture, whether it's a video or article — determines its curriculum-list icon. */
   lectureType?: LectureType;
+  /** For an existing video Lecture, its transcode status — shown in edit mode instead of a filename. */
+  videoStatus?: "uploading" | "processing" | "ready" | "failed";
   title: string;
   videoType: string;
   duration: string;

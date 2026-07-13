@@ -9,7 +9,9 @@ import {
   type SelectOption,
 } from "@/components/common/select-dropdown";
 import CustomSelect from "./custom-select";
-import { LEVELS, LANGUAGES } from "./constants";
+import SearchableSelect from "./searchable-select";
+import { LEVELS } from "./constants";
+import { LANGUAGES } from "./languages";
 import { getCourseCategories, type CourseCategory } from "@/lib/course-api";
 import { notify } from "@/lib/toast";
 
@@ -188,7 +190,7 @@ export default function SetupTab({
               options={LEVELS}
               onChange={(v) => set("level", v)}
             />
-            <CustomSelect
+            <SearchableSelect
               label="Language"
               value={form.language}
               options={LANGUAGES}

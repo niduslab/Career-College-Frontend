@@ -20,6 +20,7 @@ import {
 } from "@/lib/course-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import { useDebouncedSave } from "@/lib/use-debounced-save";
 
 const DIFFICULTIES: CodingDifficulty[] = ["easy", "medium", "hard"];
 
@@ -53,8 +54,9 @@ export default function CodingExerciseBuilder({
   const [supportedLanguages, setSupportedLanguages] = useState<
     CodingLanguage[]
   >([]);
-  const [defaultLanguage, setDefaultLanguage] =
-    useState<CodingLanguage | null>(null);
+  const [defaultLanguage, setDefaultLanguage] = useState<CodingLanguage | null>(
+    null,
+  );
   const [timeLimitMs, setTimeLimitMs] = useState("");
 
   const [languageConfigs, setLanguageConfigs] = useState<UiLanguageConfig[]>(
@@ -65,12 +67,18 @@ export default function CodingExerciseBuilder({
   );
   const [draftCode, setDraftCode] = useState<
     Record<CodingLanguage, { starter_code: string; solution_code: string }>
-  >({} as Record<CodingLanguage, { starter_code: string; solution_code: string }>);
+  >(
+    {} as Record<
+      CodingLanguage,
+      { starter_code: string; solution_code: string }
+    >,
+  );
 
   const [testCases, setTestCases] = useState<UiTestCase[]>([]);
   const [addingTestCase, setAddingTestCase] = useState(false);
   const [deletingExercise, setDeletingExercise] = useState(false);
   const [savingTitle, setSavingTitle] = useState(false);
+  const debounceSave = useDebouncedSave();
 
   useEffect(() => {
     let active = true;
@@ -91,9 +99,7 @@ export default function CodingExerciseBuilder({
         setTimeLimitMs(
           exercise.time_limit_ms != null ? String(exercise.time_limit_ms) : "",
         );
-        setLanguageConfigs(
-          configs.map((c) => ({ ...c, saving: false })),
-        );
+        setLanguageConfigs(configs.map((c) => ({ ...c, saving: false })));
         setTestCases(cases.map((c) => ({ ...c, saving: false })));
         setActiveLanguage(exercise.supported_languages[0] ?? null);
         setDraftCode(
@@ -127,10 +133,7 @@ export default function CodingExerciseBuilder({
     if (!title.trim()) return;
     setSavingTitle(true);
     try {
-      const { message } = await updateCodingExercise(exerciseId, {
-        title: title.trim(),
-      });
-      notify.success(message ?? "Exercise updated.");
+      await updateCodingExercise(exerciseId, { title: title.trim() });
     } catch (err) {
       notify.error(
         err instanceof ApiError ? err.message : "Failed to update title.",
@@ -142,15 +145,10 @@ export default function CodingExerciseBuilder({
 
   const handleDescriptionBlur = async () => {
     try {
-      const { message } = await updateCodingExercise(exerciseId, {
-        description,
-      });
-      notify.success(message ?? "Exercise updated.");
+      await updateCodingExercise(exerciseId, { description });
     } catch (err) {
       notify.error(
-        err instanceof ApiError
-          ? err.message
-          : "Failed to update description.",
+        err instanceof ApiError ? err.message : "Failed to update description.",
       );
     }
   };
@@ -158,10 +156,9 @@ export default function CodingExerciseBuilder({
   const handleProblemStatementBlur = async () => {
     if (!problemStatement.trim()) return;
     try {
-      const { message } = await updateCodingExercise(exerciseId, {
+      await updateCodingExercise(exerciseId, {
         problem_statement: problemStatement.trim(),
       });
-      notify.success(message ?? "Exercise updated.");
     } catch (err) {
       notify.error(
         err instanceof ApiError
@@ -175,10 +172,7 @@ export default function CodingExerciseBuilder({
     const prev = difficulty;
     setDifficulty(d);
     try {
-      const { message } = await updateCodingExercise(exerciseId, {
-        difficulty: d,
-      });
-      notify.success(message ?? "Exercise updated.");
+      await updateCodingExercise(exerciseId, { difficulty: d });
     } catch (err) {
       setDifficulty(prev);
       notify.error(
@@ -190,15 +184,10 @@ export default function CodingExerciseBuilder({
   const handleTimeLimitBlur = async () => {
     const parsed = timeLimitMs.trim() ? Number(timeLimitMs) : undefined;
     try {
-      const { message } = await updateCodingExercise(exerciseId, {
-        time_limit_ms: parsed,
-      });
-      notify.success(message ?? "Exercise updated.");
+      await updateCodingExercise(exerciseId, { time_limit_ms: parsed });
     } catch (err) {
       notify.error(
-        err instanceof ApiError
-          ? err.message
-          : "Failed to update time limit.",
+        err instanceof ApiError ? err.message : "Failed to update time limit.",
       );
     }
   };
@@ -228,11 +217,10 @@ export default function CodingExerciseBuilder({
     }
 
     try {
-      const { message } = await updateCodingExercise(exerciseId, {
+      await updateCodingExercise(exerciseId, {
         supported_languages: nextSupported,
         default_language: nextDefault ?? undefined,
       });
-      notify.success(message ?? "Exercise updated.");
     } catch (err) {
       setSupportedLanguages(prevSupported);
       setDefaultLanguage(prevDefault);
@@ -248,10 +236,7 @@ export default function CodingExerciseBuilder({
     const prev = defaultLanguage;
     setDefaultLanguage(lang);
     try {
-      const { message } = await updateCodingExercise(exerciseId, {
-        default_language: lang,
-      });
-      notify.success(message ?? "Exercise updated.");
+      await updateCodingExercise(exerciseId, { default_language: lang });
     } catch (err) {
       setDefaultLanguage(prev);
       notify.error(
@@ -279,16 +264,12 @@ export default function CodingExerciseBuilder({
   const saveNewLanguageConfig = async (lang: CodingLanguage) => {
     const draft = draftCode[lang] ?? { starter_code: "", solution_code: "" };
     try {
-      const { data: config, message } = await createCodingLanguageConfig(
-        exerciseId,
-        {
-          language: lang,
-          starter_code: draft.starter_code,
-          solution_code: draft.solution_code,
-        },
-      );
+      const { data: config } = await createCodingLanguageConfig(exerciseId, {
+        language: lang,
+        starter_code: draft.starter_code,
+        solution_code: draft.solution_code,
+      });
       setLanguageConfigs((prev) => [...prev, { ...config, saving: false }]);
-      notify.success(message ?? "Language config added.");
     } catch (err) {
       notify.error(
         err instanceof ApiError
@@ -298,7 +279,7 @@ export default function CodingExerciseBuilder({
     }
   };
 
-  const updateExistingLanguageConfig = async (
+  const updateExistingLanguageConfig = (
     configId: number,
     field: "starter_code" | "solution_code",
     value: string,
@@ -306,17 +287,19 @@ export default function CodingExerciseBuilder({
     setLanguageConfigs((prev) =>
       prev.map((c) => (c.id === configId ? { ...c, [field]: value } : c)),
     );
-    try {
-      await updateCodingLanguageConfig(exerciseId, configId, {
-        [field]: value,
-      });
-    } catch (err) {
-      notify.error(
-        err instanceof ApiError
-          ? err.message
-          : "Failed to save language config.",
-      );
-    }
+    debounceSave(`language-config-${configId}-${field}`, async () => {
+      try {
+        await updateCodingLanguageConfig(exerciseId, configId, {
+          [field]: value,
+        });
+      } catch (err) {
+        notify.error(
+          err instanceof ApiError
+            ? err.message
+            : "Failed to save language config.",
+        );
+      }
+    });
   };
 
   const removeLanguageConfig = async (configId: number) => {
@@ -336,17 +319,13 @@ export default function CodingExerciseBuilder({
   const addTestCase = async () => {
     setAddingTestCase(true);
     try {
-      const { data: testCase, message } = await createCodingTestCase(
-        exerciseId,
-        {
-          input_data: "New input",
-          expected_output: "New output",
-          is_hidden: false,
-          position: testCases.length + 1,
-        },
-      );
+      const { data: testCase } = await createCodingTestCase(exerciseId, {
+        input_data: "New input",
+        expected_output: "New output",
+        is_hidden: false,
+        position: testCases.length + 1,
+      });
       setTestCases((prev) => [...prev, { ...testCase, saving: false }]);
-      notify.success(message ?? "Test case added.");
     } catch (err) {
       notify.error(
         err instanceof ApiError ? err.message : "Failed to add test case.",
@@ -356,7 +335,7 @@ export default function CodingExerciseBuilder({
     }
   };
 
-  const updateTestCaseField = async (
+  const updateTestCaseField = (
     tcId: number,
     field: "input_data" | "expected_output" | "explanation" | "is_hidden",
     value: string | boolean,
@@ -364,12 +343,22 @@ export default function CodingExerciseBuilder({
     setTestCases((prev) =>
       prev.map((c) => (c.id === tcId ? { ...c, [field]: value } : c)),
     );
-    try {
-      await updateCodingTestCase(exerciseId, tcId, { [field]: value });
-    } catch (err) {
-      notify.error(
-        err instanceof ApiError ? err.message : "Failed to save test case.",
-      );
+    const isRequiredField =
+      field === "input_data" || field === "expected_output";
+    if (typeof value === "string" && isRequiredField && !value.trim()) return;
+    const save = async () => {
+      try {
+        await updateCodingTestCase(exerciseId, tcId, { [field]: value });
+      } catch (err) {
+        notify.error(
+          err instanceof ApiError ? err.message : "Failed to save test case.",
+        );
+      }
+    };
+    if (typeof value === "boolean") {
+      save();
+    } else {
+      debounceSave(`test-case-${tcId}-${field}`, save);
     }
   };
 
