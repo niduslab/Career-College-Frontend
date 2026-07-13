@@ -28,6 +28,8 @@ const INITIAL_FORM: SetupForm = {
   audiences: "",
   thumbnailFile: null,
   thumbnailUrl: null,
+  deliveryMode: "self_paced",
+  courseOutline: "",
 };
 
 const STEP_TO_PARAM: Record<Step, string> = {
@@ -46,11 +48,16 @@ export default function CourseBuilderPage() {
   const searchParams = useSearchParams();
   const urlCourseId = searchParams.get("courseId");
   const urlStep = searchParams.get("step");
+  const urlDeliveryMode = searchParams.get("deliveryMode");
 
   const [activeStep, setActiveStepState] = useState<Step>(
     (urlStep && PARAM_TO_STEP[urlStep]) || "Setup",
   );
-  const [form, setForm] = useState<SetupForm>(INITIAL_FORM);
+  const [form, setForm] = useState<SetupForm>(() =>
+    !urlCourseId && urlDeliveryMode === "scheduled"
+      ? { ...INITIAL_FORM, deliveryMode: "scheduled" }
+      : INITIAL_FORM,
+  );
   const [previewOpen, setPreviewOpen] = useState(false);
   const [courseId, setCourseIdState] = useState<number | null>(
     urlCourseId ? Number(urlCourseId) : null,
@@ -97,6 +104,8 @@ export default function CourseBuilderPage() {
           audiences: course.audiences,
           thumbnailFile: null,
           thumbnailUrl: course.thumbnail,
+          deliveryMode: course.delivery_mode,
+          courseOutline: course.course_outline,
         });
       })
       .catch((err) => {
@@ -140,9 +149,13 @@ export default function CourseBuilderPage() {
         prerequisites: form.prerequisites,
         audiences: form.audiences,
         thumbnail: form.thumbnailFile,
+        course_outline: form.courseOutline,
       };
       if (courseId === null) {
-        const { data: course, message } = await createCourse(payload);
+        const { data: course, message } = await createCourse({
+          ...payload,
+          delivery_mode: form.deliveryMode,
+        });
         notify.success(message ?? "Course created.");
         goToCurriculumFor(course.id);
       } else {

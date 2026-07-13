@@ -28,6 +28,10 @@ export interface SetupForm {
   audiences: string;
   thumbnailFile: File | null;
   thumbnailUrl: string | null;
+  /** Set once at creation and immutable afterward — not editable here after the course exists. */
+  deliveryMode: "self_paced" | "scheduled";
+  /** Only required (non-blank) before submission when deliveryMode is "scheduled". */
+  courseOutline: string;
 }
 
 /** Flatten the 2-level category tree into indented options for a flat dropdown. */
@@ -60,6 +64,7 @@ export default function SetupTab({
     title?: string;
     categoryId?: string;
     description?: string;
+    courseOutline?: string;
   }>({});
 
   useEffect(() => {
@@ -230,6 +235,43 @@ export default function SetupTab({
               </p>
             )}
           </div>
+
+          {form.deliveryMode === "scheduled" && (
+            <div className="space-y-1.5">
+              <label className="text-[14px] font-normal text-(--text-title)">
+                Course Outline <span className="text-red-500">*</span>
+                <span className="text-[12px] text-(--gray-400) font-normal ml-1">
+                  (required before submitting a scheduled course)
+                </span>
+              </label>
+              <textarea
+                value={form.courseOutline}
+                onChange={(e) => {
+                  set("courseOutline", e.target.value);
+                  setErrors((prev) => ({ ...prev, courseOutline: undefined }));
+                }}
+                rows={5}
+                placeholder={
+                  "Week 1: HTML/CSS\nWeek 2: JavaScript\nWeek 3: React\n..."
+                }
+                className={`w-full px-3 py-2.5 mt-1 text-[14px] border rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 transition-shadow ${
+                  errors.courseOutline
+                    ? "border-red-400 focus:ring-red-400"
+                    : "border-(--gray-200) focus:ring-(--primary-700)"
+                }`}
+              />
+              {errors.courseOutline && (
+                <p className="text-[12px] text-red-500 mt-1">
+                  {errors.courseOutline}
+                </p>
+              )}
+              <p className="text-[12px] text-(--gray-500)">
+                A written outline stands in for a fully-built curriculum on
+                scheduled courses — you can still add real sections/lessons,
+                but they aren&apos;t required before submitting.
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="space-y-1.5">

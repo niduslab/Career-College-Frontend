@@ -21,6 +21,7 @@ export type CourseStatus =
   | "published"
   | "rejected"
   | "archived";
+export type DeliveryMode = "self_paced" | "scheduled";
 
 export interface CourseCategory {
   id: number;
@@ -56,6 +57,8 @@ export interface Course {
   learning_objectives: string;
   prerequisites: string;
   audiences: string;
+  delivery_mode: DeliveryMode;
+  course_outline: string;
   created_at: string;
   updated_at: string;
 }
@@ -72,9 +75,15 @@ export interface CourseCreateInput {
   prerequisites?: string;
   audiences?: string;
   thumbnail?: File | null;
+  /** Immutable after creation — cannot be changed via PATCH. */
+  delivery_mode?: DeliveryMode;
+  /** Required before submission when delivery_mode is "scheduled". */
+  course_outline?: string;
 }
 
-export type CourseUpdateInput = Partial<CourseCreateInput>;
+export type CourseUpdateInput = Partial<
+  Omit<CourseCreateInput, "delivery_mode">
+>;
 
 function buildCourseFormData(
   data: CourseCreateInput | CourseUpdateInput,
