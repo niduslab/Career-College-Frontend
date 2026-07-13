@@ -11,7 +11,6 @@ import SetupTab, {
 import CurriculumTab from "@/components/dashboard/instructor/course-builder/curriculum-tab";
 import ReviewTab from "@/components/dashboard/instructor/course-builder/review-tab";
 import PreviewDrawer from "@/components/dashboard/instructor/course-builder/preview-drawer";
-import { SEED_MODULES } from "@/components/dashboard/instructor/course-builder/constants";
 import { createCourse, updateCourse, getCourse } from "@/lib/course-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
@@ -234,36 +233,29 @@ export default function CourseBuilderPage() {
       <PreviewDrawer
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
+        courseId={courseId}
         form={form}
-        modules={SEED_MODULES}
       />
 
-      {activeStep === "Review" && (
-        <ReviewTab
-          data={{
-            category: form.category,
-            level: form.level,
-            language: form.language,
-            title: form.title,
-            description: form.description,
-            modules: SEED_MODULES.map((m) => ({
-              title: m.title,
-              lessons: m.lessons.length,
-              videos: m.lessons.filter((l) => l.type === "Lecture").length,
-            })),
-            totalLessons: SEED_MODULES.reduce(
-              (s, m) => s + m.lessons.length,
-              0,
-            ),
-            totalVideos: SEED_MODULES.reduce(
-              (s, m) => s + m.lessons.filter((l) => l.type === "Lecture").length,
-              0,
-            ),
-            price: form.price,
-          }}
-          onBack={() => setActiveStep("Curriculum")}
-        />
-      )}
+      {activeStep === "Review" &&
+        (courseId !== null ? (
+          <ReviewTab
+            courseId={courseId}
+            data={{
+              category: form.category,
+              level: form.level,
+              language: form.language,
+              title: form.title,
+              description: form.description,
+              price: form.price,
+            }}
+            onBack={() => setActiveStep("Curriculum")}
+          />
+        ) : (
+          <div className="bg-white border border-(--gray-200) rounded-xl p-10 text-center text-(--gray-500) text-[14px]">
+            Please complete Course Setup first to unlock the review step.
+          </div>
+        ))}
     </div>
   );
 }

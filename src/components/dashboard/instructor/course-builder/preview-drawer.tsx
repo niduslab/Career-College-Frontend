@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   X,
   BookOpen,
@@ -10,39 +10,96 @@ import {
   Globe,
   BarChart2,
   Clock,
+  Loader2,
 } from "lucide-react";
-import type { Module } from "./types";
+import {
+  listSections,
+  listSectionContents,
+  type LectureContent,
+} from "@/lib/course-api";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
+
+interface PreviewModule {
+  id: number;
+  title: string;
+  lessons: number;
+  videos: number;
+  durationMinutes: number;
+}
 
 interface PreviewDrawerProps {
   open: boolean;
   onClose: () => void;
+  courseId: number | null;
   form: {
     title: string;
     category: string;
     level: string;
     language: string;
     description: string;
+    price: string;
   };
-  modules: Module[];
 }
 
 export default function PreviewDrawer({
   open,
   onClose,
+  courseId,
   form,
-  modules,
 }: PreviewDrawerProps) {
-  const totalLessons = modules.reduce((s, m) => s + m.lessons.length, 0);
-  const totalVideos  = modules.reduce(
-    (s, m) => s + m.lessons.filter((l) => l.type === "Lecture").length,
-    0,
+  const [modules, setModules] = useState<PreviewModule[]>([]);
+  const [loadedForCourseId, setLoadedForCourseId] = useState<number | null>(
+    null,
   );
-  const totalDuration = modules.reduce(
-    (s, m) =>
-      s +
-      m.lessons.reduce((ls, l) => ls + (parseFloat(l.duration) || 0), 0),
-    0,
-  );
+  const loading =
+    open && courseId !== null && loadedForCourseId !== courseId;
+
+  useEffect(() => {
+    if (!open || courseId === null || loadedForCourseId === courseId) return;
+    let active = true;
+    listSections(courseId)
+      .then(async (sections) => {
+        const withContents = await Promise.all(
+          sections.map(async (s) => {
+            const contents = await listSectionContents(s.id);
+            return {
+              id: s.id,
+              title: s.title,
+              lessons: contents.length,
+              videos: contents.filter(
+                (c) =>
+                  c.item_type === "lecture" &&
+                  (c.content as LectureContent).lecture_type === "video",
+              ).length,
+              durationMinutes: contents.reduce((sum, c) => {
+                if (c.item_type !== "lecture") return sum;
+                const seconds = (c.content as LectureContent)
+                  .active_video_asset?.duration_seconds;
+                return sum + (seconds ? seconds / 60 : 0);
+              }, 0),
+            };
+          }),
+        );
+        if (!active) return;
+        setModules(withContents);
+        setLoadedForCourseId(courseId);
+      })
+      .catch((err) => {
+        if (!active) return;
+        notify.error(
+          err instanceof ApiError ? err.message : "Failed to load curriculum.",
+        );
+        setLoadedForCourseId(courseId);
+      });
+    return () => {
+      active = false;
+    };
+  }, [open, courseId, loadedForCourseId]);
+
+  const totalLessons = modules.reduce((s, m) => s + m.lessons, 0);
+  const totalVideos = modules.reduce((s, m) => s + m.videos, 0);
+  const totalDuration = modules.reduce((s, m) => s + m.durationMinutes, 0);
 
   // lock body scroll when open
   useEffect(() => {
@@ -144,7 +201,9 @@ export default function PreviewDrawer({
             <DollarSign className="w-5 h-5 text-(--primary-600) shrink-0" />
             <div>
               <p className="text-[11px] text-(--gray-500)">Course Price</p>
-              <p className="text-[18px] font-bold text-(--primary-600)">$149</p>
+              <p className="text-[18px] font-bold text-(--primary-600)">
+                {form.price ? `$${form.price}` : "Free"}
+              </p>
             </div>
           </div>
 
@@ -153,40 +212,42 @@ export default function PreviewDrawer({
             <p className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase">
               Curriculum
             </p>
-            {modules.length === 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center py-8 text-(--gray-500)">
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                Loading curriculum…
+              </div>
+            ) : modules.length === 0 ? (
               <p className="text-[13px] text-(--gray-400) italic">
                 No modules added yet.
               </p>
             ) : (
               <div className="space-y-2">
-                {modules.map((mod, i) => {
-                  const videos = mod.lessons.filter((l) => l.type === "Lecture").length;
-                  return (
-                    <div
-                      key={mod.id}
-                      className="flex items-start gap-3 px-4 py-3 border border-(--gray-200) rounded-xl"
-                    >
-                      <div className="w-7 h-7 rounded-full bg-(--primary-700) text-white text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
-                        {String(i + 1).padStart(2, "0")}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold text-(--text-title) truncate">
-                          {mod.title}
-                        </p>
-                        <div className="flex items-center gap-3 mt-0.5">
-                          <span className="flex items-center gap-1 text-[11px] text-(--gray-400)">
-                            <BookOpen className="w-3 h-3" />
-                            {mod.lessons.length} lesson{mod.lessons.length !== 1 ? "s" : ""}
-                          </span>
-                          <span className="flex items-center gap-1 text-[11px] text-(--gray-400)">
-                            <TvMinimalPlay className="w-3 h-3" />
-                            {videos} video{videos !== 1 ? "s" : ""}
-                          </span>
-                        </div>
+                {modules.map((mod, i) => (
+                  <div
+                    key={mod.id}
+                    className="flex items-start gap-3 px-4 py-3 border border-(--gray-200) rounded-xl"
+                  >
+                    <div className="w-7 h-7 rounded-full bg-(--primary-700) text-white text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      {String(i + 1).padStart(2, "0")}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold text-(--text-title) truncate">
+                        {mod.title}
+                      </p>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <span className="flex items-center gap-1 text-[11px] text-(--gray-400)">
+                          <BookOpen className="w-3 h-3" />
+                          {mod.lessons} lesson{mod.lessons !== 1 ? "s" : ""}
+                        </span>
+                        <span className="flex items-center gap-1 text-[11px] text-(--gray-400)">
+                          <TvMinimalPlay className="w-3 h-3" />
+                          {mod.videos} video{mod.videos !== 1 ? "s" : ""}
+                        </span>
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             )}
           </div>

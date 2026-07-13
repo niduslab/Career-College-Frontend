@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/common/toast-provider";
+import { QueryProvider } from "@/components/common/query-provider";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -27,7 +28,7 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${outfit.variable} antialiased`}
       >
-        {children}
+        <QueryProvider>{children}</QueryProvider>
         <ToastProvider />
       </body>
     </html>
