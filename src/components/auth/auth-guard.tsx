@@ -31,22 +31,30 @@ export function AuthGuard({
   useEffect(() => {
     let active = true;
 
+    // Defer redirects to the next tick — calling router.replace() synchronously
+    // in this effect can race Next.js's own router initialization on mount.
+    const redirect = (path: string) => {
+      setTimeout(() => {
+        if (active) router.replace(path);
+      }, 0);
+    };
+
     fetchMe().then((user) => {
       if (!active) return;
 
       if (!user) {
         notify.error("Please log in to continue.");
-        router.replace("/login");
+        redirect("/login");
         return;
       }
 
       if (adminOnly && !user.is_staff) {
-        router.replace(dashboardPathFor(user));
+        redirect(dashboardPathFor(user));
         return;
       }
 
       if (requireRole && !user.is_staff && user.user_type !== requireRole) {
-        router.replace(dashboardPathFor(user));
+        redirect(dashboardPathFor(user));
         return;
       }
 
