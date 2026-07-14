@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Image, { StaticImageData } from "next/image";
 import { Star, Users, Pencil } from "lucide-react";
-import PageHeader from "@/components/dashboard/instructor/page-header";
+import PageHeader from "@/components/dashboard/common/page-header";
+import CreateCourseDropdown from "@/components/dashboard/instructor/create-course-dropdown";
 import SearchFilterBar from "@/components/dashboard/instructor/search-filter-bar";
 import { Pagination } from "@/components/common/pagination";
 import img1 from "@/assets/images/popular-courses/image1.webp";
@@ -156,13 +157,12 @@ export default function MyCoursePage() {
     page * ITEMS_PER_PAGE,
   );
 
-
   return (
     <div className="space-y-5">
       <PageHeader
         title="My Courses"
         subtitle="6 active courses, 1 currently in review."
-        buttonLabel="Create New Course"
+        action={<CreateCourseDropdown />}
       />
 
       <SearchFilterBar
