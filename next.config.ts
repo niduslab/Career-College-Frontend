@@ -33,6 +33,9 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    // Local backend runs on localhost/127.0.0.1 in dev — Next.js blocks
+    // proxying private/loopback IPs by default as an SSRF guard.
+    dangerouslyAllowLocalIP: process.env.NODE_ENV !== "production",
     remotePatterns: [
       {
         protocol: "https",

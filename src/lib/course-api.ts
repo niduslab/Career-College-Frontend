@@ -109,6 +109,209 @@ export async function getCourseCategories(): Promise<CourseCategory[]> {
   return data?.results ?? [];
 }
 
+// Public catalog
+
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+/** A course as returned by the public catalog (list view). */
+export interface CatalogCourse {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  thumbnail: string | null;
+  price: string;
+  language: string;
+  level: CourseLevel;
+  duration_minutes: number | null;
+  instructors: CourseBrief[];
+  category: { id: number; name: string; slug: string } | null;
+  published_at: string | null;
+}
+
+/** Extra fields present only on the single-course catalog detail endpoint. */
+export interface CatalogCourseDetail extends CatalogCourse {
+  partner_institution: { id: number; institution_name: string } | null;
+  learning_objectives: string;
+  prerequisites: string;
+  audiences: string;
+  total_sections: number;
+  total_content_items: number;
+}
+
+export type CatalogSort =
+  | "relevance"
+  | "newest"
+  | "popularity"
+  | "price_asc"
+  | "price_desc"
+  | "rating";
+
+export interface CatalogFilterParams {
+  category?: string;
+  subcategory?: string;
+  level?: CourseLevel[];
+  language?: string[];
+  price_type?: "free" | "paid";
+  price_min?: number;
+  price_max?: number;
+  duration_min?: number;
+  duration_max?: number;
+  search?: string;
+  rating_min?: number;
+  min_reviews?: number;
+  sort?: CatalogSort;
+  page?: number;
+  page_size?: number;
+}
+
+function buildCatalogQuery(params: CatalogFilterParams): string {
+  const qs = new URLSearchParams();
+  const setCsv = (key: string, values?: string[]) => {
+    if (values && values.length > 0) qs.set(key, values.join(","));
+  };
+  if (params.category) qs.set("category", params.category);
+  if (params.subcategory) qs.set("subcategory", params.subcategory);
+  setCsv("level", params.level);
+  setCsv("language", params.language);
+  if (params.price_type) qs.set("price_type", params.price_type);
+  if (params.price_min !== undefined)
+    qs.set("price_min", String(params.price_min));
+  if (params.price_max !== undefined)
+    qs.set("price_max", String(params.price_max));
+  if (params.duration_min !== undefined)
+    qs.set("duration_min", String(params.duration_min));
+  if (params.duration_max !== undefined)
+    qs.set("duration_max", String(params.duration_max));
+  if (params.search) qs.set("search", params.search);
+  if (params.rating_min !== undefined)
+    qs.set("rating_min", String(params.rating_min));
+  if (params.min_reviews !== undefined)
+    qs.set("min_reviews", String(params.min_reviews));
+  if (params.sort) qs.set("sort", params.sort);
+  if (params.page) qs.set("page", String(params.page));
+  if (params.page_size) qs.set("page_size", String(params.page_size));
+  const s = qs.toString();
+  return s ? `?${s}` : "";
+}
+
+/** Browse the public course catalog (no auth required). */
+export async function getCourseCatalog(
+  params: CatalogFilterParams = {},
+): Promise<PaginatedResponse<CatalogCourse>> {
+  const res = await apiGet<PaginatedResponse<CatalogCourse>>(
+    `/courses/catalog/${buildCatalogQuery(params)}`,
+  );
+  return res.data ?? { count: 0, next: null, previous: null, results: [] };
+}
+
+/** Fetch a single published course's public catalog detail (no auth required). */
+export async function getCatalogCourseDetail(
+  slug: string,
+): Promise<CatalogCourseDetail> {
+  const res = await apiGet<CatalogCourseDetail>(`/courses/catalog/${slug}/`);
+  return res.data as CatalogCourseDetail;
+}
+
+// Enrollment
+
+export type EnrollmentType = "free" | "paid";
+
+export interface Enrollment {
+  id: number;
+  course: CatalogCourse;
+  enrollment_type: EnrollmentType;
+  is_active: boolean;
+  progress_percent: number;
+  completed_at: string | null;
+  last_accessed_at: string | null;
+  created_at: string;
+}
+
+/** Enroll in a free course.*/
+export async function enrollInCourse(
+  courseSlug: string,
+): Promise<WithMessage<Enrollment>> {
+  const res = await apiPost<Enrollment>(`/courses/${courseSlug}/enroll/`, {});
+  return withMessage(res);
+}
+
+/** Deactivate the caller's enrollment; progress is preserved for re-enrollment. */
+export async function unenrollFromCourse(
+  courseSlug: string,
+): Promise<WithMessage<Enrollment>> {
+  const res = await apiPost<Enrollment>(`/courses/${courseSlug}/unenroll/`, {});
+  return withMessage(res);
+}
+
+/** List the caller's own active enrollments, most recently accessed first. */
+export async function getMyCourses(): Promise<PaginatedResponse<Enrollment>> {
+  const res = await apiGet<PaginatedResponse<Enrollment>>(
+    "/courses/my-courses/",
+  );
+  return res.data ?? { count: 0, next: null, previous: null, results: [] };
+}
+
+/** Slim enrollment summary embedded in the my-course detail payload. */
+export interface MyCourseEnrollment {
+  id: number;
+  enrollment_type: EnrollmentType;
+  is_active: boolean;
+  progress_percent: number;
+  completed_at: string | null;
+  last_accessed_at: string | null;
+  created_at: string;
+}
+
+/** Full course metadata as returned by the my-course detail (player header) endpoint. */
+export interface MyCourseDetailCourse {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  thumbnail: string | null;
+  price: string;
+  language: string;
+  level: CourseLevel;
+  duration_minutes: number | null;
+  status: CourseStatus;
+  is_published: boolean;
+  published_at: string | null;
+  instructors: CourseBrief[];
+  partner_institution: { id: number; institution_name: string } | null;
+  category: { id: number; name: string; slug: string } | null;
+  learning_objectives: string;
+  prerequisites: string;
+  audiences: string;
+  total_sections: number;
+  total_content_items: number;
+}
+
+export interface MyCourseDetail {
+  is_instructor: boolean;
+  enrollment: MyCourseEnrollment | null;
+  course: MyCourseDetailCourse;
+}
+
+/**
+ * Player-header detail for one course — enrolled learner OR the course's own
+ * instructor (preview, `enrollment: null`). Each call bumps the learner's
+ * `last_accessed_at`. No curriculum tree here — see `/learn/{slug}/curriculum/`.
+ */
+export async function getMyCourseDetail(
+  courseSlug: string,
+): Promise<MyCourseDetail> {
+  const res = await apiGet<MyCourseDetail>(
+    `/courses/my-courses/${courseSlug}/`,
+  );
+  return res.data as MyCourseDetail;
+}
+
 /** Create a new course. Uses multipart/form-data only when a thumbnail file is present. */
 export async function createCourse(
   input: CourseCreateInput,
@@ -178,12 +381,8 @@ export async function createSection(
   return withMessage(res);
 }
 
-export async function listSections(
-  courseId: number,
-): Promise<CourseSection[]> {
-  const res = await apiGet<CourseSection[]>(
-    `/courses/${courseId}/sections/`,
-  );
+export async function listSections(courseId: number): Promise<CourseSection[]> {
+  const res = await apiGet<CourseSection[]>(`/courses/${courseId}/sections/`);
   return (res.data ?? []) as CourseSection[];
 }
 
@@ -550,7 +749,11 @@ export interface CodingLanguageConfig {
 
 export async function createCodingLanguageConfig(
   exerciseId: number,
-  input: { language: CodingLanguage; starter_code: string; solution_code: string },
+  input: {
+    language: CodingLanguage;
+    starter_code: string;
+    solution_code: string;
+  },
 ): Promise<WithMessage<CodingLanguageConfig>> {
   const res = await apiPost<CodingLanguageConfig>(
     `/courses/coding-exercises/${exerciseId}/language-configs/`,
@@ -646,7 +849,9 @@ export async function deleteCodingTestCase(
   exerciseId: number,
   tcId: number,
 ): Promise<string | undefined> {
-  return apiDelete(`/courses/coding-exercises/${exerciseId}/testcases/${tcId}/`);
+  return apiDelete(
+    `/courses/coding-exercises/${exerciseId}/testcases/${tcId}/`,
+  );
 }
 
 // Assignments
@@ -712,9 +917,7 @@ export async function createAssignment(
   return withMessage(res);
 }
 
-export async function getAssignment(
-  assignmentId: number,
-): Promise<Assignment> {
+export async function getAssignment(assignmentId: number): Promise<Assignment> {
   const res = await apiGet<Assignment>(`/courses/assignments/${assignmentId}/`);
   return res.data as Assignment;
 }

@@ -2,7 +2,14 @@
 
 import { useState, useRef, useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Sparkles, Target, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Sparkles,
+  Target,
+  X,
+} from "lucide-react";
 import gsap from "gsap";
 
 import VideoPlayer from "./VideoPlayer";
@@ -11,9 +18,16 @@ import AiCopilot from "./AiCopilot";
 import TabContent from "./TabContent";
 import { ACTIVE_LESSON, AI_INITIAL, TABS, modules } from "./data";
 import type { AiMessage, TabKey } from "./types";
+import { useMyCourseDetail } from "@/hooks/use-course-catalog";
 
-export default function CoursePlayerPage() {
+export default function CoursePlayerPage({
+  courseSlug,
+}: {
+  courseSlug?: string;
+}) {
   const router = useRouter();
+  const { data: courseDetail, isLoading: courseLoading } =
+    useMyCourseDetail(courseSlug);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
@@ -130,6 +144,48 @@ export default function CoursePlayerPage() {
 
       {/* ── Center ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-(--gray-50)">
+        {/* Course header */}
+        {courseSlug && (
+          <div className="px-3 sm:px-4 py-3 bg-white border-b border-(--gray-200) shrink-0">
+            {courseLoading ? (
+              <div className="flex items-center gap-2 text-(--gray-400) text-[14px]">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading course...
+              </div>
+            ) : courseDetail ? (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="min-w-0">
+                  <h1 className="text-[15px] sm:text-[16px] font-semibold text-(--text-title) truncate">
+                    {courseDetail.course.title}
+                  </h1>
+                  <p className="text-[12px] text-(--gray-500) truncate">
+                    {courseDetail.course.instructors
+                      .map((i) => i.full_name)
+                      .join(", ") || "Career College"}
+                  </p>
+                </div>
+                {courseDetail.enrollment && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="w-32 h-2 rounded-full bg-(--gray-100)">
+                      <div
+                        className="h-2 rounded-full bg-(--primary-600) transition-all duration-700"
+                        style={{
+                          width: `${courseDetail.enrollment.progress_percent}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="text-[12px] font-semibold text-(--primary-700) whitespace-nowrap">
+                      {courseDetail.enrollment.progress_percent}%
+                    </span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-[14px] text-rose-500">Course not found.</p>
+            )}
+          </div>
+        )}
+
         {/* Topbar */}
         <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 bg-white border-b border-(--gray-200) shrink-0 gap-2">
           <button

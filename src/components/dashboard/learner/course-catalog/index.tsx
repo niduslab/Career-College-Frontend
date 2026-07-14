@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
 import {
-  Star,
   Clock,
   TrendingUp,
   Heart,
@@ -14,252 +13,140 @@ import {
 import gsap from "gsap";
 import { useRouter } from "next/navigation";
 import { Pagination } from "@/components/common/pagination";
+import {
+  useCourseCatalog,
+  useCourseCategories,
+  useMyCourses,
+  useEnrollInCourse,
+  useUnenrollFromCourse,
+} from "@/hooks/use-course-catalog";
+import { useCreateCheckoutSession } from "@/hooks/use-payments";
+import type {
+  CatalogCourse,
+  CatalogSort,
+  CourseCategory,
+} from "@/lib/course-api";
+import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
 
-import img1 from "@/assets/images/popular-courses/image1.webp";
-import img2 from "@/assets/images/popular-courses/image2.webp";
-import img3 from "@/assets/images/popular-courses/image3.webp";
-import img4 from "@/assets/images/popular-courses/image4.webp";
-import img5 from "@/assets/images/popular-courses/image5.webp";
-import img6 from "@/assets/images/popular-courses/image6.webp";
-import instructor1 from "@/assets/images/instructors/instructor1.webp";
-import instructor2 from "@/assets/images/instructors/instructor2.webp";
-import instructor3 from "@/assets/images/instructors/instructor3.webp";
-import instructor4 from "@/assets/images/instructors/instructor4.webp";
-import instructor5 from "@/assets/images/instructors/instructor5.webp";
-import instructor6 from "@/assets/images/instructors/instructor6.webp";
-
-const CATEGORIES = ["All", "AI & ML", "Data", "Design", "Web Dev", "Business"];
-const SORT_OPTIONS = [
-  "Most popular",
-  "Newest",
-  "Highest rated",
-  "Price: Low to High",
+const SORT_OPTIONS: { label: string; value: CatalogSort }[] = [
+  { label: "Most popular", value: "popularity" },
+  { label: "Newest", value: "newest" },
+  { label: "Highest rated", value: "rating" },
+  { label: "Price: Low to High", value: "price_asc" },
 ];
 
-interface Course {
-  id: number;
-  title: string;
-  instructor: string;
-  image: Parameters<typeof Image>[0]["src"];
-  instructorImg: Parameters<typeof Image>[0]["src"];
-  rating: number;
-  reviews: number;
-  duration: string;
-  level: string;
-  price: number;
-  originalPrice: number;
-  category: string;
-  badge?: string;
-  badgeColor?: string;
-  wishlisted?: boolean;
-}
-
-const COURSES: Course[] = [
-  {
-    id: 1,
-    title: "Generative AI & LLMs in Production",
-    instructor: "Dr. Lena Park",
-    image: img1,
-    instructorImg: instructor1,
-    rating: 4.9,
-    reviews: 2840,
-    duration: "18h",
-    level: "Advanced",
-    price: 89,
-    originalPrice: 149,
-    category: "AI & ML",
-    badge: "Bestseller",
-    badgeColor: "bg-amber-500",
-  },
-  {
-    id: 2,
-    title: "Prompt Engineering Masterclass",
-    instructor: "Marcus Webb",
-    image: img2,
-    instructorImg: instructor2,
-    rating: 4.8,
-    reviews: 1920,
-    duration: "9h",
-    level: "Beginner",
-    price: 59,
-    originalPrice: 99,
-    category: "AI & ML",
-    badge: "New",
-    badgeColor: "bg-emerald-500",
-  },
-  {
-    id: 3,
-    title: "Computer Vision with PyTorch",
-    instructor: "Dr. Omar Said",
-    image: img3,
-    instructorImg: instructor3,
-    rating: 4.9,
-    reviews: 3410,
-    duration: "22h",
-    level: "Advanced",
-    price: 99,
-    originalPrice: 159,
-    category: "AI & ML",
-    badge: "Hot",
-    badgeColor: "bg-rose-500",
-  },
-  {
-    id: 4,
-    title: "Data Analysis with Python & Pandas",
-    instructor: "Sara Kim",
-    image: img4,
-    instructorImg: instructor4,
-    rating: 4.7,
-    reviews: 1540,
-    duration: "14h",
-    level: "Intermediate",
-    price: 69,
-    originalPrice: 119,
-    category: "Data",
-  },
-  {
-    id: 5,
-    title: "UI/UX Design Fundamentals",
-    instructor: "James Carter",
-    image: img5,
-    instructorImg: instructor5,
-    rating: 4.8,
-    reviews: 2210,
-    duration: "11h",
-    level: "Beginner",
-    price: 49,
-    originalPrice: 89,
-    category: "Design",
-    badge: "Trending",
-    badgeColor: "bg-(--primary-600)",
-  },
-  {
-    id: 6,
-    title: "SQL for Data Analytics",
-    instructor: "Amara Okafor",
-    image: img6,
-    instructorImg: instructor6,
-    rating: 4.6,
-    reviews: 980,
-    duration: "8h",
-    level: "Beginner",
-    price: 39,
-    originalPrice: 79,
-    category: "Data",
-  },
-  {
-    id: 7,
-    title: "SQL for Data Analytics",
-    instructor: "Amara Okafor",
-    image: img5,
-    instructorImg: instructor5,
-    rating: 4.6,
-    reviews: 980,
-    duration: "8h",
-    level: "Beginner",
-    price: 39,
-    originalPrice: 79,
-    category: "Data",
-  },
-  {
-    id: 8,
-    title: "SQL for Data Analytics",
-    instructor: "Amara Okafor",
-    image: img6,
-    instructorImg: instructor6,
-    rating: 4.6,
-    reviews: 980,
-    duration: "8h",
-    level: "Beginner",
-    price: 39,
-    originalPrice: 79,
-    category: "Data",
-  },
-  {
-    id: 9,
-    title: "SQL for Data Analytics",
-    instructor: "Amara Okafor",
-    image: img2,
-    instructorImg: instructor2,
-    rating: 4.6,
-    reviews: 980,
-    duration: "8h",
-    level: "Beginner",
-    price: 39,
-    originalPrice: 79,
-    category: "Data",
-  },
-  {
-    id: 10,
-    title: "SQL for Data Analytics",
-    instructor: "Amara Okafor",
-    image: img3,
-    instructorImg: instructor3,
-    rating: 4.6,
-    reviews: 980,
-    duration: "8h",
-    level: "Beginner",
-    price: 39,
-    originalPrice: 79,
-    category: "Data",
-  },
-  {
-    id: 11,
-    title: "SQL for Data Analytics",
-    instructor: "Amara Okafor",
-    image: img4,
-    instructorImg: instructor4,
-    rating: 4.6,
-    reviews: 980,
-    duration: "8h",
-    level: "Beginner",
-    price: 39,
-    originalPrice: 79,
-    category: "Data",
-  },
-  {
-    id: 12,
-    title: "SQL for Data Analytics",
-    instructor: "Amara Okafor",
-    image: img5,
-    instructorImg: instructor5,
-    rating: 4.6,
-    reviews: 980,
-    duration: "8h",
-    level: "Beginner",
-    price: 39,
-    originalPrice: 79,
-    category: "Data",
-  },
-];
+const PAGE_SIZE = 6;
 
 const LEVEL_COLOR: Record<string, string> = {
-  Beginner: "text-emerald-600 bg-emerald-50",
-  Intermediate: "text-amber-600 bg-amber-50",
-  Advanced: "text-rose-600 bg-rose-50",
+  beginner: "text-emerald-600 bg-emerald-50",
+  intermediate: "text-amber-600 bg-amber-50",
+  advanced: "text-rose-600 bg-rose-50",
 };
 
-function CourseCard({ course }: { course: Course }) {
-  const [wished, setWished] = useState(course.wishlisted ?? false);
+function flattenCategories(
+  categories: CourseCategory[],
+): { label: string; slug: string; depth: number }[] {
+  const flat: { label: string; slug: string; depth: number }[] = [];
+  for (const c of categories) {
+    flat.push({ label: c.name, slug: c.slug, depth: 0 });
+    for (const child of c.children)
+      flat.push({ label: child.name, slug: child.slug, depth: 1 });
+  }
+  return flat;
+}
+
+function formatDuration(minutes: number | null): string {
+  if (!minutes) return "—";
+  const hours = minutes / 60;
+  return hours >= 1 ? `${Math.round(hours * 10) / 10}h` : `${minutes}m`;
+}
+
+function CourseCard({
+  course,
+  isEnrolled,
+  onEnrollChange,
+}: {
+  course: CatalogCourse;
+  isEnrolled: boolean;
+  onEnrollChange: (slug: string, enrolled: boolean) => void;
+}) {
+  const [wished, setWished] = useState(false);
+  const instructor = course.instructors[0];
+  const price = Number(course.price);
+  const isFree = price <= 0;
+  const levelLabel =
+    course.level.charAt(0).toUpperCase() + course.level.slice(1);
+  const thumbnail = mediaUrl(course.thumbnail);
+  const enrollMutation = useEnrollInCourse();
+  const unenrollMutation = useUnenrollFromCourse();
+  const checkoutMutation = useCreateCheckoutSession();
+
+  const startCheckout = () => {
+    checkoutMutation.mutate(
+      { course_slug: course.slug },
+      {
+        onSuccess: (session) => {
+          window.location.href = session.gateway_url;
+        },
+        onError: (err) => {
+          notify.error(
+            err instanceof ApiError ? err.message : "Failed to start checkout.",
+          );
+        },
+      },
+    );
+  };
+
+  const handleEnroll = () => {
+    enrollMutation.mutate(course.slug, {
+      onSuccess: (res) => {
+        onEnrollChange(course.slug, true);
+        notify.success(res.message ?? "Enrolled successfully.");
+      },
+      onError: (err) => {
+        if (!isFree && err instanceof ApiError && err.status === 422) {
+          startCheckout();
+          return;
+        }
+        notify.error(
+          err instanceof ApiError ? err.message : "Failed to enroll.",
+        );
+      },
+    });
+  };
+
+  const handleUnenroll = () => {
+    unenrollMutation.mutate(course.slug, {
+      onSuccess: (res) => {
+        onEnrollChange(course.slug, false);
+        notify.success(res.message ?? "Unenrolled successfully.");
+      },
+      onError: (err) => {
+        notify.error(
+          err instanceof ApiError ? err.message : "Failed to unenroll.",
+        );
+      },
+    });
+  };
 
   return (
     <div className="course-card opacity-0 bg-white rounded-2xl border border-(--gray-200) overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col">
       {/* Thumbnail */}
-      <div className="relative h-44 overflow-hidden shrink-0">
-        <Image
-          src={course.image}
-          alt={course.title}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover transition-transform duration-300 hover:scale-105"
-        />
-        {/* Badge */}
-        {course.badge && (
-          <span
-            className={`absolute top-3 left-3 text-[12px] font-semibold text-white px-2.5 py-1 rounded-full ${course.badgeColor}`}
-          >
-            {course.badge}
-          </span>
+      <div className="relative h-44 overflow-hidden shrink-0 bg-(--gray-50)">
+        {thumbnail ? (
+          <Image
+            src={thumbnail}
+            alt={course.title}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition-transform duration-300 hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-(--gray-300) text-[12px]">
+            No image
+          </div>
         )}
         {/* Wishlist */}
         <button
@@ -274,17 +161,6 @@ function CourseCard({ course }: { course: Course }) {
 
       {/* Body */}
       <div className="flex flex-col flex-1 p-4">
-        {/* Rating */}
-        <div className="flex items-center gap-1.5 mb-2">
-          <Star className="w-3.5 h-3.5 text-amber-400 fill-current shrink-0" />
-          <span className="text-[14px] font-semibold text-(--text-title)">
-            {course.rating}
-          </span>
-          <span className="text-[12px] text-(--gray-400)">
-            ({course.reviews.toLocaleString()})
-          </span>
-        </div>
-
         {/* Title */}
         <h3 className="text-[14px] font-semibold text-(--text-title) leading-snug mb-3 line-clamp-2 flex-1">
           {course.title}
@@ -292,17 +168,8 @@ function CourseCard({ course }: { course: Course }) {
 
         {/* Instructor */}
         <div className="flex items-center gap-2 mb-3">
-          <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-(--gray-100)">
-            <Image
-              src={course.instructorImg}
-              alt={course.instructor}
-              width={24}
-              height={24}
-              className="object-cover"
-            />
-          </div>
           <span className="text-[12px] text-(--gray-500) truncate">
-            {course.instructor}
+            {instructor?.full_name ?? "Career College"}
           </span>
         </div>
 
@@ -310,16 +177,16 @@ function CourseCard({ course }: { course: Course }) {
         <div className="flex items-center gap-3 mb-4">
           <span className="flex items-center gap-1 text-[12px] text-(--gray-400)">
             <Clock className="w-4 h-4 shrink-0" />
-            {course.duration}
+            {formatDuration(course.duration_minutes)}
           </span>
           <span className="flex items-center gap-1 text-[12px] text-(--gray-400)">
             <TrendingUp className="w-4 h-4 shrink-0" />
-            {course.level}
+            {levelLabel}
           </span>
           <span
             className={`text-[12px] font-medium px-2 py-0.5 rounded-full ml-auto ${LEVEL_COLOR[course.level]}`}
           >
-            {course.level}
+            {levelLabel}
           </span>
         </div>
 
@@ -327,15 +194,35 @@ function CourseCard({ course }: { course: Course }) {
         <div className="flex items-center justify-between pt-3 border-t border-(--gray-100)">
           <div className="flex items-baseline gap-1.5">
             <span className="text-[18px] font-bold text-(--text-title)">
-              ${course.price}
-            </span>
-            <span className="text-[14px] text-(--gray-400) line-through">
-              ${course.originalPrice}
+              {price > 0 ? `$${price.toFixed(2)}` : "Free"}
             </span>
           </div>
-          <button className="px-4 py-1.5 rounded-md bg-(--primary-50) hover:bg-(--primary-100) text-(--primary-600) text-[14px] font-semibold transition-colors cursor-pointer border border-(--primary-100)">
-            Enroll
-          </button>
+          {isEnrolled ? (
+            <div className="flex items-center gap-2">
+              <span className="text-[12px] font-medium text-emerald-600">
+                Enrolled
+              </span>
+              <button
+                onClick={handleUnenroll}
+                disabled={unenrollMutation.isPending}
+                className="px-3 py-1.5 rounded-md bg-white hover:bg-rose-50 text-rose-600 text-[13px] font-semibold transition-colors cursor-pointer border border-rose-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {unenrollMutation.isPending ? "Unenrolling..." : "Unenroll"}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleEnroll}
+              disabled={enrollMutation.isPending || checkoutMutation.isPending}
+              className="px-4 py-1.5 rounded-md bg-(--primary-50) hover:bg-(--primary-100) text-(--primary-600) text-[14px] font-semibold transition-colors cursor-pointer border border-(--primary-100) disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {checkoutMutation.isPending
+                ? "Redirecting..."
+                : enrollMutation.isPending
+                  ? "Enrolling..."
+                  : "Enroll"}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -344,32 +231,89 @@ function CourseCard({ course }: { course: Course }) {
 
 export default function CourseCatalogPage() {
   const router = useRouter();
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
-  const [sortLabel, setSortLabel] = useState("Most popular");
+  const [sort, setSort] = useState<CatalogSort>("popularity");
   const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-
-  const PAGE_SIZE = 6;
 
   const headerRef = useRef<HTMLDivElement>(null);
   const bannerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
 
-  const filtered = COURSES.filter((c) => {
-    const matchCat = activeCategory === "All" || c.category === activeCategory;
-    const matchSearch =
-      c.title.toLowerCase().includes(search.toLowerCase()) ||
-      c.instructor.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
+  // Debounce free-text search before it hits the API.
+  useEffect(() => {
+    const id = setTimeout(() => setSearch(searchInput), 400);
+    return () => clearTimeout(id);
+  }, [searchInput]);
+
+  // Close either dropdown on an outside click.
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as Node;
+      if (
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(target)
+      ) {
+        setCategoryOpen(false);
+      }
+      if (
+        sortDropdownRef.current &&
+        !sortDropdownRef.current.contains(target)
+      ) {
+        setSortOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const { data: categoriesData } = useCourseCategories();
+  const categoryOptions = useMemo(
+    () => flattenCategories(categoriesData ?? []),
+    [categoriesData],
+  );
+
+  const { data: myCoursesData } = useMyCourses();
+  const [enrollOverrides, setEnrollOverrides] = useState<
+    Record<string, boolean>
+  >({});
+  const enrolledSlugs = useMemo(() => {
+    const set = new Set(
+      (myCoursesData?.results ?? []).map((e) => e.course.slug),
+    );
+    for (const [slug, enrolled] of Object.entries(enrollOverrides)) {
+      if (enrolled) set.add(slug);
+      else set.delete(slug);
+    }
+    return set;
+  }, [myCoursesData, enrollOverrides]);
+
+  const handleEnrollChange = (slug: string, enrolled: boolean) => {
+    setEnrollOverrides((prev) => ({ ...prev, [slug]: enrolled }));
+  };
+
+  const { data, isLoading, isError } = useCourseCatalog({
+    category: activeCategory === "All" ? undefined : activeCategory,
+    search: search || undefined,
+    sort,
+    page: currentPage,
+    page_size: PAGE_SIZE,
   });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(currentPage, totalPages);
-  const paginated = filtered.slice(
-    (safePage - 1) * PAGE_SIZE,
-    safePage * PAGE_SIZE,
-  );
+  const courses = data?.results ?? [];
+  const totalPages = Math.max(1, Math.ceil((data?.count ?? 0) / PAGE_SIZE));
+  const sortLabel =
+    SORT_OPTIONS.find((o) => o.value === sort)?.label ?? "Most popular";
+  const activeCategoryLabel =
+    activeCategory === "All"
+      ? "All"
+      : (categoryOptions.find((c) => c.slug === activeCategory)?.label ??
+        activeCategory);
 
   useEffect(() => {
     const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
@@ -398,7 +342,7 @@ export default function CourseCatalogPage() {
       );
     }, gridRef);
     return () => ctx.revert();
-  }, [activeCategory, search, currentPage]);
+  }, [activeCategory, search, sort, currentPage, courses.length]);
 
   return (
     <div className="space-y-6">
@@ -443,24 +387,45 @@ export default function CourseCatalogPage() {
       {/* Filters + sort row */}
 
       <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
-        {/* Category tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => {
-                setActiveCategory(cat);
-                setCurrentPage(1);
-              }}
-              className={`px-3.5 py-1.5 rounded-md h-11 text-[12px] md:text-[14px] lg:text-[14px] font-medium transition-colors cursor-pointer border whitespace-nowrap shrink-0 ${
-                activeCategory === cat
-                  ? "bg-(--primary-600) text-white border-(--primary-600)"
-                  : "bg-white text-(--gray-600) border-(--gray-200) hover:border-(--primary-300)"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+        {/* Category dropdown */}
+        <div ref={categoryDropdownRef} className="relative shrink-0">
+          <button
+            onClick={() => setCategoryOpen((v) => !v)}
+            className="flex items-center gap-1.5 h-11 px-3.5 rounded-md border border-(--gray-200) bg-white text-[12px] md:text-[14px] lg:text-[14px] text-(--gray-500) font-normal hover:border-(--primary-300) transition-colors cursor-pointer whitespace-nowrap"
+          >
+            Category: {activeCategoryLabel}
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${categoryOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+          {categoryOpen && (
+            <div className="absolute left-0 top-12 z-20 bg-white border border-(--gray-200) rounded-xl shadow-lg py-1.5 w-56 max-h-80 overflow-y-auto">
+              <button
+                onClick={() => {
+                  setActiveCategory("All");
+                  setCategoryOpen(false);
+                  setCurrentPage(1);
+                }}
+                className={`w-full text-left px-4 py-2 text-[12px] md:text-[14px] lg:text-[14px] hover:bg-(--gray-50) transition-colors cursor-pointer ${activeCategory === "All" ? "font-semibold text-(--primary-600)" : "text-(--text-title)"}`}
+              >
+                All
+              </button>
+              {categoryOptions.map((cat) => (
+                <button
+                  key={cat.slug}
+                  onClick={() => {
+                    setActiveCategory(cat.slug);
+                    setCategoryOpen(false);
+                    setCurrentPage(1);
+                  }}
+                  style={{ paddingLeft: `${16 + cat.depth * 16}px` }}
+                  className={`w-full text-left py-2 pr-4 text-[12px] md:text-[14px] lg:text-[14px] hover:bg-(--gray-50) transition-colors cursor-pointer ${activeCategory === cat.slug ? "font-semibold text-(--primary-600)" : "text-(--text-title)"}`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Search + sort — own row on <xl, inline on xl+ */}
@@ -468,16 +433,16 @@ export default function CourseCatalogPage() {
           <div className="relative flex-1 xl:flex-none">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--gray-400)" />
             <input
-              value={search}
+              value={searchInput}
               onChange={(e) => {
-                setSearch(e.target.value);
+                setSearchInput(e.target.value);
                 setCurrentPage(1);
               }}
               placeholder="Search courses..."
               className="w-full sm:w-56 xl:w-56 pl-9 pr-4 h-11 rounded-md border border-(--gray-200) text-[14px] text-(--text-title) placeholder:text-(--gray-400) outline-none focus:border-(--primary-400) transition-colors bg-white"
             />
           </div>
-          <div className="relative shrink-0">
+          <div ref={sortDropdownRef} className="relative shrink-0">
             <button
               onClick={() => setSortOpen((v) => !v)}
               className="flex items-center gap-1.5 h-11 px-3.5 rounded-md border border-(--gray-200) bg-white text-[12px] md:text-[14px] lg:text-[14px] text-(--gray-500) font-normal hover:border-(--primary-300) transition-colors cursor-pointer whitespace-nowrap"
@@ -491,14 +456,15 @@ export default function CourseCatalogPage() {
               <div className="absolute right-0 top-12 z-20 bg-white border border-(--gray-200) rounded-xl shadow-lg py-1.5 w-48">
                 {SORT_OPTIONS.map((opt) => (
                   <button
-                    key={opt}
+                    key={opt.value}
                     onClick={() => {
-                      setSortLabel(opt);
+                      setSort(opt.value);
                       setSortOpen(false);
+                      setCurrentPage(1);
                     }}
-                    className={`w-full text-left px-4 py-2 text-[12px] md:text-[14px] lg:text-[14px] hover:bg-(--gray-50) transition-colors cursor-pointer ${sortLabel === opt ? "font-semibold text-(--primary-600)" : "text-(--text-title)"}`}
+                    className={`w-full text-left px-4 py-2 text-[12px] md:text-[14px] lg:text-[14px] hover:bg-(--gray-50) transition-colors cursor-pointer ${sort === opt.value ? "font-semibold text-(--primary-600)" : "text-(--text-title)"}`}
                   >
-                    {opt}
+                    {opt.label}
                   </button>
                 ))}
               </div>
@@ -511,7 +477,7 @@ export default function CourseCatalogPage() {
       <p className="text-[12px] md:text-[14px] lg:text-[14px] text-(--gray-500)">
         Showing{" "}
         <span className="font-semibold text-(--text-title)">
-          {filtered.length}
+          {data?.count ?? 0}
         </span>{" "}
         courses
         {activeCategory !== "All" && (
@@ -519,33 +485,56 @@ export default function CourseCatalogPage() {
             {" "}
             in{" "}
             <span className="font-semibold text-(--primary-600)">
-              {activeCategory}
+              {activeCategoryLabel}
             </span>
           </>
         )}
       </p>
 
       {/* Grid */}
-      <div
-        ref={gridRef}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
-      >
-        {paginated.map((course) => (
-          <CourseCard key={course.id} course={course} />
-        ))}
-        {filtered.length === 0 && (
-          <div className="col-span-full py-16 text-center text-(--gray-400)">
-            <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p className="text-[16px] font-medium">No courses found</p>
-            <p className="text-[12px] md:text-[14px] lg:text-[14px] mt-1">
-              Try a different keyword or category
-            </p>
-          </div>
-        )}
-      </div>
+      {isError ? (
+        <div className="py-16 text-center text-(--gray-400)">
+          <p className="text-[16px] font-medium text-rose-500">
+            Failed to load courses
+          </p>
+          <p className="text-[12px] md:text-[14px] lg:text-[14px] mt-1">
+            Please try again in a moment.
+          </p>
+        </div>
+      ) : (
+        <div
+          ref={gridRef}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
+        >
+          {isLoading
+            ? Array.from({ length: PAGE_SIZE }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-85 rounded-2xl border border-(--gray-200) bg-(--gray-50) animate-pulse"
+                />
+              ))
+            : courses.map((course) => (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  isEnrolled={enrolledSlugs.has(course.slug)}
+                  onEnrollChange={handleEnrollChange}
+                />
+              ))}
+          {!isLoading && courses.length === 0 && (
+            <div className="col-span-full py-16 text-center text-(--gray-400)">
+              <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="text-[16px] font-medium">No courses found</p>
+              <p className="text-[12px] md:text-[14px] lg:text-[14px] mt-1">
+                Try a different keyword or category
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       <Pagination
-        currentPage={safePage}
+        currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
       />
