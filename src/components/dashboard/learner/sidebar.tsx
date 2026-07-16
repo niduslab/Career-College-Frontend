@@ -8,7 +8,6 @@ import {
   BookOpenText,
   LayoutDashboard,
   BookOpen,
-  Play,
   Award,
   Settings,
   Heart,
@@ -44,16 +43,11 @@ const navSections = [
         label: "Learning Paths",
         href: "/dashboard/learner/learning-paths",
       },
-      {
-        icon: Play,
-        label: "Course Player",
-        href: "/dashboard/learner/course-player",
-      },
-      {
-        icon: Target,
-        label: "Quiz Assessment",
-        href: "/dashboard/learner/quiz-assessment",
-      },
+      // {
+      //   icon: Target,
+      //   label: "Quiz Assessment",
+      //   href: "/dashboard/learner/quiz-assessment",
+      // },
     ],
   },
   {
