@@ -2,23 +2,25 @@
 
 import { useState, useRef, useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  Sparkles,
-  Target,
-  X,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Sparkles, X } from "lucide-react";
 import gsap from "gsap";
 
 import VideoPlayer from "./VideoPlayer";
 import CurriculumPanel from "./CurriculumPanel";
+import QuizPanel from "./QuizPanel";
+import AssignmentPanel from "./AssignmentPanel";
+import CodingExercisePanel from "./CodingExercisePanel";
 import AiCopilot from "./AiCopilot";
-import TabContent from "./TabContent";
-import { ACTIVE_LESSON, AI_INITIAL, TABS, modules } from "./data";
-import type { AiMessage, TabKey } from "./types";
+import { AI_INITIAL } from "./data";
+import type { AiMessage } from "./types";
 import { useMyCourseDetail } from "@/hooks/use-course-catalog";
+import {
+  useLearnerCurriculum,
+  useLearnerLecture,
+  useSaveWatchProgress,
+} from "@/hooks/use-learner-consumption";
+import { hlsAssetUrl } from "@/lib/course-api";
+import type { CurriculumItem, LearnerCurriculum } from "@/lib/course-api";
 
 export default function CoursePlayerPage({
   courseSlug,
@@ -28,14 +30,117 @@ export default function CoursePlayerPage({
   const router = useRouter();
   const { data: courseDetail, isLoading: courseLoading } =
     useMyCourseDetail(courseSlug);
+  const { data: curriculum, isLoading: curriculumLoading } =
+    useLearnerCurriculum(courseSlug);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [aiInput, setAiInput] = useState("");
   const [aiMessages, setAiMessages] = useState<AiMessage[]>([
     { role: "ai", text: AI_INITIAL },
   ]);
-  const [expandedModules, setExpandedModules] = useState<number[]>([4, 5, 6]);
+  const [expandedSections, setExpandedSections] = useState<number[]>([]);
+  const [activeItem, setActiveItem] = useState<CurriculumItem | null>(null);
+
+  const activeLectureId =
+    activeItem?.item_type === "lecture" ? activeItem.object_id : undefined;
+  const { data: lecture, isLoading: lectureLoading } =
+    useLearnerLecture(activeLectureId);
+  const saveProgress = useSaveWatchProgress(courseSlug);
+  const lastSavedRef = useRef<number>(-1);
+
+  // Each lecture tracks its own watch cursor — without the reset.
+  useEffect(() => {
+    lastSavedRef.current = -1;
+  }, [activeLectureId]);
+
+  // Client-tracked completions. The curriculum endpoint only carries.
+  const storageKey = courseSlug
+    ? `course-player:completed:${courseSlug}`
+    : null;
+  const [locallyCompleted, setLocallyCompleted] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const locallyCompletedRef = useRef<Set<number>>(locallyCompleted);
+  useEffect(() => {
+    if (!storageKey) return;
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) return;
+      const ids: unknown = JSON.parse(raw);
+      if (!Array.isArray(ids)) return;
+      const merged = new Set(locallyCompletedRef.current);
+      for (const id of ids) if (typeof id === "number") merged.add(id);
+      if (merged.size === locallyCompletedRef.current.size) return;
+      locallyCompletedRef.current = merged;
+      setLocallyCompleted(merged);
+    } catch {}
+  }, [storageKey]);
+  const markLocallyCompleted = (contentId: number) => {
+    if (locallyCompletedRef.current.has(contentId)) return;
+    const next = new Set(locallyCompletedRef.current);
+    next.add(contentId);
+    locallyCompletedRef.current = next;
+    setLocallyCompleted(next);
+    if (storageKey) {
+      try {
+        window.localStorage.setItem(storageKey, JSON.stringify([...next]));
+      } catch {}
+    }
+  };
+
+  const handleVideoProgress = (
+    watchedSeconds: number,
+    durationSeconds: number,
+  ) => {
+    if (!activeLectureId) return;
+    const rounded = Math.floor(watchedSeconds);
+    const completed = rounded >= Math.floor(durationSeconds);
+    // Only save on real forward progress, at most once per ~5s tick.
+    if (rounded <= lastSavedRef.current) {
+      if (completed && activeItem) markLocallyCompleted(activeItem.content_id);
+      return;
+    }
+    lastSavedRef.current = rounded;
+    // mutateAsync (not mutate) so VideoPlayer.
+    const contentId = activeItem?.content_id;
+    return saveProgress
+      .mutateAsync({
+        lectureId: activeLectureId,
+        input: {
+          watched_seconds: rounded,
+          is_completed: completed,
+        },
+      })
+      .then((res) => {
+        if (completed && contentId !== undefined)
+          markLocallyCompleted(contentId);
+        return res;
+      });
+  };
+  const [seededFor, setSeededFor] = useState<LearnerCurriculum | null>(null);
+  if (
+    curriculum &&
+    curriculum !== seededFor &&
+    curriculum.sections.length > 0
+  ) {
+    setSeededFor(curriculum);
+    const flat = curriculum.sections.flatMap((s) =>
+      s.items.map((item) => ({ item, sectionId: s.id })),
+    );
+    const isLearnerView = flat.some((f) => f.item.is_completed !== undefined);
+    const resume = isLearnerView
+      ? (flat.find(
+          (f) =>
+            !f.item.is_completed && !locallyCompleted.has(f.item.content_id),
+        ) ?? flat[0])
+      : flat[0];
+    if (resume) {
+      setExpandedSections((prev) =>
+        prev.length === 0 ? [resume.sectionId] : prev,
+      );
+      setActiveItem((prev) => prev ?? resume.item);
+    }
+  }
 
   const playerRef = useRef<HTMLDivElement>(null);
   const centerRef = useRef<HTMLDivElement>(null);
@@ -61,10 +166,68 @@ export default function CoursePlayerPage({
     );
   }, []);
 
-  const toggleModule = (id: number) =>
-    setExpandedModules((prev) =>
+  const toggleSection = (id: number) =>
+    setExpandedSections((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
+
+  // Flattened items in curriculum order (section order, then item position)
+  const flatItems = (curriculum?.sections ?? []).flatMap((s) =>
+    s.items.map((item) => ({ item, sectionId: s.id })),
+  );
+  const activeFlatIndex = activeItem
+    ? flatItems.findIndex((f) => f.item.content_id === activeItem.content_id)
+    : -1;
+  const hasPrevItem = activeFlatIndex > 0;
+  const hasNextItem =
+    activeFlatIndex >= 0 && activeFlatIndex < flatItems.length - 1;
+
+  // An item is reachable only once everything before it is completed.
+  const isSequential = flatItems.some((f) => f.item.is_completed !== undefined);
+  const isItemDone = (item: CurriculumItem) =>
+    !!item.is_completed || locallyCompleted.has(item.content_id);
+  const frontierIndex = isSequential
+    ? flatItems.findIndex((f) => !isItemDone(f.item))
+    : -1;
+  const lockedContentIds = new Set(
+    frontierIndex === -1
+      ? []
+      : flatItems.slice(frontierIndex + 1).map((f) => f.item.content_id),
+  );
+  const nextItemLocked =
+    hasNextItem &&
+    lockedContentIds.has(flatItems[activeFlatIndex + 1].item.content_id);
+
+  const selectItem = (item: CurriculumItem, sectionId: number) => {
+    setActiveItem(item);
+    setExpandedSections((prev) =>
+      prev.includes(sectionId) ? prev : [...prev, sectionId],
+    );
+  };
+
+  const goToPrevItem = () => {
+    if (!hasPrevItem) return;
+    const prev = flatItems[activeFlatIndex - 1];
+    selectItem(prev.item, prev.sectionId);
+  };
+
+  const goToNextItem = () => {
+    if (!hasNextItem) return;
+
+    if (
+      isSequential &&
+      flatItems
+        .slice(0, activeFlatIndex + 1)
+        .some(
+          (f) =>
+            !f.item.is_completed &&
+            !locallyCompletedRef.current.has(f.item.content_id),
+        )
+    )
+      return;
+    const next = flatItems[activeFlatIndex + 1];
+    selectItem(next.item, next.sectionId);
+  };
 
   const sendAiMessage = () => {
     const trimmed = aiInput.trim();
@@ -84,17 +247,15 @@ export default function CoursePlayerPage({
     );
   };
 
-  const totalLessons = modules.reduce((s, m) => s + m.lessons.length, 0);
-  const doneLessons = modules.reduce(
-    (s, m) => s + m.lessons.filter((l) => l.status === "completed").length,
-    0,
-  );
-
   const curriculumProps = {
-    doneLessons,
-    totalLessons,
-    expandedModules,
-    toggleModule,
+    curriculum,
+    isLoading: curriculumLoading,
+    activeContentId: activeItem?.content_id ?? null,
+    onSelectItem: setActiveItem,
+    expandedSections,
+    toggleSection,
+    lockedContentIds,
+    completedContentIds: locallyCompleted,
   };
   const aiProps = {
     aiMessages,
@@ -107,7 +268,7 @@ export default function CoursePlayerPage({
 
   return (
     <div className="flex h-[calc(100svh-64px)] overflow-hidden -m-4 lg:-m-6">
-      {/* ── Left overlay (mobile/tablet) ── */}
+      {/* Left overlay (mobile/tablet) */}
       {sidebarOpen && (
         <div
           className="xl:hidden fixed inset-0 z-40 bg-black/40"
@@ -204,13 +365,6 @@ export default function CoursePlayerPage({
 
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => router.push("/dashboard/learner/quiz-assessment")}
-              className="flex items-center cursor-pointer gap-1.5 text-[14px] h-10 font-medium text-(--gray-500) border border-(--gray-200) px-2.5 sm:px-3 py-1.5 rounded-lg hover:bg-(--gray-50) transition-colors whitespace-nowrap"
-            >
-              <Target className="w-4 h-4" />
-              <span className="hidden sm:inline">Take Quiz</span>
-            </button>
-            <button
               onClick={() => router.push("/dashboard/learner/ai-assistant")}
               className="flex cursor-pointer items-center gap-1.5 text-[14px] h-10 font-medium text-white bg-(--primary-600) hover:bg-(--primary-700) px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
             >
@@ -220,30 +374,103 @@ export default function CoursePlayerPage({
           </div>
         </div>
 
-        {/* Video */}
+        {/* Lecture content */}
         <div ref={playerRef} className="opacity-0 shrink-0 w-full">
-          <VideoPlayer moduleLabel={ACTIVE_LESSON.moduleLabel} />
+          {activeItem?.item_type === "lecture" ? (
+            lectureLoading ? (
+              <div className="w-full aspect-video bg-black flex items-center justify-center">
+                <Loader2 className="w-6 h-6 text-white/60 animate-spin" />
+              </div>
+            ) : lecture?.lecture_type === "article" ? (
+              <div className="bg-white p-4 sm:p-6 lg:p-8 max-h-[60vh] overflow-y-auto">
+                <div
+                  className="prose prose-sm max-w-none text-(--text-title)"
+                  dangerouslySetInnerHTML={{ __html: lecture.article_content }}
+                />
+                <div className="mt-6 pt-4 border-t border-(--gray-100)">
+                  {lecture.progress?.is_completed ? (
+                    <span className="inline-flex items-center gap-1.5 text-[14px] font-medium text-emerald-600">
+                      Completed
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() =>
+                        activeLectureId &&
+                        saveProgress.mutate({
+                          lectureId: activeLectureId,
+                          input: { watched_seconds: 0, is_completed: true },
+                        })
+                      }
+                      disabled={saveProgress.isPending}
+                      className="px-4 py-2 rounded-md bg-(--primary-600) hover:bg-(--primary-700) text-white text-[14px] font-semibold transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {saveProgress.isPending
+                        ? "Saving..."
+                        : "Mark as complete"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <VideoPlayer
+                moduleLabel={activeItem.title}
+                src={
+                  lecture?.stream_master_playlist
+                    ? hlsAssetUrl(lecture.stream_master_playlist)
+                    : undefined
+                }
+                startAtSeconds={lecture?.progress?.watched_seconds ?? 0}
+                onProgress={handleVideoProgress}
+                onPrevLesson={hasPrevItem ? goToPrevItem : undefined}
+                onNextLesson={hasNextItem ? goToNextItem : undefined}
+                nextLocked={nextItemLocked}
+              />
+            )
+          ) : activeItem?.item_type === "quiz" ? (
+            <QuizPanel
+              quizId={activeItem.object_id}
+              courseSlug={courseSlug}
+              onCompleted={() => markLocallyCompleted(activeItem.content_id)}
+              onNextLesson={hasNextItem ? goToNextItem : undefined}
+            />
+          ) : activeItem?.item_type === "assignment" ? (
+            <AssignmentPanel
+              assignmentId={activeItem.object_id}
+              courseSlug={courseSlug}
+              onCompleted={() => markLocallyCompleted(activeItem.content_id)}
+              onNextLesson={hasNextItem ? goToNextItem : undefined}
+            />
+          ) : activeItem?.item_type === "coding" ? (
+            <CodingExercisePanel
+              exerciseId={activeItem.object_id}
+              courseSlug={courseSlug}
+              onCompleted={() => markLocallyCompleted(activeItem.content_id)}
+              onNextLesson={hasNextItem ? goToNextItem : undefined}
+            />
+          ) : (
+            <div className="w-full aspect-video bg-black flex items-center justify-center">
+              <p className="text-white/40 text-[14px]">
+                Select an item from the curriculum to begin.
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Tabs */}
-        <div ref={centerRef} className="opacity-0 flex-1 bg-white">
-          <div className="flex items-center overflow-x-auto border-b border-(--gray-200) scrollbar-none">
-            {TABS.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setActiveTab(t.key)}
-                className={`text-[14px] cursor-pointer font-medium px-3 sm:px-4 py-3 sm:py-3.5 border-b-2 transition-colors whitespace-nowrap shrink-0 ${
-                  activeTab === t.key
-                    ? "border-(--primary-600) text-(--primary-600)"
-                    : "border-transparent text-(--gray-500) hover:text-(--text-title)"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-          <TabContent activeTab={activeTab} />
-        </div>
+        {/* Lecture overview — video lectures only; quiz/assignment/coding
+            panels already show their own title + description inline. */}
+        {activeItem?.item_type === "lecture" &&
+          lecture?.lecture_type !== "article" && (
+            <div
+              ref={centerRef}
+              className="opacity-0 flex-1 bg-white p-4 sm:p-6 lg:p-8"
+            >
+              <div className="max-w-3xl">
+                <h2 className="text-[18px] sm:text-[20px] font-bold text-(--text-title) mb-2">
+                  {activeItem.title}
+                </h2>
+              </div>
+            </div>
+          )}
       </div>
 
       {/* ── Right overlay (mobile/tablet) ── */}

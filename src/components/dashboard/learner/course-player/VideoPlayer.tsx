@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Hls from "hls.js";
 import {
   Play,
   Pause,
@@ -17,8 +18,12 @@ import {
   Check,
   Maximize2,
   Minimize2,
+  Gauge,
+  Monitor,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
 } from "lucide-react";
-import { ACTIVE_LESSON, SPEEDS, VIDEO_SRC } from "./data";
+import { SPEEDS, VIDEO_SRC } from "./data";
 
 function fmt(sec: number) {
   const m = Math.floor(sec / 60);
@@ -31,28 +36,53 @@ function CtrlBtn({
   children,
   className = "",
   title,
+  disabled,
 }: {
   onClick?: () => void;
   children: React.ReactNode;
   className?: string;
   title?: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       title={title}
-      className={`text-white/80 hover:text-white transition-colors flex items-center justify-center ${className}`}
+      disabled={disabled}
+      className={`text-white/80 hover:text-white transition-colors flex items-center justify-center disabled:opacity-30 disabled:hover:text-white/80 disabled:cursor-not-allowed ${className}`}
     >
       {children}
     </button>
   );
 }
 
-export default function VideoPlayer({ moduleLabel }: { moduleLabel: string }) {
+export default function VideoPlayer({
+  moduleLabel,
+  src,
+  startAtSeconds = 0,
+  onProgress,
+  onPrevLesson,
+  onNextLesson,
+  nextLocked = false,
+}: {
+  moduleLabel: string;
+  src?: string;
+  startAtSeconds?: number;
+
+  onProgress?: (
+    watchedSeconds: number,
+    durationSeconds: number,
+  ) => void | Promise<unknown>;
+  onPrevLesson?: () => void;
+  onNextLesson?: () => void;
+
+  nextLocked?: boolean;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const volTrackRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
 
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -64,7 +94,17 @@ export default function VideoPlayer({ moduleLabel }: { moduleLabel: string }) {
   const [looping, setLooping] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsMenu, setSettingsMenu] = useState<
+    "main" | "speed" | "quality"
+  >("main");
   const [showVolSlider, setShowVolSlider] = useState(false);
+  const [levels, setLevels] = useState<{ index: number; height: number }[]>([]);
+  const [currentLevel, setCurrentLevel] = useState(-1); // -1 = Auto
+
+  const closeSettings = () => {
+    setSettingsOpen(false);
+    setSettingsMenu("main");
+  };
 
   useEffect(() => {
     const onOutside = (e: MouseEvent) => {
@@ -72,7 +112,7 @@ export default function VideoPlayer({ moduleLabel }: { moduleLabel: string }) {
         settingsRef.current &&
         !settingsRef.current.contains(e.target as Node)
       )
-        setSettingsOpen(false);
+        closeSettings();
     };
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("mousedown", onOutside);
@@ -82,6 +122,71 @@ export default function VideoPlayer({ moduleLabel }: { moduleLabel: string }) {
       document.removeEventListener("fullscreenchange", onFsChange);
     };
   }, []);
+
+  // Load the HLS source (real lecture) or fall back to the mock MP4 clip.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+
+    hlsRef.current?.destroy();
+    hlsRef.current = null;
+
+    if (!src) {
+      v.src = VIDEO_SRC;
+      return;
+    }
+
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hlsRef.current = hls;
+      hls.on(Hls.Events.MANIFEST_PARSED, (_evt, data) => {
+        setLevels(
+          data.levels.map((lvl, index) => ({ index, height: lvl.height })),
+        );
+      });
+      hls.on(Hls.Events.LEVEL_SWITCHED, (_evt, data) => {
+        setCurrentLevel(data.level);
+      });
+      hls.loadSource(src);
+      hls.attachMedia(v);
+    } else if (v.canPlayType("application/vnd.apple.mpegurl")) {
+      v.src = src;
+    } else {
+      v.src = src;
+    }
+
+    return () => {
+      hlsRef.current?.destroy();
+      hlsRef.current = null;
+    };
+  }, [src]);
+
+  const changeQuality = (levelIndex: number) => {
+    if (hlsRef.current) hlsRef.current.currentLevel = levelIndex;
+    closeSettings();
+  };
+
+  // Resume from the learner's last saved position once metadata is ready.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !startAtSeconds) return;
+    const onLoaded = () => {
+      v.currentTime = startAtSeconds;
+    };
+    v.addEventListener("loadedmetadata", onLoaded);
+    return () => v.removeEventListener("loadedmetadata", onLoaded);
+  }, [src, startAtSeconds]);
+
+  // Report progress periodically while playing.
+  useEffect(() => {
+    if (!onProgress) return;
+    const id = setInterval(() => {
+      const v = videoRef.current;
+      if (!v || v.paused || !v.duration) return;
+      onProgress(v.currentTime, v.duration);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [onProgress]);
 
   const togglePlay = () => {
     const v = videoRef.current;
@@ -136,7 +241,7 @@ export default function VideoPlayer({ moduleLabel }: { moduleLabel: string }) {
     if (!v) return;
     v.playbackRate = s;
     setSpeed(s);
-    setSettingsOpen(false);
+    closeSettings();
   };
 
   const toggleLoop = () => {
@@ -184,23 +289,35 @@ export default function VideoPlayer({ moduleLabel }: { moduleLabel: string }) {
         onLoadedMetadata={() =>
           videoRef.current && setDurationSec(videoRef.current.duration)
         }
-        onEnded={() => {
+        onEnded={async () => {
+          setPlaying(false);
+          setShowOverlay(true);
+          const v = videoRef.current;
+          if (v && onProgress && v.duration) {
+            try {
+              await onProgress(v.duration, v.duration);
+            } catch {}
+          }
+          onNextLesson?.();
+        }}
+        onPlay={() => {
+          setPlaying(true);
+          setShowOverlay(false);
+        }}
+        onPause={() => {
           setPlaying(false);
           setShowOverlay(true);
         }}
         muted={muted}
         preload="metadata"
-      >
-        <source src={VIDEO_SRC} type="video/mp4" />
-      </video>
+      />
 
       {/* Lesson label */}
-      <div className="absolute top-2 sm:top-3 left-3 sm:left-4 z-10 flex items-center gap-2 pointer-events-none">
-        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
-        <span className="text-[12px]  text-white/80 font-medium truncate drop-shadow">
+      {/* <div className="absolute top-2 sm:top-3 left-3 sm:left-4 z-10 flex items-center gap-2 pointer-events-none max-w-[calc(100%-1.5rem)] bg-black/60 backdrop-blur-sm rounded-full pl-2 pr-3 py-1">
+        <span className="text-[12px] text-white font-medium truncate">
           {moduleLabel}
         </span>
-      </div>
+      </div> */}
 
       {/* Centre overlay */}
       {showOverlay && (
@@ -240,7 +357,8 @@ export default function VideoPlayer({ moduleLabel }: { moduleLabel: string }) {
           {/* Left */}
           <div className="flex items-center gap-1 sm:gap-2">
             <CtrlBtn
-              onClick={() => {}}
+              onClick={onPrevLesson}
+              disabled={!onPrevLesson}
               title="Previous lesson"
               className="cursor-pointer"
             >
@@ -286,8 +404,13 @@ export default function VideoPlayer({ moduleLabel }: { moduleLabel: string }) {
             </CtrlBtn>
 
             <CtrlBtn
-              onClick={() => {}}
-              title="Next lesson"
+              onClick={onNextLesson}
+              disabled={!onNextLesson || nextLocked}
+              title={
+                nextLocked
+                  ? "Complete this lesson to unlock the next one"
+                  : "Next lesson"
+              }
               className="cursor-pointer"
             >
               <SkipForward className="w-4 h-4 fill-current" />
@@ -324,8 +447,7 @@ export default function VideoPlayer({ moduleLabel }: { moduleLabel: string }) {
 
             {/* Time */}
             <span className="text-[11px] sm:text-[12px] text-white/80 tabular-nums whitespace-nowrap ml-1">
-              {fmt(currentSec)} /{" "}
-              {durationSec > 0 ? fmt(durationSec) : ACTIVE_LESSON.duration}
+              {fmt(currentSec)} / {fmt(durationSec)}
             </span>
           </div>
 
@@ -350,29 +472,107 @@ export default function VideoPlayer({ moduleLabel }: { moduleLabel: string }) {
             {/* Settings */}
             <div ref={settingsRef} className="relative ">
               <CtrlBtn
-                onClick={() => setSettingsOpen((v) => !v)}
+                onClick={() => {
+                  setSettingsOpen((v) => !v);
+                  setSettingsMenu("main");
+                }}
                 title="Settings"
                 className={`cursor-pointer ${settingsOpen ? "text-white" : ""}`}
               >
                 <Settings className="w-4 h-4" />
               </CtrlBtn>
               {settingsOpen && (
-                <div className="absolute bottom-8 right-0 bg-black/90 backdrop-blur-sm rounded-xl border border-white/10 py-2 w-40 z-30">
-                  <p className="text-[10px] font-semibold text-white/40 uppercase tracking-widest px-3 pb-1.5">
-                    Playback speed
-                  </p>
-                  {SPEEDS.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => changeSpeed(s)}
-                      className="w-full flex items-center justify-between px-3 py-1.5 text-[13px] text-white/80 hover:text-white hover:bg-white/10 transition-colors"
-                    >
-                      <span>{s === 1 ? "Normal" : `${s}×`}</span>
-                      {speed === s && (
-                        <Check className="w-3.5 h-3.5 text-(--primary-400)" />
+                <div className="absolute bottom-8 right-0 bg-black/90 backdrop-blur-sm rounded-xl border border-white/10 py-1.5 w-44 z-30">
+                  {settingsMenu === "main" && (
+                    <>
+                      <button
+                        onClick={() => setSettingsMenu("speed")}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                      >
+                        <Gauge className="w-4 h-4 shrink-0" />
+                        <span className="flex-1 text-left">Playback speed</span>
+                        <span className="text-white/40">
+                          {speed === 1 ? "Normal" : `${speed}×`}
+                        </span>
+                        <ChevronRightIcon className="w-3.5 h-3.5 text-white/40 shrink-0" />
+                      </button>
+                      {levels.length > 0 && (
+                        <button
+                          onClick={() => setSettingsMenu("quality")}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                        >
+                          <Monitor className="w-4 h-4 shrink-0" />
+                          <span className="flex-1 text-left">Resolution</span>
+                          <span className="text-white/40">
+                            {currentLevel === -1
+                              ? "Auto"
+                              : `${levels.find((l) => l.index === currentLevel)?.height ?? ""}p`}
+                          </span>
+                          <ChevronRightIcon className="w-3.5 h-3.5 text-white/40 shrink-0" />
+                        </button>
                       )}
-                    </button>
-                  ))}
+                    </>
+                  )}
+
+                  {settingsMenu === "speed" && (
+                    <>
+                      <button
+                        onClick={() => setSettingsMenu("main")}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-white/80 hover:text-white hover:bg-white/10 transition-colors border-b border-white/10 mb-1"
+                      >
+                        <ChevronLeftIcon className="w-3.5 h-3.5 shrink-0" />
+                        <span className="font-semibold">Playback speed</span>
+                      </button>
+                      {SPEEDS.map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => changeSpeed(s)}
+                          className="w-full flex items-center justify-between px-3 py-1.5 text-[13px] text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                        >
+                          <span>{s === 1 ? "Normal" : `${s}×`}</span>
+                          {speed === s && (
+                            <Check className="w-3.5 h-3.5 text-(--primary-400)" />
+                          )}
+                        </button>
+                      ))}
+                    </>
+                  )}
+
+                  {settingsMenu === "quality" && (
+                    <>
+                      <button
+                        onClick={() => setSettingsMenu("main")}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-white/80 hover:text-white hover:bg-white/10 transition-colors border-b border-white/10 mb-1"
+                      >
+                        <ChevronLeftIcon className="w-3.5 h-3.5 shrink-0" />
+                        <span className="font-semibold">Resolution</span>
+                      </button>
+                      <button
+                        onClick={() => changeQuality(-1)}
+                        className="w-full flex items-center justify-between px-3 py-1.5 text-[13px] text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                      >
+                        <span>Auto</span>
+                        {currentLevel === -1 && (
+                          <Check className="w-3.5 h-3.5 text-(--primary-400)" />
+                        )}
+                      </button>
+                      {levels
+                        .slice()
+                        .sort((a, b) => b.height - a.height)
+                        .map((lvl) => (
+                          <button
+                            key={lvl.index}
+                            onClick={() => changeQuality(lvl.index)}
+                            className="w-full flex items-center justify-between px-3 py-1.5 text-[13px] text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                          >
+                            <span>{lvl.height}p</span>
+                            {currentLevel === lvl.index && (
+                              <Check className="w-3.5 h-3.5 text-(--primary-400)" />
+                            )}
+                          </button>
+                        ))}
+                    </>
+                  )}
                 </div>
               )}
             </div>
