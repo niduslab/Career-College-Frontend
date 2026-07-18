@@ -24,12 +24,16 @@ import type { CurriculumItem, LearnerCurriculum } from "@/lib/course-api";
 
 export default function CoursePlayerPage({
   courseSlug,
+  topOffsetPx = 64,
 }: {
   courseSlug?: string;
+  /** Height of the chrome above this page (e.g. the dashboard topbar) to subtract from the viewport. 0 for standalone routes with no topbar. */
+  topOffsetPx?: number;
 }) {
   const router = useRouter();
   const { data: courseDetail, isLoading: courseLoading } =
     useMyCourseDetail(courseSlug);
+  const isInstructorPreview = courseDetail?.is_instructor === true;
   const { data: curriculum, isLoading: curriculumLoading } =
     useLearnerCurriculum(courseSlug);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -92,7 +96,8 @@ export default function CoursePlayerPage({
     watchedSeconds: number,
     durationSeconds: number,
   ) => {
-    if (!activeLectureId) return;
+    // Instructor preview — progress saving is learner-only.
+    if (!activeLectureId || isInstructorPreview) return;
     const rounded = Math.floor(watchedSeconds);
     const completed = rounded >= Math.floor(durationSeconds);
     // Only save on real forward progress, at most once per ~5s tick.
@@ -267,7 +272,10 @@ export default function CoursePlayerPage({
   };
 
   return (
-    <div className="flex h-[calc(100svh-64px)] overflow-hidden -m-4 lg:-m-6">
+    <div
+      className="flex overflow-hidden -m-4 lg:-m-6"
+      style={{ height: `calc(100svh - ${topOffsetPx}px)` }}
+    >
       {/* Left overlay (mobile/tablet) */}
       {sidebarOpen && (
         <div
@@ -325,20 +333,26 @@ export default function CoursePlayerPage({
                       .join(", ") || "Career College"}
                   </p>
                 </div>
-                {courseDetail.enrollment && (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="w-32 h-2 rounded-full bg-(--gray-100)">
-                      <div
-                        className="h-2 rounded-full bg-(--primary-600) transition-all duration-700"
-                        style={{
-                          width: `${courseDetail.enrollment.progress_percent}%`,
-                        }}
-                      />
+                {isInstructorPreview ? (
+                  <span className="shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+                    Instructor Preview
+                  </span>
+                ) : (
+                  courseDetail.enrollment && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="w-32 h-2 rounded-full bg-(--gray-100)">
+                        <div
+                          className="h-2 rounded-full bg-(--primary-600) transition-all duration-700"
+                          style={{
+                            width: `${courseDetail.enrollment.progress_percent}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-[12px] font-semibold text-(--primary-700) whitespace-nowrap">
+                        {courseDetail.enrollment.progress_percent}%
+                      </span>
                     </div>
-                    <span className="text-[12px] font-semibold text-(--primary-700) whitespace-nowrap">
-                      {courseDetail.enrollment.progress_percent}%
-                    </span>
-                  </div>
+                  )
                 )}
               </div>
             ) : (
@@ -363,15 +377,17 @@ export default function CoursePlayerPage({
             </span>
           </button>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => router.push("/dashboard/learner/ai-assistant")}
-              className="flex cursor-pointer items-center gap-1.5 text-[14px] h-10 font-medium text-white bg-(--primary-600) hover:bg-(--primary-700) px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span className="hidden sm:inline">AI Assistant</span>
-            </button>
-          </div>
+          {!isInstructorPreview && (
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => router.push("/dashboard/learner/ai-assistant")}
+                className="flex cursor-pointer items-center gap-1.5 text-[14px] h-10 font-medium text-white bg-(--primary-600) hover:bg-(--primary-700) px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span className="hidden sm:inline">AI Assistant</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Lecture content */}
@@ -388,7 +404,12 @@ export default function CoursePlayerPage({
                   dangerouslySetInnerHTML={{ __html: lecture.article_content }}
                 />
                 <div className="mt-6 pt-4 border-t border-(--gray-100)">
-                  {lecture.progress?.is_completed ? (
+                  {isInstructorPreview ? (
+                    <p className="text-[13px] text-(--gray-400) italic">
+                      Preview only — progress tracking is available to enrolled
+                      learners.
+                    </p>
+                  ) : lecture.progress?.is_completed ? (
                     <span className="inline-flex items-center gap-1.5 text-[14px] font-medium text-emerald-600">
                       Completed
                     </span>
@@ -432,6 +453,7 @@ export default function CoursePlayerPage({
               courseSlug={courseSlug}
               onCompleted={() => markLocallyCompleted(activeItem.content_id)}
               onNextLesson={hasNextItem ? goToNextItem : undefined}
+              isInstructorPreview={isInstructorPreview}
             />
           ) : activeItem?.item_type === "assignment" ? (
             <AssignmentPanel
@@ -439,6 +461,7 @@ export default function CoursePlayerPage({
               courseSlug={courseSlug}
               onCompleted={() => markLocallyCompleted(activeItem.content_id)}
               onNextLesson={hasNextItem ? goToNextItem : undefined}
+              isInstructorPreview={isInstructorPreview}
             />
           ) : activeItem?.item_type === "coding" ? (
             <CodingExercisePanel
@@ -446,6 +469,7 @@ export default function CoursePlayerPage({
               courseSlug={courseSlug}
               onCompleted={() => markLocallyCompleted(activeItem.content_id)}
               onNextLesson={hasNextItem ? goToNextItem : undefined}
+              isInstructorPreview={isInstructorPreview}
             />
           ) : (
             <div className="w-full aspect-video bg-black flex items-center justify-center">

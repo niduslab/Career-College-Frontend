@@ -17,12 +17,14 @@ export default function AssignmentPanel({
   courseSlug,
   onCompleted,
   onNextLesson,
+  isInstructorPreview,
 }: {
   assignmentId: number;
   courseSlug?: string;
   /** Fired when a submission reaches "passed" — the item counts as completed. */
   onCompleted?: () => void;
   onNextLesson?: () => void;
+  isInstructorPreview?: boolean;
 }) {
   const { data: assignment, isLoading } = useLearnerAssignment(assignmentId);
   const submitMutation = useSubmitAssignment(courseSlug);
@@ -285,21 +287,28 @@ export default function AssignmentPanel({
                 value={answers[q.id] ?? ""}
                 onChange={(e) => handleChange(q.id, e.target.value)}
                 rows={4}
+                disabled={isInstructorPreview}
                 placeholder="Write your answer..."
-                className="w-full rounded-lg border border-(--gray-200) p-3 text-[14px] text-(--text-title) placeholder:text-(--gray-400) outline-none focus:border-(--primary-400) transition-colors"
+                className="w-full rounded-lg border border-(--gray-200) p-3 text-[14px] text-(--text-title) placeholder:text-(--gray-400) outline-none focus:border-(--primary-400) transition-colors disabled:bg-(--gray-50) disabled:cursor-not-allowed"
               />
             </div>
           ))}
         </div>
 
         <div className="mt-6 pt-4 border-t border-(--gray-100)">
-          <button
-            onClick={handleSubmit}
-            disabled={submitMutation.isPending}
-            className="px-4 py-2 rounded-md bg-(--primary-600) hover:bg-(--primary-700) text-white text-[14px] font-semibold transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {submitMutation.isPending ? "Submitting..." : "Submit assignment"}
-          </button>
+          {isInstructorPreview ? (
+            <p className="text-[13px] text-(--gray-400) italic">
+              Preview only — submitting is available to enrolled learners.
+            </p>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={submitMutation.isPending}
+              className="px-4 py-2 rounded-md bg-(--primary-600) hover:bg-(--primary-700) text-white text-[14px] font-semibold transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {submitMutation.isPending ? "Submitting..." : "Submit assignment"}
+            </button>
+          )}
         </div>
       </div>
     </div>
