@@ -10,7 +10,6 @@ import SetupTab, {
 } from "@/components/dashboard/instructor/course-builder/setup-tab";
 import CurriculumTab from "@/components/dashboard/instructor/course-builder/curriculum-tab";
 import ReviewTab from "@/components/dashboard/instructor/course-builder/review-tab";
-import PreviewDrawer from "@/components/dashboard/instructor/course-builder/preview-drawer";
 import { createCourse, updateCourse, getCourse } from "@/lib/course-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
@@ -58,10 +57,10 @@ export default function CourseBuilderPage() {
       ? { ...INITIAL_FORM, deliveryMode: "scheduled" }
       : INITIAL_FORM,
   );
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [courseId, setCourseIdState] = useState<number | null>(
     urlCourseId ? Number(urlCourseId) : null,
   );
+  const [courseSlug, setCourseSlug] = useState<string | null>(null);
   const [savingCourse, setSavingCourse] = useState(false);
   const [loadingCourse, setLoadingCourse] = useState(!!urlCourseId);
 
@@ -90,12 +89,12 @@ export default function CourseBuilderPage() {
     getCourse(Number(urlCourseId))
       .then((course) => {
         if (!active) return;
+        setCourseSlug(course.slug);
         setForm({
           title: course.title,
           categoryId: course.category?.id ?? null,
           category: course.category?.name ?? "",
-          level:
-            course.level.charAt(0).toUpperCase() + course.level.slice(1),
+          level: course.level.charAt(0).toUpperCase() + course.level.slice(1),
           language: course.language,
           description: course.description,
           price: course.price,
@@ -143,7 +142,10 @@ export default function CourseBuilderPage() {
         description: form.description,
         category: form.categoryId,
         language: form.language,
-        level: form.level.toLowerCase() as "beginner" | "intermediate" | "advanced",
+        level: form.level.toLowerCase() as
+          | "beginner"
+          | "intermediate"
+          | "advanced",
         price: form.price || "0",
         learning_objectives: form.learningObjectives,
         prerequisites: form.prerequisites,
@@ -157,6 +159,7 @@ export default function CourseBuilderPage() {
           delivery_mode: form.deliveryMode,
         });
         notify.success(message ?? "Course created.");
+        setCourseSlug(course.slug);
         goToCurriculumFor(course.id);
       } else {
         const { message } = await updateCourse(courseId, payload);
@@ -185,8 +188,15 @@ export default function CourseBuilderPage() {
           </p>
         </div>
         <button
-          onClick={() => setPreviewOpen(true)}
-          className="flex items-center cursor-pointer gap-2 bg-(--primary-700) hover:bg-(--primary-900) text-white text-[13px] font-semibold px-4 h-12 rounded-md transition-colors"
+          onClick={() => {
+            if (!courseSlug) {
+              notify.info("Save the course in Setup before previewing it.");
+              return;
+            }
+            window.open(`/course-player/${courseSlug}`, "_blank");
+          }}
+          disabled={!courseSlug}
+          className="flex items-center cursor-pointer gap-2 bg-(--primary-700) hover:bg-(--primary-900) text-white text-[13px] font-semibold px-4 h-12 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Eye className="w-4 h-4" />
           Preview
@@ -242,13 +252,6 @@ export default function CourseBuilderPage() {
             Please complete Course Setup first to unlock the curriculum builder.
           </div>
         ))}
-
-      <PreviewDrawer
-        open={previewOpen}
-        onClose={() => setPreviewOpen(false)}
-        courseId={courseId}
-        form={form}
-      />
 
       {activeStep === "Review" &&
         (courseId !== null ? (

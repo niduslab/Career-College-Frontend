@@ -15,11 +15,14 @@ export default function QuizPanel({
   courseSlug,
   onCompleted,
   onNextLesson,
+  isInstructorPreview,
 }: {
   quizId: number;
   courseSlug?: string;
   onCompleted?: () => void;
   onNextLesson?: () => void;
+  /** The course's own instructor previewing — submit is learner-only (backend 403s it). */
+  isInstructorPreview?: boolean;
 }) {
   const { data: quiz, isLoading } = useLearnerQuiz(quizId);
   const submitMutation = useSubmitQuizAttempt(courseSlug);
@@ -139,9 +142,11 @@ export default function QuizPanel({
                       <button
                         key={a.id}
                         onClick={() => handleSelect(q.id, a.id)}
-                        disabled={!!result}
+                        disabled={!!result || isInstructorPreview}
                         className={`w-full flex items-center justify-between gap-2 text-left px-4 py-2.5 rounded-lg border transition-colors ${optionClass} ${
-                          result ? "cursor-default" : "cursor-pointer"
+                          result || isInstructorPreview
+                            ? "cursor-default"
+                            : "cursor-pointer"
                         }`}
                       >
                         <span className="text-[14px] text-(--text-title)">
@@ -182,6 +187,10 @@ export default function QuizPanel({
                 </button>
               )}
             </div>
+          ) : isInstructorPreview ? (
+            <p className="text-[13px] text-(--gray-400) italic">
+              Preview only — submitting is available to enrolled learners.
+            </p>
           ) : (
             <button
               onClick={handleSubmit}

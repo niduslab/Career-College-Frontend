@@ -73,6 +73,7 @@ export default function CodingExercisePanel({
   courseSlug,
   onCompleted,
   onNextLesson,
+  isInstructorPreview,
 }: {
   exerciseId: number;
   courseSlug?: string;
@@ -80,6 +81,8 @@ export default function CodingExercisePanel({
   onCompleted?: () => void;
   /** Navigate to the next curriculum item; omit to hide the button. */
   onNextLesson?: () => void;
+  /** The course's own instructor previewing — run/submit are learner-only . */
+  isInstructorPreview?: boolean;
 }) {
   const { data: exercise, isLoading } = useLearnerCodingExercise(exerciseId);
   const runMutation = useRunCodingExercise();
@@ -260,25 +263,32 @@ export default function CodingExercisePanel({
           className="w-full rounded-lg border border-(--gray-200) bg-(--gray-900) text-(--gray-100) p-4 text-[13px] font-mono outline-none focus:border-(--primary-400) transition-colors"
         />
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleRun}
-            disabled={!!runPending || runMutation.isPending}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-(--primary-50) hover:bg-(--primary-100) text-(--primary-600) text-[14px] font-semibold transition-colors cursor-pointer border border-(--primary-100) disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <Play className="w-4 h-4" />
-            {runPending || runMutation.isPending ? "Running..." : "Run"}
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmissionPending || submitMutation.isPending}
-            className="px-4 py-2 rounded-md bg-(--primary-600) hover:bg-(--primary-700) text-white text-[14px] font-semibold transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isSubmissionPending || submitMutation.isPending
-              ? "Submitting..."
-              : "Submit"}
-          </button>
-        </div>
+        {isInstructorPreview ? (
+          <p className="text-[13px] text-(--gray-400) italic">
+            Preview only — running and submitting code is available to enrolled
+            learners.
+          </p>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRun}
+              disabled={!!runPending || runMutation.isPending}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-(--primary-50) hover:bg-(--primary-100) text-(--primary-600) text-[14px] font-semibold transition-colors cursor-pointer border border-(--primary-100) disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <Play className="w-4 h-4" />
+              {runPending || runMutation.isPending ? "Running..." : "Run"}
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmissionPending || submitMutation.isPending}
+              className="px-4 py-2 rounded-md bg-(--primary-600) hover:bg-(--primary-700) text-white text-[14px] font-semibold transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isSubmissionPending || submitMutation.isPending
+                ? "Submitting..."
+                : "Submit"}
+            </button>
+          </div>
+        )}
 
         {/* Run results (transient, visible tests only) */}
         {taskId && (
