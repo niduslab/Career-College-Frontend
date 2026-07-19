@@ -163,10 +163,14 @@ export default function CourseBuilderPage() {
           | "beginner"
           | "intermediate"
           | "advanced",
-        price: form.price || "0",
+
+         price: form.price,
         duration_minutes: form.durationMinutes
           ? Number(form.durationMinutes)
           : undefined,
+
+       
+
         learning_objectives: form.learningObjectives,
         prerequisites: form.prerequisites,
         audiences: form.audiences,
