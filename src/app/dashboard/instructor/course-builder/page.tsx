@@ -146,7 +146,7 @@ export default function CourseBuilderPage() {
           | "beginner"
           | "intermediate"
           | "advanced",
-        price: form.price || "0",
+        price: form.price,
         learning_objectives: form.learningObjectives,
         prerequisites: form.prerequisites,
         audiences: form.audiences,

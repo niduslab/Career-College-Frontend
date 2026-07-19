@@ -213,7 +213,6 @@ export default function QuizBuilder({
   const setCorrectAnswer = async (questionId: number, answerId: number) => {
     const question = questions.find((q) => q.id === questionId);
     if (!question) return;
-    const previouslyCorrect = question.answers.find((a) => a.is_correct);
 
     setQuestions((prev) =>
       prev.map((q) =>
@@ -230,10 +229,9 @@ export default function QuizBuilder({
     );
 
     try {
+      // Single-correct question: the backend atomically demotes the previously
+      // correct sibling, so marking the new answer correct is all that's needed.
       await updateQuizAnswer(answerId, { is_correct: true });
-      if (previouslyCorrect && previouslyCorrect.id !== answerId) {
-        await updateQuizAnswer(previouslyCorrect.id, { is_correct: false });
-      }
     } catch (err) {
       notify.error(
         err instanceof ApiError

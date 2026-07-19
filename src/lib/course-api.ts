@@ -98,13 +98,33 @@ function buildCourseFormData(
   return form;
 }
 
-/** Fetch active course categories (public, no auth required). */
+/** Fetch active course categories (public, no auth required). Follows
+ *  pagination so every category is returned, not just the first page. */
 export async function getCourseCategories(): Promise<CourseCategory[]> {
-  const res = await apiGet<{ results: CourseCategory[] }>(
-    "/courses/categories/",
-  );
-  const data = res.data as unknown as { results?: CourseCategory[] };
-  return data?.results ?? [];
+  const all: CourseCategory[] = [];
+  let path: string | null = "/courses/categories/";
+  while (path) {
+    const res = await apiGet<{
+      results: CourseCategory[];
+      next: string | null;
+    }>(path);
+    const data = res.data as unknown as {
+      results?: CourseCategory[];
+      next?: string | null;
+    };
+    all.push(...(data?.results ?? []));
+    // `next` is an absolute URL from DRF; reduce it to a path relative to the
+    // API base so apiGet can re-prepend the base. Null = no more pages.
+    const next = data?.next ?? null;
+    if (next) {
+      const nextUrl = new URL(next);
+      const basePath = new URL(config.apiBaseUrl).pathname;
+      path = nextUrl.pathname.replace(basePath, "") + nextUrl.search;
+    } else {
+      path = null;
+    }
+  }
+  return all;
 }
 
 // Public catalog
