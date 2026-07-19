@@ -124,10 +124,10 @@ export default function RichTextEditor({
       StarterKit.configure({
         link: { openOnClick: false },
       }),
-      TextStyle,
+      TextStyle.configure(),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Placeholder.configure({ placeholder }),
-      LineHeight,
+      LineHeight.configure(),
     ],
     content: value,
     onUpdate: ({ editor }) => {

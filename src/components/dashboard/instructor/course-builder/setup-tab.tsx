@@ -46,6 +46,11 @@ function flattenCategories(tree: CourseCategory[]): SelectOption[] {
   return options;
 }
 
+/** True when rich-text HTML has no visible text (e.g. "" or "<p></p>"). */
+function isBlankHtml(html: string): boolean {
+  return !html.replace(/<[^>]*>/g, "").trim();
+}
+
 export default function SetupTab({
   form,
   setForm,
@@ -64,6 +69,10 @@ export default function SetupTab({
     title?: string;
     categoryId?: string;
     description?: string;
+    price?: string;
+    learningObjectives?: string;
+    prerequisites?: string;
+    audiences?: string;
     courseOutline?: string;
   }>({});
 
@@ -86,7 +95,14 @@ export default function SetupTab({
 
   const set = <K extends keyof SetupForm>(key: K, value: SetupForm[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
-    if (key === "title" || key === "description") {
+    if (
+      key === "title" ||
+      key === "description" ||
+      key === "price" ||
+      key === "learningObjectives" ||
+      key === "prerequisites" ||
+      key === "audiences"
+    ) {
       setErrors((prev) => ({ ...prev, [key]: undefined }));
     }
   };
@@ -109,8 +125,20 @@ export default function SetupTab({
     if (!form.categoryId) {
       next.categoryId = "Please select a category.";
     }
-    if (!form.description.trim()) {
+    if (isBlankHtml(form.description)) {
       next.description = "Description is required.";
+    }
+    if (form.price.trim() === "" || isNaN(Number(form.price)) || Number(form.price) < 0) {
+      next.price = "Enter a valid price (0 or more).";
+    }
+    if (isBlankHtml(form.learningObjectives)) {
+      next.learningObjectives = "Learning objectives are required.";
+    }
+    if (isBlankHtml(form.prerequisites)) {
+      next.prerequisites = "Prerequisites are required.";
+    }
+    if (isBlankHtml(form.audiences)) {
+      next.audiences = "Audiences are required.";
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -203,7 +231,7 @@ export default function SetupTab({
             />
             <div className="space-y-1.5">
               <label className="text-[13px] font-medium text-(--text-title)">
-                Price ($)
+                Price (BDT) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -212,8 +240,15 @@ export default function SetupTab({
                 value={form.price}
                 onChange={(e) => set("price", e.target.value)}
                 placeholder="0.00"
-                className="w-full h-12 px-3 text-[14px] mt-1 border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className={`w-full h-12 px-3 text-[14px] mt-1 border rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 transition-shadow [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                  errors.price
+                    ? "border-red-400 focus:ring-red-400"
+                    : "border-(--gray-200) focus:ring-(--primary-700)"
+                }`}
               />
+              {errors.price && (
+                <p className="text-[12px] text-red-500 mt-1">{errors.price}</p>
+              )}
             </div>
           </div>
 
@@ -276,41 +311,68 @@ export default function SetupTab({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <label className="text-[14px] font-normal text-(--text-title)">
-                Learning Objectives
+                Learning Objectives <span className="text-red-500">*</span>
               </label>
-              <textarea
-                value={form.learningObjectives}
-                onChange={(e) => set("learningObjectives", e.target.value)}
-                rows={4}
-                placeholder={
-                  "One per line, e.g.\nBuild production REST APIs.\nContainerize with Docker."
-                }
-                className="w-full px-3 py-2.5 mt-1 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
-              />
+              <div className="mt-1">
+                <RichTextEditor
+                  value={form.learningObjectives}
+                  onChange={(html) => set("learningObjectives", html)}
+                  placeholder={
+                    "One per line, e.g.\nBuild production REST APIs.\nContainerize with Docker."
+                  }
+                  minHeight="120px"
+                />
+              </div>
+              <p className="text-[12px] text-(--gray-500)">
+                Use a bullet list if you have more than one.
+              </p>
+              {errors.learningObjectives && (
+                <p className="text-[12px] text-red-500 mt-1">
+                  {errors.learningObjectives}
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <label className="text-[14px] font-normal text-(--text-title)">
-                Prerequisites
+                Prerequisites <span className="text-red-500">*</span>
               </label>
-              <textarea
-                value={form.prerequisites}
-                onChange={(e) => set("prerequisites", e.target.value)}
-                rows={4}
-                placeholder={"One per line, e.g.\nComfortable with Python."}
-                className="w-full px-3 py-2.5 mt-1 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
-              />
+              <div className="mt-1">
+                <RichTextEditor
+                  value={form.prerequisites}
+                  onChange={(html) => set("prerequisites", html)}
+                  placeholder={"One per line, e.g.\nComfortable with Python."}
+                  minHeight="120px"
+                />
+              </div>
+              <p className="text-[12px] text-(--gray-500)">
+                Use a bullet list if you have more than one.
+              </p>
+              {errors.prerequisites && (
+                <p className="text-[12px] text-red-500 mt-1">
+                  {errors.prerequisites}
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <label className="text-[14px] font-normal text-(--text-title)">
-                Audiences
+                Audiences <span className="text-red-500">*</span>
               </label>
-              <textarea
-                value={form.audiences}
-                onChange={(e) => set("audiences", e.target.value)}
-                rows={4}
-                placeholder={"One per line, e.g.\nBackend engineers."}
-                className="w-full px-3 py-2.5 mt-1 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
-              />
+              <div className="mt-1">
+                <RichTextEditor
+                  value={form.audiences}
+                  onChange={(html) => set("audiences", html)}
+                  placeholder={"One per line, e.g.\nBackend engineers."}
+                  minHeight="120px"
+                />
+              </div>
+              <p className="text-[12px] text-(--gray-500)">
+                Use a bullet list if you have more than one.
+              </p>
+              {errors.audiences && (
+                <p className="text-[12px] text-red-500 mt-1">
+                  {errors.audiences}
+                </p>
+              )}
             </div>
           </div>
         </div>
