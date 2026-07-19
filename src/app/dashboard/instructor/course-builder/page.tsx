@@ -4,10 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronRight, Eye, Loader2 } from "lucide-react";
 import type { Step } from "@/components/dashboard/instructor/course-builder/types";
-import { steps } from "@/components/dashboard/instructor/course-builder/constants";
+import {
+  SELF_PACED_STEPS,
+  SCHEDULED_STEPS,
+} from "@/components/dashboard/instructor/course-builder/constants";
 import SetupTab, {
   type SetupForm,
 } from "@/components/dashboard/instructor/course-builder/setup-tab";
+import ScheduleTab from "@/components/dashboard/instructor/course-builder/schedule-tab";
 import CurriculumTab from "@/components/dashboard/instructor/course-builder/curriculum-tab";
 import ReviewTab from "@/components/dashboard/instructor/course-builder/review-tab";
 import { createCourse, updateCourse, getCourse } from "@/lib/course-api";
@@ -18,10 +22,11 @@ const INITIAL_FORM: SetupForm = {
   title: "",
   categoryId: null,
   category: "",
-  level: "Intermediate",
+  level: "Beginner",
   language: "English",
   description: "",
   price: "",
+  durationMinutes: "",
   learningObjectives: "",
   prerequisites: "",
   audiences: "",
@@ -33,11 +38,13 @@ const INITIAL_FORM: SetupForm = {
 
 const STEP_TO_PARAM: Record<Step, string> = {
   Setup: "setup",
+  Schedule: "schedule",
   Curriculum: "curriculum",
   Review: "review",
 };
 const PARAM_TO_STEP: Record<string, Step> = {
   setup: "Setup",
+  schedule: "Schedule",
   curriculum: "Curriculum",
   review: "Review",
 };
@@ -64,6 +71,9 @@ export default function CourseBuilderPage() {
   const [savingCourse, setSavingCourse] = useState(false);
   const [loadingCourse, setLoadingCourse] = useState(!!urlCourseId);
 
+  const activeSteps =
+    form.deliveryMode === "scheduled" ? SCHEDULED_STEPS : SELF_PACED_STEPS;
+
   const updateUrl = (nextCourseId: number | null, nextStep: Step) => {
     const params = new URLSearchParams();
     if (nextCourseId !== null) params.set("courseId", String(nextCourseId));
@@ -76,10 +86,13 @@ export default function CourseBuilderPage() {
     updateUrl(courseId, step);
   };
 
-  const goToCurriculumFor = (id: number) => {
+  const nextStepAfterSetup: Step =
+    form.deliveryMode === "scheduled" ? "Schedule" : "Curriculum";
+
+  const goToNextStepFor = (id: number) => {
     setCourseIdState(id);
-    setActiveStepState("Curriculum");
-    updateUrl(id, "Curriculum");
+    setActiveStepState(nextStepAfterSetup);
+    updateUrl(id, nextStepAfterSetup);
   };
 
   // Resume an existing course (e.g. after a reload, or arriving from "Edit" in My Courses).
@@ -98,6 +111,10 @@ export default function CourseBuilderPage() {
           language: course.language,
           description: course.description,
           price: course.price,
+          durationMinutes:
+            course.duration_minutes != null
+              ? String(course.duration_minutes)
+              : "",
           learningObjectives: course.learning_objectives,
           prerequisites: course.prerequisites,
           audiences: course.audiences,
@@ -146,7 +163,14 @@ export default function CourseBuilderPage() {
           | "beginner"
           | "intermediate"
           | "advanced",
-        price: form.price,
+
+         price: form.price,
+        duration_minutes: form.durationMinutes
+          ? Number(form.durationMinutes)
+          : undefined,
+
+       
+
         learning_objectives: form.learningObjectives,
         prerequisites: form.prerequisites,
         audiences: form.audiences,
@@ -160,11 +184,11 @@ export default function CourseBuilderPage() {
         });
         notify.success(message ?? "Course created.");
         setCourseSlug(course.slug);
-        goToCurriculumFor(course.id);
+        goToNextStepFor(course.id);
       } else {
         const { message } = await updateCourse(courseId, payload);
         notify.success(message ?? "Course updated.");
-        setActiveStep("Curriculum");
+        setActiveStep(nextStepAfterSetup);
       }
     } catch (err) {
       notify.error(
@@ -205,9 +229,9 @@ export default function CourseBuilderPage() {
 
       {/* Step Tabs */}
       <div className="bg-white border border-(--gray-200) rounded-xl px-5 py-3 flex items-center gap-2 flex-wrap">
-        {steps.map(({ key, icon: Icon }, i) => {
+        {activeSteps.map(({ key, icon: Icon }, i) => {
           const isActive = activeStep === key;
-          const isPast = steps.findIndex((s) => s.key === activeStep) > i;
+          const isPast = activeSteps.findIndex((s) => s.key === activeStep) > i;
           return (
             <div key={key} className="flex items-center gap-2">
               <button
@@ -223,7 +247,7 @@ export default function CourseBuilderPage() {
                 <Icon className="w-4 h-4" />
                 {key}
               </button>
-              {i < steps.length - 1 && (
+              {i < activeSteps.length - 1 && (
                 <ChevronRight className="w-4 h-4 text-(--gray-300)" />
               )}
             </div>
@@ -240,6 +264,18 @@ export default function CourseBuilderPage() {
           saving={savingCourse}
         />
       )}
+
+      {activeStep === "Schedule" &&
+        (courseId !== null ? (
+          <ScheduleTab
+            courseId={courseId}
+            onContinue={() => setActiveStep("Curriculum")}
+          />
+        ) : (
+          <div className="bg-white border border-(--gray-200) rounded-xl p-10 text-center text-(--gray-500) text-[14px]">
+            Please complete Course Setup first to unlock scheduling.
+          </div>
+        ))}
 
       {activeStep === "Curriculum" &&
         (courseId !== null ? (

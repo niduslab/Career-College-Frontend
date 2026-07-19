@@ -13,7 +13,6 @@ import {
   Award,
   Settings,
   BookOpen,
-  Sparkles,
   ChartColumn,
   MessageSquareMore,
   PenLine,
@@ -33,11 +32,11 @@ const navSections = [
         label: "My Course",
         href: "/dashboard/instructor/my-course",
       },
-      {
-        icon: Sparkles,
-        label: "Course Builder",
-        href: "/dashboard/instructor/course-builder",
-      },
+      // {
+      //   icon: Sparkles,
+      //   label: "Course Builder",
+      //   href: "/dashboard/instructor/course-builder",
+      // },
 
       {
         icon: Radio,

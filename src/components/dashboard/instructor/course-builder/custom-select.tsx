@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
 
 export default function CustomSelect({
@@ -15,15 +15,28 @@ export default function CustomSelect({
   onChange: (v: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   return (
-    <div className="space-y-1.5">
-      <label className="text-[13px] font-medium text-(--text-title)">{label}</label>
+    <div className="space-y-1.5" ref={ref}>
+      <label className="text-[13px] font-medium text-(--text-title)">
+        {label}
+      </label>
       <div className="relative mt-1">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="w-full h-12 px-3 rounded-lg cursor-pointer border border-(--gray-200) bg-white text-[13px] text-(--gray-500) focus:outline-none focus:ring-2 focus:ring-(--primary-700) text-left flex items-center justify-between transition-shadow"
+          className="w-full h-12 px-3 rounded-lg cursor-pointer border border-(--gray-200) bg-white text-[14px] text-(--gray-500) focus:outline-none focus:ring-2 focus:ring-(--primary-700) text-left flex items-center justify-between transition-shadow"
         >
           <span className={value ? "text-(--text-title)" : "text-(--gray-400)"}>
             {value || `Select ${label.toLowerCase()}`}
@@ -41,9 +54,14 @@ export default function CustomSelect({
               <button
                 key={opt}
                 type="button"
-                onClick={() => { onChange(opt); setOpen(false); }}
+                onClick={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
                 className={`w-full px-4 py-3 text-left text-[14px] cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors hover:bg-purple-50 ${
-                  opt === value ? "bg-purple-50 text-(--primary-700) font-medium" : "text-gray-500"
+                  opt === value
+                    ? "bg-purple-50 text-(--primary-700) font-medium"
+                    : "text-gray-500"
                 }`}
               >
                 {opt}

@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronRight, Loader2, Upload } from "lucide-react";
+import {
+  ChevronRight,
+  Loader2,
+  Upload,
+  Plus,
+  Trash2,
+  GripVertical,
+} from "lucide-react";
 import Image from "next/image";
 import RichTextEditor from "@/components/common/rich-text-editor";
 import {
@@ -15,6 +22,116 @@ import { LANGUAGES } from "./languages";
 import { getCourseCategories, type CourseCategory } from "@/lib/course-api";
 import { notify } from "@/lib/toast";
 
+interface OutlineWeek {
+  id: number;
+  topic: string;
+}
+
+let outlineRowId = 0;
+function nextOutlineRowId() {
+  outlineRowId += 1;
+  return outlineRowId;
+}
+
+/** "Week 1: HTML/CSS\nWeek 2: JavaScript" -> rows. Falls back to one row per line for text that doesn't match the "Week N: " pattern (e.g. a legacy freeform outline). */
+function parseOutline(text: string): OutlineWeek[] {
+  const lines = text.split("\n").filter((l) => l.trim());
+  if (lines.length === 0) return [];
+  return lines.map((line) => {
+    const match = line.match(/^Week\s+\d+:\s*(.*)$/i);
+    return { id: nextOutlineRowId(), topic: match ? match[1] : line };
+  });
+}
+
+function serializeOutline(weeks: OutlineWeek[]): string {
+  return weeks.map((w, i) => `Week ${i + 1}: ${w.topic}`).join("\n");
+}
+
+function WeekOutlineEditor({
+  value,
+  onChange,
+  hasError,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  hasError?: boolean;
+}) {
+  const [weeks, setWeeks] = useState<OutlineWeek[]>(() => parseOutline(value));
+
+  const [lastCommitted, setLastCommitted] = useState(value);
+
+  if (value !== lastCommitted) {
+    setLastCommitted(value);
+    setWeeks(parseOutline(value));
+  }
+
+  const commit = (next: OutlineWeek[]) => {
+    const serialized = serializeOutline(next);
+    setLastCommitted(serialized);
+    setWeeks(next);
+    onChange(serialized);
+  };
+
+  const addWeek = () => {
+    commit([...weeks, { id: nextOutlineRowId(), topic: "" }]);
+  };
+
+  const removeWeek = (id: number) => {
+    commit(weeks.filter((w) => w.id !== id));
+  };
+
+  const updateWeek = (id: number, topic: string) => {
+    commit(weeks.map((w) => (w.id === id ? { ...w, topic } : w)));
+  };
+
+  return (
+    <div className="space-y-2">
+      {weeks.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-(--gray-200) bg-(--gray-50) py-6 text-center">
+          <p className="text-[13px] text-(--gray-400)">No weeks added yet.</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {weeks.map((week, i) => (
+            <div key={week.id} className="flex items-center gap-2">
+              <GripVertical className="w-4 h-4 text-(--gray-300) shrink-0" />
+              <span className="w-16 shrink-0 text-[13px] font-medium text-(--gray-500)">
+                Week {i + 1}
+              </span>
+              <input
+                type="text"
+                value={week.topic}
+                onChange={(e) => updateWeek(week.id, e.target.value)}
+                placeholder="e.g. HTML & CSS fundamentals"
+                className={`flex-1 h-10 px-3 text-[14px] border rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 transition-shadow ${
+                  hasError && !week.topic.trim()
+                    ? "border-red-400 focus:ring-red-400"
+                    : "border-(--gray-200) focus:ring-(--primary-700)"
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => removeWeek(week.id)}
+                className="shrink-0 p-2 text-(--gray-400) hover:text-red-500 cursor-pointer transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={addWeek}
+        className="flex items-center gap-2 text-[13px] font-medium text-(--primary-700) hover:text-(--primary-900) cursor-pointer transition-colors"
+      >
+        <Plus className="w-4 h-4" />
+        Add Week
+      </button>
+    </div>
+  );
+}
+
 export interface SetupForm {
   title: string;
   categoryId: number | null;
@@ -23,6 +140,7 @@ export interface SetupForm {
   language: string;
   description: string;
   price: string;
+  durationMinutes: string;
   learningObjectives: string;
   prerequisites: string;
   audiences: string;
@@ -198,7 +316,7 @@ export default function SetupTab({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 mt-1">
             <div className="space-y-1.5">
               <label className="text-[13px] font-medium text-(--text-title)">
                 Category <span className="text-red-500">*</span>
@@ -250,6 +368,19 @@ export default function SetupTab({
                 <p className="text-[12px] text-red-500 mt-1">{errors.price}</p>
               )}
             </div>
+            <div className="space-y-1.5">
+              <label className="text-[13px] font-medium text-(--text-title)">
+                Duration (minutes)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={form.durationMinutes}
+                onChange={(e) => set("durationMinutes", e.target.value)}
+                placeholder="e.g. 240"
+                className="w-full h-12 px-3 text-[14px] mt-1 border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -279,22 +410,19 @@ export default function SetupTab({
                   (required before submitting a scheduled course)
                 </span>
               </label>
-              <textarea
-                value={form.courseOutline}
-                onChange={(e) => {
-                  set("courseOutline", e.target.value);
-                  setErrors((prev) => ({ ...prev, courseOutline: undefined }));
-                }}
-                rows={5}
-                placeholder={
-                  "Week 1: HTML/CSS\nWeek 2: JavaScript\nWeek 3: React\n..."
-                }
-                className={`w-full px-3 py-2.5 mt-1 text-[14px] border rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 transition-shadow ${
-                  errors.courseOutline
-                    ? "border-red-400 focus:ring-red-400"
-                    : "border-(--gray-200) focus:ring-(--primary-700)"
-                }`}
-              />
+              <div className="mt-1">
+                <WeekOutlineEditor
+                  value={form.courseOutline}
+                  onChange={(next) => {
+                    set("courseOutline", next);
+                    setErrors((prev) => ({
+                      ...prev,
+                      courseOutline: undefined,
+                    }));
+                  }}
+                  hasError={!!errors.courseOutline}
+                />
+              </div>
               {errors.courseOutline && (
                 <p className="text-[12px] text-red-500 mt-1">
                   {errors.courseOutline}
@@ -302,8 +430,8 @@ export default function SetupTab({
               )}
               <p className="text-[12px] text-(--gray-500)">
                 A written outline stands in for a fully-built curriculum on
-                scheduled courses — you can still add real sections/lessons,
-                but they aren&apos;t required before submitting.
+                scheduled courses — you can still add real sections/lessons, but
+                they aren&apos;t required before submitting.
               </p>
             </div>
           )}
