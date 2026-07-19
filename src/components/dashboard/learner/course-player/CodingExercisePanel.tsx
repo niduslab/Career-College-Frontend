@@ -13,8 +13,8 @@ import {
 } from "@/hooks/use-learner-consumption";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import CodeEditor from "@/components/common/code-editor";
 import type {
-  CodingLanguage,
   CodingTestResult,
   CodingSubmissionTestResult,
 } from "@/lib/course-api";
@@ -39,29 +39,23 @@ function TestResultRow({
         ) : (
           <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
         )}
-        <span className="font-medium text-(--text-title)">
-          Test {result.position}
+        <span className="font-medium font-mono text-(--text-title) truncate">
+          {result.test_name || `Test ${result.position}`}
         </span>
-        <span className="text-(--gray-400) ml-auto">{result.runtime_ms}ms</span>
+        <span className="text-(--gray-400) ml-auto shrink-0">
+          {result.runtime_ms}ms
+        </span>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-[12px] text-(--gray-600)">
-        <div>
-          <span className="text-(--gray-400)">Input: </span>
-          {result.input_data}
-        </div>
-        <div>
-          <span className="text-(--gray-400)">Expected: </span>
-          {result.expected_output}
-        </div>
-        <div>
-          <span className="text-(--gray-400)">Output: </span>
-          {result.actual_output}
-        </div>
-        {result.stderr && (
-          <div className="text-rose-600">
-            <span className="text-(--gray-400)">stderr: </span>
+      <div className="space-y-1.5 font-mono text-[12px] text-(--gray-600)">
+        {result.stdout && (
+          <pre className="whitespace-pre-wrap bg-white/60 rounded-md px-2.5 py-1.5 overflow-x-auto">
+            {result.stdout}
+          </pre>
+        )}
+        {!passed && result.stderr && (
+          <pre className="whitespace-pre-wrap text-rose-600 bg-white/60 rounded-md px-2.5 py-1.5 overflow-x-auto">
             {result.stderr}
-          </div>
+          </pre>
         )}
       </div>
     </div>
@@ -89,7 +83,6 @@ export default function CodingExercisePanel({
   const submitMutation = useSubmitCodingExercise();
   const retryMutation = useRetryCodingSubmission();
 
-  const [language, setLanguage] = useState<CodingLanguage | null>(null);
   const [code, setCode] = useState<string | null>(null);
   const [taskId, setTaskId] = useState<string | undefined>(undefined);
   const [submissionId, setSubmissionId] = useState<number | undefined>(
@@ -130,20 +123,8 @@ export default function CodingExercisePanel({
     );
   }
 
-  const activeLanguage = language ?? exercise.default_language;
-  const activeCode =
-    code ??
-    exercise.language_configs.find((c) => c.language === activeLanguage)
-      ?.starter_code ??
-    "";
-
-  const handleLanguageChange = (lang: CodingLanguage) => {
-    setLanguage(lang);
-    setCode(
-      exercise.language_configs.find((c) => c.language === lang)
-        ?.starter_code ?? "",
-    );
-  };
+  const activeLanguage = exercise.language;
+  const activeCode = code ?? exercise.starter_code ?? "";
 
   const handleRun = () => {
     if (!activeCode.trim()) {
@@ -204,12 +185,9 @@ export default function CodingExercisePanel({
               {exercise.title}
             </h2>
             <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-(--gray-100) text-(--gray-600) capitalize">
-              {exercise.difficulty}
+              {activeLanguage}
             </span>
           </div>
-          <p className="text-[13px] text-(--gray-500)">
-            {exercise.description}
-          </p>
         </div>
 
         <div className="bg-(--gray-50) rounded-xl p-4">
@@ -217,50 +195,16 @@ export default function CodingExercisePanel({
             Problem
           </p>
           <p className="text-[13px] text-(--gray-600) whitespace-pre-wrap">
-            {exercise.problem_statement}
+            {exercise.description}
           </p>
         </div>
 
-        <div>
-          <p className="text-[13px] font-semibold text-(--text-title) mb-2">
-            Visible test cases
-          </p>
-          <div className="space-y-2">
-            {exercise.test_cases.map((tc) => (
-              <div
-                key={tc.id}
-                className="text-[12px] font-mono bg-(--gray-50) rounded-lg p-2.5 text-(--gray-600)"
-              >
-                <span className="text-(--gray-400)">Input: </span>
-                {tc.input_data} <span className="text-(--gray-400)">→</span>{" "}
-                {tc.expected_output}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {exercise.supported_languages.map((lang) => (
-            <button
-              key={lang}
-              onClick={() => handleLanguageChange(lang)}
-              className={`px-3 py-1.5 rounded-md text-[13px] font-medium capitalize transition-colors cursor-pointer border ${
-                activeLanguage === lang
-                  ? "bg-(--primary-600) text-white border-(--primary-600)"
-                  : "bg-white text-(--gray-600) border-(--gray-200) hover:border-(--primary-300)"
-              }`}
-            >
-              {lang}
-            </button>
-          ))}
-        </div>
-
-        <textarea
+        <CodeEditor
+          language={activeLanguage}
           value={activeCode}
-          onChange={(e) => setCode(e.target.value)}
-          rows={12}
-          spellCheck={false}
-          className="w-full rounded-lg border border-(--gray-200) bg-(--gray-900) text-(--gray-100) p-4 text-[13px] font-mono outline-none focus:border-(--primary-400) transition-colors"
+          onChange={setCode}
+          minHeight="280px"
+          dark
         />
 
         {isInstructorPreview ? (
@@ -290,7 +234,7 @@ export default function CodingExercisePanel({
           </div>
         )}
 
-        {/* Run results (transient, visible tests only) */}
+        {/* Run results (transient) */}
         {taskId && (
           <div>
             <p className="text-[13px] font-semibold text-(--text-title) mb-2">

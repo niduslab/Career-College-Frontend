@@ -344,7 +344,7 @@ export interface CurriculumItem {
   lecture_type?: LectureType;
   duration_seconds?: number | null;
   /** Only present when item_type === "coding". */
-  difficulty?: CodingDifficulty;
+  language?: CodingLanguage;
   /** Absent for instructor preview. */
   is_completed?: boolean;
 }
@@ -636,20 +636,6 @@ export async function retryAssignmentGrading(
   return withMessage(res);
 }
 
-export interface LearnerCodingLanguageConfig {
-  id: number;
-  language: CodingLanguage;
-  starter_code: string;
-}
-
-export interface LearnerCodingTestCase {
-  id: number;
-  input_data: string;
-  expected_output: string;
-  explanation: string;
-  position: number;
-}
-
 export type CodingSubmissionStatus =
   | "queued"
   | "grading"
@@ -668,14 +654,11 @@ export interface LearnerCodingExercise {
   id: number;
   section_id: number;
   title: string;
+  /** The problem text (states the function contract to implement). */
   description: string;
-  problem_statement: string;
-  difficulty: CodingDifficulty;
-  default_language: CodingLanguage;
-  supported_languages: CodingLanguage[];
+  language: CodingLanguage;
+  starter_code: string;
   time_limit_ms: number;
-  language_configs: LearnerCodingLanguageConfig[];
-  test_cases: LearnerCodingTestCase[];
   latest_submission: LatestCodingSubmission | null;
 }
 
@@ -712,12 +695,12 @@ export type CeleryTaskState = "PENDING" | "STARTED" | "SUCCESS" | "FAILURE";
 
 export interface CodingTestResult {
   position: number;
-  input_data: string;
-  expected_output: string;
-  actual_output: string;
-  stdout: string;
-  stderr: string;
+  /** Name reported by the evaluation script (e.g. "evaluate.AddTests.test_small"). */
+  test_name: string;
   status: "passed" | "failed" | "error";
+  stdout: string;
+  /** Assertion failure message / traceback — the learner-facing feedback. */
+  stderr: string;
   runtime_ms: number;
   exit_code: number;
 }
@@ -780,13 +763,10 @@ export async function submitCodingExercise(
 export interface CodingSubmissionTestResult {
   id: number;
   position: number;
+  test_name: string;
   status: "passed" | "failed" | "error";
   runtime_ms: number;
   exit_code: number;
-  is_hidden: boolean;
-  input_data: string;
-  expected_output: string;
-  actual_output: string;
   stdout: string;
   stderr: string;
 }
@@ -1198,19 +1178,22 @@ export async function deleteQuizAnswer(
   return apiDelete(`/courses/quiz-answers/${answerId}/`);
 }
 
-// Coding exercises
+// Coding exercises (single-language, script-evaluated)
 
-export type CodingDifficulty = "easy" | "medium" | "hard";
 export type CodingLanguage = "python" | "javascript" | "cpp" | "java";
 
 export interface CodingExercise {
   id: number;
+  section_id: number;
   title: string;
+  /** The problem text shown to learners. */
   description: string;
-  problem_statement: string;
-  difficulty: CodingDifficulty;
-  default_language: CodingLanguage;
-  supported_languages: CodingLanguage[];
+  language: CodingLanguage;
+  starter_code: string;
+  /** Instructor-only reference implementation. */
+  solution_code: string;
+  /** Instructor-only test script — the grading source of truth. */
+  evaluation_script: string;
   time_limit_ms: number;
 }
 
@@ -1218,10 +1201,10 @@ export interface CreateCodingExerciseInput {
   item_type: "coding";
   title: string;
   description?: string;
-  problem_statement: string;
-  difficulty: CodingDifficulty;
-  default_language: CodingLanguage;
-  supported_languages: CodingLanguage[];
+  language: CodingLanguage;
+  starter_code?: string;
+  solution_code?: string;
+  evaluation_script?: string;
   time_limit_ms?: number;
   position?: number;
 }
@@ -1250,10 +1233,10 @@ export async function getCodingExercise(
 export interface CodingExerciseUpdateInput {
   title?: string;
   description?: string;
-  problem_statement?: string;
-  difficulty?: CodingDifficulty;
-  default_language?: CodingLanguage;
-  supported_languages?: CodingLanguage[];
+  language?: CodingLanguage;
+  starter_code?: string;
+  solution_code?: string;
+  evaluation_script?: string;
   time_limit_ms?: number;
 }
 
@@ -1274,118 +1257,28 @@ export async function deleteCodingExercise(
   return apiDelete(`/courses/coding-exercises/${exerciseId}/`);
 }
 
-export interface CodingLanguageConfig {
-  id: number;
-  language: CodingLanguage;
-  starter_code: string;
-  solution_code: string;
+// Instructor-side transient run so the exercise can be tested while
+// authoring. "tests" runs code against the evaluation script; "code" runs
+// the code standalone (top-level output / compile check). Omitted fields
+// default to the stored solution_code / evaluation_script. Poll the returned
+// task_id with getCodingTaskStatus (same endpoint as the learner run).
+export type InstructorCodingRunMode = "tests" | "code";
+
+export interface InstructorCodingRunInput {
+  code?: string;
+  evaluation_script?: string;
+  mode?: InstructorCodingRunMode;
 }
 
-export async function createCodingLanguageConfig(
+export async function runInstructorCodingExercise(
   exerciseId: number,
-  input: {
-    language: CodingLanguage;
-    starter_code: string;
-    solution_code: string;
-  },
-): Promise<WithMessage<CodingLanguageConfig>> {
-  const res = await apiPost<CodingLanguageConfig>(
-    `/courses/coding-exercises/${exerciseId}/language-configs/`,
+  input: InstructorCodingRunInput = {},
+): Promise<WithMessage<CodingRunDispatch>> {
+  const res = await apiPost<CodingRunDispatch>(
+    `/courses/coding-exercises/${exerciseId}/run/`,
     input,
   );
   return withMessage(res);
-}
-
-export async function listCodingLanguageConfigs(
-  exerciseId: number,
-): Promise<CodingLanguageConfig[]> {
-  const res = await apiGet<CodingLanguageConfig[]>(
-    `/courses/coding-exercises/${exerciseId}/language-configs/`,
-  );
-  return (res.data ?? []) as CodingLanguageConfig[];
-}
-
-export async function updateCodingLanguageConfig(
-  exerciseId: number,
-  configId: number,
-  input: { starter_code?: string; solution_code?: string },
-): Promise<WithMessage<CodingLanguageConfig>> {
-  const res = await apiPatch<CodingLanguageConfig>(
-    `/courses/coding-exercises/${exerciseId}/language-configs/${configId}/`,
-    input,
-  );
-  return withMessage(res);
-}
-
-export async function deleteCodingLanguageConfig(
-  exerciseId: number,
-  configId: number,
-): Promise<string | undefined> {
-  return apiDelete(
-    `/courses/coding-exercises/${exerciseId}/language-configs/${configId}/`,
-  );
-}
-
-export interface CodingTestCase {
-  id: number;
-  input_data: string;
-  expected_output: string;
-  is_hidden: boolean;
-  explanation: string;
-  position: number;
-}
-
-export async function createCodingTestCase(
-  exerciseId: number,
-  input: {
-    input_data: string;
-    expected_output: string;
-    is_hidden: boolean;
-    explanation?: string;
-    position?: number;
-  },
-): Promise<WithMessage<CodingTestCase>> {
-  const res = await apiPost<CodingTestCase>(
-    `/courses/coding-exercises/${exerciseId}/testcases/`,
-    input,
-  );
-  return withMessage(res);
-}
-
-export async function listCodingTestCases(
-  exerciseId: number,
-): Promise<CodingTestCase[]> {
-  const res = await apiGet<CodingTestCase[]>(
-    `/courses/coding-exercises/${exerciseId}/testcases/`,
-  );
-  return (res.data ?? []) as CodingTestCase[];
-}
-
-export async function updateCodingTestCase(
-  exerciseId: number,
-  tcId: number,
-  input: {
-    input_data?: string;
-    expected_output?: string;
-    is_hidden?: boolean;
-    explanation?: string;
-    position?: number;
-  },
-): Promise<WithMessage<CodingTestCase>> {
-  const res = await apiPatch<CodingTestCase>(
-    `/courses/coding-exercises/${exerciseId}/testcases/${tcId}/`,
-    input,
-  );
-  return withMessage(res);
-}
-
-export async function deleteCodingTestCase(
-  exerciseId: number,
-  tcId: number,
-): Promise<string | undefined> {
-  return apiDelete(
-    `/courses/coding-exercises/${exerciseId}/testcases/${tcId}/`,
-  );
 }
 
 // Assignments
