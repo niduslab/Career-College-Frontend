@@ -65,8 +65,8 @@ function itemMeta(item: CurriculumItem): string {
     const dur = formatDuration(item.duration_seconds);
     return dur || (item.lecture_type === "article" ? "Article" : "Video");
   }
-  if (item.item_type === "coding" && item.difficulty) {
-    return item.difficulty.charAt(0).toUpperCase() + item.difficulty.slice(1);
+  if (item.item_type === "coding" && item.language) {
+    return item.language.charAt(0).toUpperCase() + item.language.slice(1);
   }
   if (item.item_type === "quiz") return "Quiz";
   if (item.item_type === "assignment") return "Assignment";

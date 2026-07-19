@@ -1,28 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { X, Plus, Trash2, Loader2 } from "lucide-react";
-import type { UiLanguageConfig, UiTestCase } from "./coding-exercise-types";
+import { useEffect, useRef, useState } from "react";
+import {
+  X,
+  Trash2,
+  Loader2,
+  Play,
+  FlaskConical,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+} from "lucide-react";
 import {
   getCodingExercise,
   updateCodingExercise,
   deleteCodingExercise,
-  createCodingLanguageConfig,
-  listCodingLanguageConfigs,
-  updateCodingLanguageConfig,
-  deleteCodingLanguageConfig,
-  createCodingTestCase,
-  listCodingTestCases,
-  updateCodingTestCase,
-  deleteCodingTestCase,
-  type CodingDifficulty,
+  runInstructorCodingExercise,
+  getCodingTaskStatus,
   type CodingLanguage,
+  type CodingRunResult,
+  type CodingTestResult,
+  type InstructorCodingRunMode,
 } from "@/lib/course-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 import { useDebouncedSave } from "@/lib/use-debounced-save";
-
-const DIFFICULTIES: CodingDifficulty[] = ["easy", "medium", "hard"];
+import CodeEditor from "@/components/common/code-editor";
 
 const LANGUAGE_OPTIONS: { value: CodingLanguage; label: string }[] = [
   { value: "python", label: "Python" },
@@ -31,8 +34,66 @@ const LANGUAGE_OPTIONS: { value: CodingLanguage; label: string }[] = [
   { value: "java", label: "Java" },
 ];
 
-function languageLabel(lang: CodingLanguage): string {
-  return LANGUAGE_OPTIONS.find((o) => o.value === lang)?.label ?? lang;
+const POLL_INTERVAL_MS = 750;
+const POLL_MAX_ATTEMPTS = 80; // ~60s
+
+function StatusIcon({ status }: { status: CodingTestResult["status"] }) {
+  if (status === "passed")
+    return <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />;
+  if (status === "failed")
+    return <XCircle className="w-4 h-4 text-red-500 shrink-0" />;
+  return <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />;
+}
+
+function RunResultPanel({ result }: { result: CodingRunResult }) {
+  return (
+    <div className="border border-(--gray-200) rounded-xl overflow-hidden mt-2">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-(--gray-50) border-b border-(--gray-200)">
+        <div className="flex items-center gap-2">
+          <StatusIcon status={result.status} />
+          <span className="text-[13px] font-semibold text-(--text-title) capitalize">
+            {result.status}
+          </span>
+        </div>
+        <span className="text-[12px] text-(--gray-500)">
+          {result.passed_tests}/{result.total_tests} passed ·{" "}
+          {result.runtime_ms} ms
+        </span>
+      </div>
+      {result.error_message && (
+        <pre className="px-4 py-3 text-[12px] font-mono text-red-600 whitespace-pre-wrap border-b border-(--gray-100)">
+          {result.error_message}
+        </pre>
+      )}
+      <div className="divide-y divide-(--gray-100)">
+        {result.test_results.map((t) => (
+          <div key={t.position} className="px-4 py-3 space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <StatusIcon status={t.status} />
+                <span className="text-[13px] font-mono text-(--text-title) truncate">
+                  {t.test_name}
+                </span>
+              </div>
+              <span className="text-[12px] text-(--gray-500) shrink-0">
+                {t.runtime_ms} ms
+              </span>
+            </div>
+            {t.stdout && (
+              <pre className="text-[12px] font-mono text-(--text-paragraph) bg-(--gray-50) rounded-md px-3 py-2 whitespace-pre-wrap overflow-x-auto">
+                {t.stdout}
+              </pre>
+            )}
+            {t.status !== "passed" && t.stderr && (
+              <pre className="text-[12px] font-mono text-red-600 bg-red-50 rounded-md px-3 py-2 whitespace-pre-wrap overflow-x-auto">
+                {t.stderr}
+              </pre>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function CodingExerciseBuilder({
@@ -49,69 +110,51 @@ export default function CodingExerciseBuilder({
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [problemStatement, setProblemStatement] = useState("");
-  const [difficulty, setDifficulty] = useState<CodingDifficulty>("easy");
-  const [supportedLanguages, setSupportedLanguages] = useState<
-    CodingLanguage[]
-  >([]);
-  const [defaultLanguage, setDefaultLanguage] = useState<CodingLanguage | null>(
-    null,
-  );
+  const [language, setLanguage] = useState<CodingLanguage>("python");
+  const [starterCode, setStarterCode] = useState("");
+  const [solutionCode, setSolutionCode] = useState("");
+  const [evaluationScript, setEvaluationScript] = useState("");
   const [timeLimitMs, setTimeLimitMs] = useState("");
 
-  const [languageConfigs, setLanguageConfigs] = useState<UiLanguageConfig[]>(
-    [],
-  );
-  const [activeLanguage, setActiveLanguage] = useState<CodingLanguage | null>(
-    null,
-  );
-  const [draftCode, setDraftCode] = useState<
-    Record<CodingLanguage, { starter_code: string; solution_code: string }>
-  >(
-    {} as Record<
-      CodingLanguage,
-      { starter_code: string; solution_code: string }
-    >,
-  );
-
-  const [testCases, setTestCases] = useState<UiTestCase[]>([]);
-  const [addingTestCase, setAddingTestCase] = useState(false);
   const [deletingExercise, setDeletingExercise] = useState(false);
   const [savingTitle, setSavingTitle] = useState(false);
+
+  const [runningMode, setRunningMode] = useState<InstructorCodingRunMode | null>(
+    null,
+  );
+  const [runResult, setRunResult] = useState<CodingRunResult | null>(null);
+  const [runLabel, setRunLabel] = useState<string>("");
+  const pollGeneration = useRef(0);
+  const runPanelRef = useRef<HTMLDivElement | null>(null);
+
   const debounceSave = useDebouncedSave();
+
+  // Bring the run panel into view when a run starts (spinner) and again
+  // when the result lands — the modal body is long and the panel sits at
+  // the bottom, so without this the user has to scroll manually.
+  useEffect(() => {
+    if (runningMode !== null || runResult !== null) {
+      runPanelRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: runResult !== null ? "start" : "nearest",
+      });
+    }
+  }, [runningMode, runResult]);
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        const [exercise, configs, cases] = await Promise.all([
-          getCodingExercise(exerciseId),
-          listCodingLanguageConfigs(exerciseId),
-          listCodingTestCases(exerciseId),
-        ]);
+        const exercise = await getCodingExercise(exerciseId);
         if (!active) return;
         setTitle(exercise.title);
         setDescription(exercise.description ?? "");
-        setProblemStatement(exercise.problem_statement);
-        setDifficulty(exercise.difficulty);
-        setSupportedLanguages(exercise.supported_languages);
-        setDefaultLanguage(exercise.default_language);
+        setLanguage(exercise.language);
+        setStarterCode(exercise.starter_code ?? "");
+        setSolutionCode(exercise.solution_code ?? "");
+        setEvaluationScript(exercise.evaluation_script ?? "");
         setTimeLimitMs(
           exercise.time_limit_ms != null ? String(exercise.time_limit_ms) : "",
-        );
-        setLanguageConfigs(configs.map((c) => ({ ...c, saving: false })));
-        setTestCases(cases.map((c) => ({ ...c, saving: false })));
-        setActiveLanguage(exercise.supported_languages[0] ?? null);
-        setDraftCode(
-          Object.fromEntries(
-            exercise.supported_languages.map((lang) => [
-              lang,
-              { starter_code: "", solution_code: "" },
-            ]),
-          ) as Record<
-            CodingLanguage,
-            { starter_code: string; solution_code: string }
-          >,
         );
       } catch (err) {
         if (!active) return;
@@ -126,6 +169,7 @@ export default function CodingExerciseBuilder({
     })();
     return () => {
       active = false;
+      pollGeneration.current += 1; // cancel any in-flight poll loop
     };
   }, [exerciseId]);
 
@@ -144,8 +188,11 @@ export default function CodingExerciseBuilder({
   };
 
   const handleDescriptionBlur = async () => {
+    if (!description.trim()) return;
     try {
-      await updateCodingExercise(exerciseId, { description });
+      await updateCodingExercise(exerciseId, {
+        description: description.trim(),
+      });
     } catch (err) {
       notify.error(
         err instanceof ApiError ? err.message : "Failed to update description.",
@@ -153,30 +200,15 @@ export default function CodingExerciseBuilder({
     }
   };
 
-  const handleProblemStatementBlur = async () => {
-    if (!problemStatement.trim()) return;
+  const handleLanguageChange = async (lang: CodingLanguage) => {
+    const prev = language;
+    setLanguage(lang);
     try {
-      await updateCodingExercise(exerciseId, {
-        problem_statement: problemStatement.trim(),
-      });
+      await updateCodingExercise(exerciseId, { language: lang });
     } catch (err) {
+      setLanguage(prev);
       notify.error(
-        err instanceof ApiError
-          ? err.message
-          : "Failed to update problem statement.",
-      );
-    }
-  };
-
-  const handleDifficultyChange = async (d: CodingDifficulty) => {
-    const prev = difficulty;
-    setDifficulty(d);
-    try {
-      await updateCodingExercise(exerciseId, { difficulty: d });
-    } catch (err) {
-      setDifficulty(prev);
-      notify.error(
-        err instanceof ApiError ? err.message : "Failed to update difficulty.",
+        err instanceof ApiError ? err.message : "Failed to update language.",
       );
     }
   };
@@ -192,184 +224,69 @@ export default function CodingExerciseBuilder({
     }
   };
 
-  const toggleSupportedLanguage = async (lang: CodingLanguage) => {
-    const prevSupported = supportedLanguages;
-    const prevDefault = defaultLanguage;
-    const isRemoving = supportedLanguages.includes(lang);
-    const nextSupported = isRemoving
-      ? supportedLanguages.filter((l) => l !== lang)
-      : [...supportedLanguages, lang];
-    const nextDefault =
-      isRemoving && defaultLanguage === lang
-        ? (nextSupported[0] ?? null)
-        : defaultLanguage;
-
-    setSupportedLanguages(nextSupported);
-    setDefaultLanguage(nextDefault);
-    if (isRemoving && activeLanguage === lang) {
-      setActiveLanguage(nextSupported[0] ?? null);
-    } else if (!isRemoving) {
-      setDraftCode((prev) => ({
-        ...prev,
-        [lang]: prev[lang] ?? { starter_code: "", solution_code: "" },
-      }));
-      setActiveLanguage(lang);
-    }
-
-    try {
-      await updateCodingExercise(exerciseId, {
-        supported_languages: nextSupported,
-        default_language: nextDefault ?? undefined,
-      });
-    } catch (err) {
-      setSupportedLanguages(prevSupported);
-      setDefaultLanguage(prevDefault);
-      notify.error(
-        err instanceof ApiError
-          ? err.message
-          : "Failed to update supported languages.",
-      );
-    }
-  };
-
-  const handleDefaultLanguageChange = async (lang: CodingLanguage) => {
-    const prev = defaultLanguage;
-    setDefaultLanguage(lang);
-    try {
-      await updateCodingExercise(exerciseId, { default_language: lang });
-    } catch (err) {
-      setDefaultLanguage(prev);
-      notify.error(
-        err instanceof ApiError
-          ? err.message
-          : "Failed to update default language.",
-      );
-    }
-  };
-
-  const configFor = (lang: CodingLanguage) =>
-    languageConfigs.find((c) => c.language === lang);
-
-  const handleDraftChange = (
-    lang: CodingLanguage,
-    field: "starter_code" | "solution_code",
+  const handleCodeChange = (
+    field: "starter_code" | "solution_code" | "evaluation_script",
     value: string,
   ) => {
-    setDraftCode((prev) => ({
-      ...prev,
-      [lang]: { ...prev[lang], [field]: value },
-    }));
-  };
-
-  const saveNewLanguageConfig = async (lang: CodingLanguage) => {
-    const draft = draftCode[lang] ?? { starter_code: "", solution_code: "" };
-    try {
-      const { data: config } = await createCodingLanguageConfig(exerciseId, {
-        language: lang,
-        starter_code: draft.starter_code,
-        solution_code: draft.solution_code,
-      });
-      setLanguageConfigs((prev) => [...prev, { ...config, saving: false }]);
-    } catch (err) {
-      notify.error(
-        err instanceof ApiError
-          ? err.message
-          : "Failed to save language config.",
-      );
-    }
-  };
-
-  const updateExistingLanguageConfig = (
-    configId: number,
-    field: "starter_code" | "solution_code",
-    value: string,
-  ) => {
-    setLanguageConfigs((prev) =>
-      prev.map((c) => (c.id === configId ? { ...c, [field]: value } : c)),
-    );
-    debounceSave(`language-config-${configId}-${field}`, async () => {
+    if (field === "starter_code") setStarterCode(value);
+    else if (field === "solution_code") setSolutionCode(value);
+    else setEvaluationScript(value);
+    debounceSave(`coding-exercise-${exerciseId}-${field}`, async () => {
       try {
-        await updateCodingLanguageConfig(exerciseId, configId, {
-          [field]: value,
-        });
+        await updateCodingExercise(exerciseId, { [field]: value });
       } catch (err) {
         notify.error(
-          err instanceof ApiError
-            ? err.message
-            : "Failed to save language config.",
+          err instanceof ApiError ? err.message : "Failed to save code.",
         );
       }
     });
   };
 
-  const removeLanguageConfig = async (configId: number) => {
+  const handleRun = async (mode: InstructorCodingRunMode) => {
+    if (!solutionCode.trim()) {
+      notify.error("Write a solution first — the run executes your solution code.");
+      return;
+    }
+    if (mode === "tests" && !evaluationScript.trim()) {
+      notify.error("Write a test script first.");
+      return;
+    }
+    setRunningMode(mode);
+    setRunResult(null);
+    setRunLabel(mode === "tests" ? "Running tests…" : "Running code…");
+    const generation = ++pollGeneration.current;
     try {
-      const message = await deleteCodingLanguageConfig(exerciseId, configId);
-      setLanguageConfigs((prev) => prev.filter((c) => c.id !== configId));
-      notify.success(message ?? "Language config deleted.");
+      // Send the current editor contents so unsaved edits run too.
+      const { data } = await runInstructorCodingExercise(exerciseId, {
+        code: solutionCode,
+        ...(mode === "tests" ? { evaluation_script: evaluationScript } : {}),
+        mode,
+      });
+      for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
+        await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+        if (pollGeneration.current !== generation) return; // superseded
+        const status = await getCodingTaskStatus(data.task_id);
+        if (status.state === "SUCCESS" && status.result) {
+          setRunResult(status.result);
+          setRunLabel("");
+          setRunningMode(null);
+          return;
+        }
+        if (status.state === "FAILURE") {
+          throw new Error("Run failed. Please try again.");
+        }
+      }
+      throw new Error("Run timed out. Please try again.");
     } catch (err) {
+      if (pollGeneration.current !== generation) return;
+      setRunLabel("");
+      setRunningMode(null);
       notify.error(
         err instanceof ApiError
           ? err.message
-          : "Failed to delete language config.",
-      );
-    }
-  };
-
-  const addTestCase = async () => {
-    setAddingTestCase(true);
-    try {
-      const { data: testCase } = await createCodingTestCase(exerciseId, {
-        input_data: "New input",
-        expected_output: "New output",
-        is_hidden: false,
-        position: testCases.length + 1,
-      });
-      setTestCases((prev) => [...prev, { ...testCase, saving: false }]);
-    } catch (err) {
-      notify.error(
-        err instanceof ApiError ? err.message : "Failed to add test case.",
-      );
-    } finally {
-      setAddingTestCase(false);
-    }
-  };
-
-  const updateTestCaseField = (
-    tcId: number,
-    field: "input_data" | "expected_output" | "explanation" | "is_hidden",
-    value: string | boolean,
-  ) => {
-    setTestCases((prev) =>
-      prev.map((c) => (c.id === tcId ? { ...c, [field]: value } : c)),
-    );
-    const isRequiredField =
-      field === "input_data" || field === "expected_output";
-    if (typeof value === "string" && isRequiredField && !value.trim()) return;
-    const save = async () => {
-      try {
-        await updateCodingTestCase(exerciseId, tcId, { [field]: value });
-      } catch (err) {
-        notify.error(
-          err instanceof ApiError ? err.message : "Failed to save test case.",
-        );
-      }
-    };
-    if (typeof value === "boolean") {
-      save();
-    } else {
-      debounceSave(`test-case-${tcId}-${field}`, save);
-    }
-  };
-
-  const removeTestCase = async (tcId: number) => {
-    try {
-      const message = await deleteCodingTestCase(exerciseId, tcId);
-      setTestCases((prev) => prev.filter((c) => c.id !== tcId));
-      notify.success(message ?? "Test case deleted.");
-    } catch (err) {
-      notify.error(
-        err instanceof ApiError ? err.message : "Failed to delete test case.",
+          : err instanceof Error
+            ? err.message
+            : "Run failed.",
       );
     }
   };
@@ -391,7 +308,7 @@ export default function CodingExerciseBuilder({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-xl flex flex-col max-h-[94vh]">
+      <div className="bg-white rounded-2xl w-full max-w-3xl shadow-xl flex flex-col max-h-[94vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-(--gray-100)">
           <h3 className="text-[16px] lg:text-[20px] font-semibold text-(--text-title)">
@@ -433,99 +350,34 @@ export default function CodingExerciseBuilder({
               </div>
             </div>
 
-            {/* Description */}
+            {/* Problem Description */}
             <div className="space-y-1.5">
               <label className="text-[14px] font-normal text-(--text-title)">
-                Description
+                Problem Description
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 onBlur={handleDescriptionBlur}
-                rows={3}
-                placeholder="What will the student learn in this lesson"
+                rows={5}
+                placeholder="Describe the problem and the function(s) the student must implement..."
                 className="w-full px-3 py-3 mt-1 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
               />
             </div>
 
-            {/* Problem Statement */}
-            <div className="space-y-1.5">
-              <label className="text-[14px] font-normal text-(--text-title)">
-                Problem Statement
-              </label>
-              <textarea
-                value={problemStatement}
-                onChange={(e) => setProblemStatement(e.target.value)}
-                onBlur={handleProblemStatementBlur}
-                rows={6}
-                placeholder="Describe the problem the student needs to solve..."
-                className="w-full px-3 py-3 mt-1 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
-              />
-            </div>
-
-            {/* Difficulty */}
+            {/* Language */}
             <div className="space-y-2">
               <label className="text-[14px] font-normal text-(--text-title)">
-                Difficulty
-              </label>
-              <div className="flex gap-2 mt-1">
-                {DIFFICULTIES.map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => handleDifficultyChange(d)}
-                    className={`flex items-center gap-2 px-4 h-9 rounded-md text-[13px] border transition-colors cursor-pointer capitalize ${
-                      difficulty === d
-                        ? "bg-(--primary-700) text-white border-(--primary-700) font-semibold"
-                        : "border-(--gray-200) text-(--text-paragraph) hover:border-(--primary-300) hover:bg-(--primary-50)"
-                    }`}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Supported Languages */}
-            <div className="space-y-2">
-              <label className="text-[14px] font-normal text-(--text-title)">
-                Supported Languages
-              </label>
-              <div className="flex flex-wrap gap-3 mt-1">
-                {LANGUAGE_OPTIONS.map((opt) => (
-                  <label
-                    key={opt.value}
-                    className="flex items-center gap-2 px-3 h-10 border border-(--gray-200) rounded-lg cursor-pointer hover:bg-(--gray-50) transition-colors"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={supportedLanguages.includes(opt.value)}
-                      onChange={() => toggleSupportedLanguage(opt.value)}
-                      className="w-4 h-4 rounded border-(--gray-300) accent-(--primary-700) cursor-pointer"
-                    />
-                    <span className="text-[14px] text-(--text-title)">
-                      {opt.label}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Default Language */}
-            <div className="space-y-2">
-              <label className="text-[14px] font-normal text-(--text-title)">
-                Default Language
+                Language
               </label>
               <div className="flex flex-wrap gap-2 mt-1">
-                {LANGUAGE_OPTIONS.filter((opt) =>
-                  supportedLanguages.includes(opt.value),
-                ).map((opt) => (
+                {LANGUAGE_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
-                    onClick={() => handleDefaultLanguageChange(opt.value)}
+                    onClick={() => handleLanguageChange(opt.value)}
                     className={`px-4 h-9 rounded-md text-[13px] border transition-colors cursor-pointer ${
-                      defaultLanguage === opt.value
+                      language === opt.value
                         ? "bg-(--primary-700) text-white border-(--primary-700) font-semibold"
                         : "border-(--gray-200) text-(--text-paragraph) hover:border-(--primary-300) hover:bg-(--primary-50)"
                     }`}
@@ -533,11 +385,6 @@ export default function CodingExerciseBuilder({
                     {opt.label}
                   </button>
                 ))}
-                {supportedLanguages.length === 0 && (
-                  <p className="text-[12px] text-(--gray-500)">
-                    Select supported languages first.
-                  </p>
-                )}
               </div>
             </div>
 
@@ -555,261 +402,119 @@ export default function CodingExerciseBuilder({
                 placeholder="e.g. 2000"
                 className="w-full h-12 px-3 text-[14px] mt-1 border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
               />
+              <p className="text-[12px] text-(--gray-500)">
+                Wall-clock budget for the whole test suite.
+              </p>
             </div>
 
-            {/* Per-language code */}
-            <div className="space-y-2">
+            {/* Starter Code */}
+            <div className="space-y-1.5">
               <label className="text-[14px] font-normal text-(--text-title)">
-                Language Code
+                Starter Code
               </label>
-              {supportedLanguages.length === 0 ? (
-                <p className="text-[13px] text-(--gray-500)">
-                  Select supported languages to add starter/solution code.
-                </p>
-              ) : (
-                <>
-                  <div className="flex gap-2 mt-1 overflow-x-auto pb-1 scrollbar-none">
-                    {supportedLanguages.map((lang) => (
-                      <button
-                        key={lang}
-                        type="button"
-                        onClick={() => setActiveLanguage(lang)}
-                        className={`px-4 h-9 rounded-md text-[13px] border transition-colors cursor-pointer shrink-0 ${
-                          activeLanguage === lang
-                            ? "bg-(--primary-700) text-white border-(--primary-700) font-semibold"
-                            : "border-(--gray-200) text-(--text-paragraph) hover:border-(--primary-300) hover:bg-(--primary-50)"
-                        }`}
-                      >
-                        {languageLabel(lang)}
-                      </button>
-                    ))}
-                  </div>
-
-                  {activeLanguage &&
-                    (() => {
-                      const existing = configFor(activeLanguage);
-                      const draft = draftCode[activeLanguage] ?? {
-                        starter_code: "",
-                        solution_code: "",
-                      };
-                      return (
-                        <div className="border border-(--gray-200) rounded-xl p-4 space-y-3 mt-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[13px] font-semibold text-(--text-title)">
-                              {languageLabel(activeLanguage)}
-                            </span>
-                            {existing && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  removeLanguageConfig(existing.id)
-                                }
-                                className="text-red-400 hover:text-red-500 cursor-pointer transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-[13px] font-normal text-(--text-title)">
-                              Starter Code
-                            </label>
-                            <textarea
-                              value={
-                                existing
-                                  ? existing.starter_code
-                                  : draft.starter_code
-                              }
-                              onChange={(e) =>
-                                existing
-                                  ? updateExistingLanguageConfig(
-                                      existing.id,
-                                      "starter_code",
-                                      e.target.value,
-                                    )
-                                  : handleDraftChange(
-                                      activeLanguage,
-                                      "starter_code",
-                                      e.target.value,
-                                    )
-                              }
-                              rows={5}
-                              spellCheck={false}
-                              className="w-full px-3 py-2 mt-1 text-[13px] font-mono border border-(--gray-200) rounded-lg bg-white text-(--text-title) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
-                            />
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <label className="text-[13px] font-normal text-(--text-title)">
-                              Solution Code
-                            </label>
-                            <textarea
-                              value={
-                                existing
-                                  ? existing.solution_code
-                                  : draft.solution_code
-                              }
-                              onChange={(e) =>
-                                existing
-                                  ? updateExistingLanguageConfig(
-                                      existing.id,
-                                      "solution_code",
-                                      e.target.value,
-                                    )
-                                  : handleDraftChange(
-                                      activeLanguage,
-                                      "solution_code",
-                                      e.target.value,
-                                    )
-                              }
-                              rows={5}
-                              spellCheck={false}
-                              className="w-full px-3 py-2 mt-1 text-[13px] font-mono border border-(--gray-200) rounded-lg bg-white text-(--text-title) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
-                            />
-                          </div>
-
-                          {!existing && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                saveNewLanguageConfig(activeLanguage)
-                              }
-                              className="px-4 h-9 text-[13px] font-semibold bg-(--primary-700) hover:bg-(--primary-900) text-white rounded-md cursor-pointer transition-colors"
-                            >
-                              Save
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })()}
-                </>
-              )}
+              <p className="text-[12px] text-(--gray-500)">
+                Shown to the learner as their starting point — declare the
+                function signature(s) your test script will call.
+              </p>
+              <CodeEditor
+                language={language}
+                value={starterCode}
+                onChange={(v) => handleCodeChange("starter_code", v)}
+                placeholder={"def add(a, b):\n    pass"}
+                minHeight="140px"
+              />
             </div>
 
-            {/* Test Cases */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-[14px] font-normal text-(--text-title)">
-                  Test Cases
-                </label>
+            {/* Solution Code */}
+            <div className="space-y-1.5">
+              <label className="text-[14px] font-normal text-(--text-title)">
+                Solution Code
+              </label>
+              <p className="text-[12px] text-(--gray-500)">
+                Your reference implementation. Never shown to learners. Used by
+                Run Code / Run Tests below.
+              </p>
+              <CodeEditor
+                language={language}
+                value={solutionCode}
+                onChange={(v) => handleCodeChange("solution_code", v)}
+                placeholder={"def add(a, b):\n    return a + b"}
+                minHeight="180px"
+              />
+            </div>
+
+            {/* Evaluation Script */}
+            <div className="space-y-1.5">
+              <label className="text-[14px] font-normal text-(--text-title)">
+                Test Script (evaluate)
+              </label>
+              <p className="text-[12px] text-(--gray-500)">
+                Grades submissions by importing the learner&apos;s code and
+                asserting on it. Never shown to learners.
+                {language === "python" &&
+                  " Python: a unittest module — `from exercise import ...`."}
+                {language === "javascript" &&
+                  " JavaScript: `const ex = require('./exercise')` + node assert, register with test(name, fn)."}
+                {language === "java" &&
+                  " Java: public class Evaluate with public test*() methods; throw AssertionError to fail."}
+                {language === "cpp" &&
+                  ' C++: #include "exercise.h" + "testkit.h"; TEST(name) { ASSERT_EQ(...); }'}
+              </p>
+              <CodeEditor
+                language={language}
+                value={evaluationScript}
+                onChange={(v) => handleCodeChange("evaluation_script", v)}
+                placeholder={
+                  "import unittest\nfrom exercise import add\n\nclass AddTests(unittest.TestCase):\n    def test_small(self):\n        self.assertEqual(add(1, 2), 3)"
+                }
+                minHeight="220px"
+              />
+            </div>
+
+            {/* Run panel */}
+            <div ref={runPanelRef} className="space-y-2 scroll-mt-4">
+              <label className="text-[14px] font-normal text-(--text-title)">
+                Try It
+              </label>
+              <p className="text-[12px] text-(--gray-500)">
+                Runs your solution code in the sandbox. Run Code executes it
+                standalone (shows output); Run Tests grades it with your test
+                script — make sure everything passes before publishing.
+              </p>
+              <div className="flex items-center gap-2 mt-1">
                 <button
                   type="button"
-                  onClick={addTestCase}
-                  disabled={addingTestCase}
-                  className="flex items-center gap-1.5 text-[13px] font-medium text-(--primary-700) hover:text-(--primary-900) cursor-pointer transition-colors disabled:opacity-60"
+                  onClick={() => handleRun("code")}
+                  disabled={runningMode !== null}
+                  className="flex items-center gap-2 px-4 h-9 text-[13px] font-medium border border-(--gray-200) rounded-md text-(--text-title) hover:bg-(--gray-50) cursor-pointer transition-colors disabled:opacity-60"
                 >
-                  {addingTestCase ? (
+                  {runningMode === "code" ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <Plus className="w-4 h-4" />
+                    <Play className="w-4 h-4" />
                   )}
-                  Add Test Case
+                  Run Code
                 </button>
+                <button
+                  type="button"
+                  onClick={() => handleRun("tests")}
+                  disabled={runningMode !== null}
+                  className="flex items-center gap-2 px-4 h-9 text-[13px] font-semibold bg-(--primary-700) hover:bg-(--primary-900) text-white rounded-md cursor-pointer transition-colors disabled:opacity-60"
+                >
+                  {runningMode === "tests" ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <FlaskConical className="w-4 h-4" />
+                  )}
+                  Run Tests
+                </button>
+                {runLabel && (
+                  <span className="text-[13px] text-(--gray-500)">
+                    {runLabel}
+                  </span>
+                )}
               </div>
-
-              {testCases.length === 0 ? (
-                <div className="w-full mt-1 rounded-lg border border-dashed border-(--gray-200) bg-(--gray-50) flex items-center justify-center gap-2 py-5">
-                  <p className="text-[13px] text-(--gray-500)">
-                    No test cases yet.
-                  </p>
-                </div>
-              ) : (
-                <div className="mt-1 space-y-3">
-                  {testCases.map((c, i) => (
-                    <div
-                      key={c.id}
-                      className="border border-(--gray-200) rounded-xl p-4 space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[13px] font-semibold text-(--text-title)">
-                          Test Case {i + 1}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeTestCase(c.id)}
-                          className="text-red-400 hover:text-red-500 cursor-pointer transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[13px] font-normal text-(--text-title)">
-                          Input Data
-                        </label>
-                        <textarea
-                          value={c.input_data}
-                          onChange={(e) =>
-                            updateTestCaseField(
-                              c.id,
-                              "input_data",
-                              e.target.value,
-                            )
-                          }
-                          rows={2}
-                          placeholder="e.g. [1, 2, 3]"
-                          spellCheck={false}
-                          className="w-full px-3 py-2 mt-1 text-[13px] font-mono border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[13px] font-normal text-(--text-title)">
-                          Expected Output
-                        </label>
-                        <textarea
-                          value={c.expected_output}
-                          onChange={(e) =>
-                            updateTestCaseField(
-                              c.id,
-                              "expected_output",
-                              e.target.value,
-                            )
-                          }
-                          rows={2}
-                          placeholder="e.g. 6"
-                          spellCheck={false}
-                          className="w-full px-3 py-2 mt-1 text-[13px] font-mono border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[13px] font-normal text-(--text-title)">
-                          Explanation
-                        </label>
-                        <input
-                          type="text"
-                          value={c.explanation}
-                          onChange={(e) =>
-                            updateTestCaseField(
-                              c.id,
-                              "explanation",
-                              e.target.value,
-                            )
-                          }
-                          placeholder="Optional explanation for this test case"
-                          className="w-full h-10 px-3 mt-1 text-[13px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
-                        />
-                      </div>
-                      <label className="flex items-center gap-2 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={c.is_hidden}
-                          onChange={(e) =>
-                            updateTestCaseField(
-                              c.id,
-                              "is_hidden",
-                              e.target.checked,
-                            )
-                          }
-                          className="w-4 h-4 rounded border-(--gray-300) accent-(--primary-700) cursor-pointer"
-                        />
-                        <span className="text-[13px] text-(--text-title)">
-                          Hidden (grading only)
-                        </span>
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {runResult && <RunResultPanel result={runResult} />}
             </div>
           </div>
         )}
