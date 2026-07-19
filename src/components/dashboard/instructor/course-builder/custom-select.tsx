@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { useClickOutside } from "@/hooks/use-click-outside";
 
 export default function CustomSelect({
   label,
@@ -17,15 +18,10 @@ export default function CustomSelect({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  useClickOutside(
+    ref,
+    useCallback(() => setOpen(false), []),
+  );
 
   return (
     <div className="space-y-1.5" ref={ref}>

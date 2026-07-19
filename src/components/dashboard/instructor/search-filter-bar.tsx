@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { useClickOutside } from "@/hooks/use-click-outside";
 
 interface SearchFilterBarProps {
   searchPlaceholder?: string;
@@ -21,6 +22,12 @@ export default function SearchFilterBar({
   filterValue,
 }: SearchFilterBarProps) {
   const [dropOpen, setDropOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useClickOutside(
+    ref,
+    useCallback(() => setDropOpen(false), []),
+  );
 
   return (
     <div className="flex items-center justify-between gap-3 bg-white border border-(--gray-200) rounded-xl px-5 py-4">
@@ -37,7 +44,7 @@ export default function SearchFilterBar({
       </div>
 
       {/* Filter dropdown — standalone */}
-      <div className="relative">
+      <div className="relative" ref={ref}>
         <button
           onClick={() => setDropOpen((v) => !v)}
           className="flex items-center cursor-pointer gap-2 px-4 h-12 w-41.5 border border-(--gray-200) rounded-xl bg-white text-[13px] text-(--gray-600) hover:bg-(--gray-50) transition-colors"
@@ -58,7 +65,7 @@ export default function SearchFilterBar({
                   onFilterChange(opt);
                   setDropOpen(false);
                 }}
-                className={`w-full text-left px-4 py-2 text-[12px] transition-colors ${
+                className={`w-full text-left cursor-pointer px-4 py-2 text-[12px] transition-colors ${
                   opt === filterValue
                     ? "bg-(--primary-50) text-(--primary-600) font-semibold"
                     : "text-(--gray-600) hover:bg-(--gray-50)"

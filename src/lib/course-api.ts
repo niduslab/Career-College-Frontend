@@ -833,6 +833,17 @@ export async function retryCodingSubmission(
 }
 
 /** Create a new course. Uses multipart/form-data only when a thumbnail file is present. */
+/** List courses where the caller is the owner or an assigned instructor. */
+export async function listCourses(
+  page = 1,
+  pageSize = 8,
+): Promise<PaginatedResponse<Course>> {
+  const res = await apiGet<PaginatedResponse<Course>>(
+    `/courses/?page=${page}&page_size=${pageSize}`,
+  );
+  return res.data ?? { count: 0, next: null, previous: null, results: [] };
+}
+
 export async function createCourse(
   input: CourseCreateInput,
 ): Promise<WithMessage<Course>> {
