@@ -2,10 +2,29 @@
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { STATS } from "./data";
+import { STAT_ICONS } from "./data";
+import type { Course } from "./types";
 
-export default function CoursesStatsCards() {
+interface StatsCardsProps {
+  courses: Course[];
+}
+
+export default function CoursesStatsCards({ courses }: StatsCardsProps) {
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+
+  const total = courses.length;
+  const published = courses.filter((c) => c.status === "published").length;
+  const drafts = courses.filter((c) => c.status === "draft").length;
+  const pendingReview = courses.filter(
+    (c) => c.status === "under_review" || c.status === "institution_review",
+  ).length;
+
+  const stats = [
+    { label: "Total Courses", value: String(total) },
+    { label: "Published", value: String(published) },
+    { label: "Drafts", value: String(drafts) },
+    { label: "Pending Review", value: String(pendingReview) },
+  ];
 
   useEffect(() => {
     cardsRef.current.forEach((el, i) => {
@@ -16,12 +35,12 @@ export default function CoursesStatsCards() {
         { opacity: 1, y: 0, scale: 1, duration: 0.4, delay: i * 0.08, ease: "back.out(1.4)" },
       );
     });
-  }, []);
+  }, [total]);
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      {STATS.map((s, i) => {
-        const Icon = s.icon;
+      {stats.map((s, i) => {
+        const Icon = STAT_ICONS[i];
         return (
           <div
             key={s.label}
@@ -37,8 +56,6 @@ export default function CoursesStatsCards() {
                 <Icon className="w-6 h-6 xl:w-5 xl:h-5 text-(--primary-600)" />
               </div>
             </div>
-            <div className="border border-dashed border-gray-200 mt-1 mb-1" />
-            <p className="text-[12px] font-medium text-(--success-500)">{s.change}</p>
           </div>
         );
       })}

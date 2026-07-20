@@ -8,18 +8,13 @@ import { notify } from "@/lib/toast";
 
 interface AuthGuardProps {
   children: React.ReactNode;
-  /** Restrict to a specific user type. */
-  requireRole?: AuthUser["user_type"];
+  /** Restrict to a specific user type, or any of several. */
+  requireRole?: AuthUser["user_type"] | AuthUser["user_type"][];
   adminOnly?: boolean;
 }
 
 type Status = "checking" | "authorized";
 
-/**
- * Protects a page from unauthenticated access. If the user is not logged in, or
- * does not have the required role, they will be redirected to the login page or
- * their own dashboard.
- */
 export function AuthGuard({
   children,
   requireRole,
@@ -31,8 +26,6 @@ export function AuthGuard({
   useEffect(() => {
     let active = true;
 
-    // Defer redirects to the next tick — calling router.replace() synchronously
-    // in this effect can race Next.js's own router initialization on mount.
     const redirect = (path: string) => {
       setTimeout(() => {
         if (active) router.replace(path);
@@ -53,7 +46,16 @@ export function AuthGuard({
         return;
       }
 
-      if (requireRole && !user.is_staff && user.user_type !== requireRole) {
+      const allowedRoles = Array.isArray(requireRole)
+        ? requireRole
+        : requireRole
+          ? [requireRole]
+          : null;
+      if (
+        allowedRoles &&
+        !user.is_staff &&
+        !allowedRoles.includes(user.user_type)
+      ) {
         redirect(dashboardPathFor(user));
         return;
       }

@@ -2,10 +2,27 @@
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { STATS } from "./data";
+import { STAT_ICONS } from "./data";
+import type { Expert } from "./types";
 
-export default function InstructorsStatsCards() {
+interface StatsCardsProps {
+  experts: Expert[];
+}
+
+export default function InstructorsStatsCards({ experts }: StatsCardsProps) {
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+
+  const total = experts.length;
+  const active = experts.filter((e) => e.affiliation_status === "active").length;
+  const totalCourses = experts.reduce((sum, e) => sum + e.course_count, 0);
+  const activePct = total > 0 ? Math.round((active / total) * 100) : 0;
+
+  const stats = [
+    { label: "Total Experts", value: String(total) },
+    { label: "Active", value: String(active), change: `${activePct}% active rate` },
+    { label: "Departments", value: String(new Set(experts.map((e) => e.department?.id).filter(Boolean)).size) },
+    { label: "Total Courses", value: String(totalCourses) },
+  ];
 
   useEffect(() => {
     cardsRef.current.forEach((el, i) => {
@@ -16,12 +33,12 @@ export default function InstructorsStatsCards() {
         { opacity: 1, y: 0, scale: 1, duration: 0.4, delay: i * 0.08, ease: "back.out(1.4)" },
       );
     });
-  }, []);
+  }, [total]);
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      {STATS.map((s, i) => {
-        const Icon = s.icon;
+      {stats.map((s, i) => {
+        const Icon = STAT_ICONS[i];
         return (
           <div
             key={s.label}
@@ -37,8 +54,12 @@ export default function InstructorsStatsCards() {
                 <Icon className="w-6 h-6 xl:w-5 xl:h-5 text-(--primary-600)" />
               </div>
             </div>
-            <div className="border border-dashed border-gray-200 mt-1 mb-1" />
-            <p className="text-[12px] font-medium text-(--success-500)">{s.change}</p>
+            {s.change && (
+              <>
+                <div className="border border-dashed border-gray-200 mt-1 mb-1" />
+                <p className="text-[12px] font-medium text-(--success-500)">{s.change}</p>
+              </>
+            )}
           </div>
         );
       })}

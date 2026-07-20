@@ -1474,6 +1474,25 @@ export async function archiveCourse(
   return withMessage(res);
 }
 
+/**
+ * Institution forwards a course out of `institution_review` — either onward
+ * to the admin (`under_review`) or back to the expert (`rejected`, requires
+ * `rejectionReason`). Institution-owned courses only.
+ */
+export async function institutionReviewCourse(
+  courseId: number,
+  action: "submit" | "send_back",
+  rejectionReason?: string,
+): Promise<WithMessage<CourseStatusResult>> {
+  const res = await apiPost<CourseStatusResult>(
+    `/courses/${courseId}/institution-review/`,
+    action === "send_back"
+      ? { action, rejection_reason: rejectionReason }
+      : { action },
+  );
+  return withMessage(res);
+}
+
 // Course schedules (cohorts) — only valid on delivery_mode: "scheduled" courses.
 
 export type ScheduleStatus =

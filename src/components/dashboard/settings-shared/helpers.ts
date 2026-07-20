@@ -1,12 +1,8 @@
 import { config } from "@/lib/config";
-
-/**
- * Resolve a backend media path (e.g. "/media/photos/x.jpg") to an absolute URL.
- * The API base includes `/api/v1`, so strip it for asset paths.
- */
 export function mediaUrl(path: string | null): string | null {
   if (!path) return null;
-  if (path.startsWith("http")) return path;
+  // Already absolute (backend URL) or a local object/data URL — pass through untouched.
+  if (/^(https?|blob|data):/.test(path)) return path;
   const origin = config.apiBaseUrl.replace(/\/api\/v1\/?$/, "");
   return `${origin}${path}`;
 }
