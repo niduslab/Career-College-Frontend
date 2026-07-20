@@ -15,6 +15,7 @@ import ScheduleTab from "@/components/dashboard/instructor/course-builder/schedu
 import CurriculumTab from "@/components/dashboard/instructor/course-builder/curriculum-tab";
 import ReviewTab from "@/components/dashboard/instructor/course-builder/review-tab";
 import { createCourse, updateCourse, getCourse } from "@/lib/course-api";
+import { fetchMe } from "@/lib/auth-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 
@@ -70,9 +71,26 @@ export default function CourseBuilderPage() {
   const [courseSlug, setCourseSlug] = useState<string | null>(null);
   const [savingCourse, setSavingCourse] = useState(false);
   const [loadingCourse, setLoadingCourse] = useState(!!urlCourseId);
+  const [isInstitution, setIsInstitution] = useState(false);
 
-  const activeSteps =
-    form.deliveryMode === "scheduled" ? SCHEDULED_STEPS : SELF_PACED_STEPS;
+  useEffect(() => {
+    let active = true;
+    fetchMe().then((user) => {
+      if (active && user)
+        setIsInstitution(user.user_type === "partner_institution");
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Partner institutions own the course and assign an expert to build it —
+  // they never author curriculum content themselves, so Setup is their only step.
+  const activeSteps = isInstitution
+    ? SELF_PACED_STEPS.filter((s) => s.key === "Setup")
+    : form.deliveryMode === "scheduled"
+      ? SCHEDULED_STEPS
+      : SELF_PACED_STEPS;
 
   const updateUrl = (nextCourseId: number | null, nextStep: Step) => {
     const params = new URLSearchParams();
@@ -91,8 +109,10 @@ export default function CourseBuilderPage() {
 
   const goToNextStepFor = (id: number) => {
     setCourseIdState(id);
-    setActiveStepState(nextStepAfterSetup);
-    updateUrl(id, nextStepAfterSetup);
+    // (Assign Expert) section can render now that the course exists.
+    const nextStep = isInstitution ? "Setup" : nextStepAfterSetup;
+    setActiveStepState(nextStep);
+    updateUrl(id, nextStep);
   };
 
   // Resume an existing course (e.g. after a reload, or arriving from "Edit" in My Courses).
@@ -164,12 +184,10 @@ export default function CourseBuilderPage() {
           | "intermediate"
           | "advanced",
 
-         price: form.price,
+        price: form.price,
         duration_minutes: form.durationMinutes
           ? Number(form.durationMinutes)
           : undefined,
-
-       
 
         learning_objectives: form.learningObjectives,
         prerequisites: form.prerequisites,
@@ -262,6 +280,8 @@ export default function CourseBuilderPage() {
           setForm={setForm}
           onContinue={handleSetupContinue}
           saving={savingCourse}
+          courseId={courseId}
+          isInstitution={isInstitution}
         />
       )}
 

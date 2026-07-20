@@ -19,8 +19,16 @@ import CustomSelect from "./custom-select";
 import SearchableSelect from "./searchable-select";
 import { LEVELS } from "./constants";
 import { LANGUAGES } from "./languages";
-import { getCourseCategories, type CourseCategory } from "@/lib/course-api";
+import {
+  getCourseCategories,
+  getCourse,
+  type Course,
+  type CourseCategory,
+} from "@/lib/course-api";
 import { notify } from "@/lib/toast";
+import { ApiError } from "@/lib/api";
+import AssignExpertPanel from "@/components/dashboard/common/assign-expert-panel";
+import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
 
 interface OutlineWeek {
   id: number;
@@ -33,7 +41,7 @@ function nextOutlineRowId() {
   return outlineRowId;
 }
 
-/** "Week 1: HTML/CSS\nWeek 2: JavaScript" -> rows. Falls back to one row per line for text that doesn't match the "Week N: " pattern (e.g. a legacy freeform outline). */
+/** "Week 1: HTML/CSS\nWeek 2: JavaScript" -> rows. Falls back to one row per line for text that doesn't match. */
 function parseOutline(text: string): OutlineWeek[] {
   const lines = text.split("\n").filter((l) => l.trim());
   if (lines.length === 0) return [];
@@ -148,7 +156,6 @@ export interface SetupForm {
   thumbnailUrl: string | null;
   /** Set once at creation and immutable afterward — not editable here after the course exists. */
   deliveryMode: "self_paced" | "scheduled";
-  /** Only required (non-blank) before submission when deliveryMode is "scheduled". */
   courseOutline: string;
 }
 
@@ -174,15 +181,39 @@ export default function SetupTab({
   setForm,
   onContinue,
   saving,
+  courseId = null,
+  isInstitution = false,
 }: {
   form: SetupForm;
   setForm: React.Dispatch<React.SetStateAction<SetupForm>>;
   onContinue: () => void;
   saving?: boolean;
+  courseId?: number | null;
+  isInstitution?: boolean;
 }) {
   const [categoryOptions, setCategoryOptions] = useState<SelectOption[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [course, setCourse] = useState<Course | null>(null);
+  const [loadingCourse, setLoadingCourse] = useState(false);
+
+  const loadCourse = () => {
+    if (!courseId) return;
+    setLoadingCourse(true);
+    getCourse(courseId)
+      .then(setCourse)
+      .catch((err) => {
+        notify.error(
+          err instanceof ApiError ? err.message : "Failed to load course.",
+        );
+      })
+      .finally(() => setLoadingCourse(false));
+  };
+
+  useEffect(() => {
+    if (isInstitution && courseId) loadCourse();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInstitution, courseId]);
   const [errors, setErrors] = useState<{
     title?: string;
     categoryId?: string;
@@ -246,7 +277,11 @@ export default function SetupTab({
     if (isBlankHtml(form.description)) {
       next.description = "Description is required.";
     }
-    if (form.price.trim() === "" || isNaN(Number(form.price)) || Number(form.price) < 0) {
+    if (
+      form.price.trim() === "" ||
+      isNaN(Number(form.price)) ||
+      Number(form.price) < 0
+    ) {
       next.price = "Enter a valid price (0 or more).";
     }
     if (isBlankHtml(form.learningObjectives)) {
@@ -518,7 +553,7 @@ export default function SetupTab({
           >
             {form.thumbnailUrl ? (
               <Image
-                src={form.thumbnailUrl}
+                src={mediaUrl(form.thumbnailUrl) as string}
                 alt="Cover"
                 width={400}
                 height={225}
@@ -565,10 +600,27 @@ export default function SetupTab({
           className="px-5 h-12 text-[14px] cursor-pointer font-semibold bg-(--primary-600) hover:bg-(--primary-700) text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-          {saving ? "Saving…" : "Continue"}
-          {!saving && <ChevronRight className="w-4 h-4" />}
+          {saving
+            ? "Saving…"
+            : isInstitution && courseId !== null
+              ? "Save Changes"
+              : "Continue"}
+          {!saving && !isInstitution && <ChevronRight className="w-4 h-4" />}
         </button>
       </div>
+
+      {isInstitution && courseId !== null && (
+        <div>
+          {loadingCourse && !course ? (
+            <div className="flex items-center justify-center py-10 text-(--gray-500)">
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              Loading roster…
+            </div>
+          ) : course ? (
+            <AssignExpertPanel course={course} onChanged={loadCourse} />
+          ) : null}
+        </div>
+      )}
     </>
   );
 }

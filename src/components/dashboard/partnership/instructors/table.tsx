@@ -1,40 +1,57 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import gsap from "gsap";
 import {
   Search,
   ChevronDown,
   GraduationCap,
-  Star,
-  Plus,
-  Upload,
-  Mail,
+  Loader2,
 } from "lucide-react";
-import { INSTRUCTORS, DEPARTMENTS, SPECIALIZATIONS, STATUSES } from "./data";
-import { InstructorStatus, Department, Specialization } from "./types";
+import type { AffiliationStatus, Department, Expert } from "./types";
 import InstructorStatusBadge from "./status-badge";
 import InstructorActionMenu from "./action-menu";
+import { setExpertActive } from "@/lib/partner-api";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
 import dynamic from "next/dynamic";
 const AddInstructorDrawer = dynamic(() => import("./add-drawer"), { ssr: false });
 
-const COLS = "grid-cols-[2fr_1fr_1fr_70px_80px_90px_40px]";
+const COLS = "grid-cols-[2fr_1fr_1fr_70px_90px_40px]";
 
-export default function InstructorsTable() {
+const STATUS_OPTIONS: ("All" | AffiliationStatus)[] = ["All", "active", "removed"];
+const STATUS_LABEL: Record<"All" | AffiliationStatus, string> = {
+  All: "All",
+  active: "Active",
+  removed: "Removed",
+};
+
+interface TableProps {
+  experts: Expert[];
+  departments: Department[];
+  loading: boolean;
+  onRefresh: () => void;
+}
+
+export default function InstructorsTable({
+  experts,
+  departments,
+  loading,
+  onRefresh,
+}: TableProps) {
   const [search, setSearch] = useState("");
-  const [deptFilter, setDeptFilter] = useState<"All" | Department>("All");
-  const [specFilter, setSpecFilter] = useState<"All" | Specialization>("All");
-  const [statusFilter, setStatusFilter] = useState<"All" | InstructorStatus>(
+  const [deptFilter, setDeptFilter] = useState<"All" | number>("All");
+  const [statusFilter, setStatusFilter] = useState<"All" | AffiliationStatus>(
     "All",
   );
   const [deptOpen, setDeptOpen] = useState(false);
-  const [specOpen, setSpecOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editingExpert, setEditingExpert] = useState<Expert | null>(null);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
   const rowsRef = useRef<(HTMLDivElement | null)[]>([]);
-  const menuRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const menuRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
   useEffect(() => {
     rowsRef.current.forEach((el, i) => {
@@ -51,7 +68,7 @@ export default function InstructorsTable() {
         },
       );
     });
-  }, [search, deptFilter, specFilter, statusFilter]);
+  }, [search, deptFilter, statusFilter, experts]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -70,27 +87,46 @@ export default function InstructorsTable() {
 
   const closeAllFilters = () => {
     setDeptOpen(false);
-    setSpecOpen(false);
     setStatusOpen(false);
   };
 
-  const filtered = INSTRUCTORS.filter((inst) => {
+  const filtered = experts.filter((inst) => {
     const matchSearch =
-      inst.name.toLowerCase().includes(search.toLowerCase()) ||
+      inst.full_name.toLowerCase().includes(search.toLowerCase()) ||
       inst.email.toLowerCase().includes(search.toLowerCase());
-    const matchDept = deptFilter === "All" || inst.department === deptFilter;
-    const matchSpec =
-      specFilter === "All" || inst.specialization === specFilter;
-    const matchStatus = statusFilter === "All" || inst.status === statusFilter;
-    return matchSearch && matchDept && matchSpec && matchStatus;
+    const matchDept =
+      deptFilter === "All" || inst.department?.id === deptFilter;
+    const matchStatus =
+      statusFilter === "All" || inst.affiliation_status === statusFilter;
+    return matchSearch && matchDept && matchStatus;
   });
+
+  const handleToggleActive = async (expert: Expert) => {
+    setTogglingId(expert.id);
+    setOpenMenuId(null);
+    try {
+      await setExpertActive(expert.id, expert.affiliation_status !== "active");
+      notify.success(
+        expert.affiliation_status === "active"
+          ? "Expert deactivated."
+          : "Expert reactivated.",
+      );
+      onRefresh();
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to update expert.",
+      );
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   return (
     <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-4">
       {/* Header row */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <p className="text-[14px] lg:text-[16px] font-medium text-(--text-title)">
-          Instructor List
+          Expert List
           <span className="ml-2 text-[12px] font-normal text-(--gray-500)">
             ({filtered.length})
           </span>
@@ -99,25 +135,13 @@ export default function InstructorsTable() {
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
-            className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-(--gray-200) bg-white text-[13px] font-medium text-(--gray-600) hover:bg-(--gray-50) cursor-pointer transition-colors"
-          >
-            <Upload className="w-4 h-4" />
-            Bulk Add
-          </button>
-          <button
-            type="button"
-            className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-(--primary-600) text-(--primary-600) bg-white text-[13px] font-medium hover:bg-(--primary-50) cursor-pointer transition-colors"
-          >
-            <Mail className="w-4 h-4" />
-            Invite
-          </button>
-          <button
-            type="button"
-            onClick={() => setDrawerOpen(true)}
+            onClick={() => {
+              setEditingExpert(null);
+              setDrawerOpen(true);
+            }}
             className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-(--primary-700) text-white text-[13px] font-medium hover:bg-(--primary-600) cursor-pointer transition-colors"
           >
-            <Plus className="w-4 h-4" />
-            Add Instructor
+            Onboard Expert
           </button>
         </div>
       </div>
@@ -135,75 +159,49 @@ export default function InstructorsTable() {
           />
         </div>
 
-        <div className="grid grid-cols-3 md:flex md:items-center gap-2 md:ml-auto">
+        <div className="grid grid-cols-2 md:flex md:items-center gap-2 md:ml-auto">
           {/* Department */}
           <div className="relative">
             <button
               type="button"
               onClick={() => {
                 setDeptOpen((v) => !v);
-                setSpecOpen(false);
                 setStatusOpen(false);
               }}
               className="flex items-center gap-1.5 w-full h-10 px-3 border border-(--gray-200) rounded-lg bg-white text-[13px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors"
             >
               <span className="flex-1 text-left truncate">
-                {deptFilter === "All" ? "Department" : deptFilter}
+                {deptFilter === "All"
+                  ? "Department"
+                  : departments.find((d) => d.id === deptFilter)?.name ?? "Department"}
               </span>
               <ChevronDown
                 className={`w-4 h-4 text-(--gray-500) transition-transform shrink-0 ${deptOpen ? "rotate-180" : ""}`}
               />
             </button>
             {deptOpen && (
-              <div className="absolute left-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-20 py-1 min-w-44">
-                {DEPARTMENTS.map((d) => (
+              <div className="absolute left-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-20 py-1 min-w-44 max-h-52 overflow-y-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeptFilter("All");
+                    closeAllFilters();
+                  }}
+                  className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${deptFilter === "All" ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
+                >
+                  All Departments
+                </button>
+                {departments.map((d) => (
                   <button
-                    key={d}
+                    key={d.id}
                     type="button"
                     onClick={() => {
-                      setDeptFilter(d);
+                      setDeptFilter(d.id);
                       closeAllFilters();
                     }}
-                    className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${d === deptFilter ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
+                    className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${d.id === deptFilter ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
                   >
-                    {d === "All" ? "All Departments" : d}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Specialization */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                setSpecOpen((v) => !v);
-                setDeptOpen(false);
-                setStatusOpen(false);
-              }}
-              className="flex items-center gap-1.5 w-full h-10 px-3 border border-(--gray-200) rounded-lg bg-white text-[13px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors"
-            >
-              <span className="flex-1 text-left truncate">
-                {specFilter === "All" ? "Specialization" : specFilter}
-              </span>
-              <ChevronDown
-                className={`w-4 h-4 text-(--gray-500) transition-transform shrink-0 ${specOpen ? "rotate-180" : ""}`}
-              />
-            </button>
-            {specOpen && (
-              <div className="absolute left-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-20 py-1 min-w-40">
-                {SPECIALIZATIONS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => {
-                      setSpecFilter(s);
-                      closeAllFilters();
-                    }}
-                    className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${s === specFilter ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
-                  >
-                    {s === "All" ? "All Specializations" : s}
+                    {d.name}
                   </button>
                 ))}
               </div>
@@ -217,18 +215,17 @@ export default function InstructorsTable() {
               onClick={() => {
                 setStatusOpen((v) => !v);
                 setDeptOpen(false);
-                setSpecOpen(false);
               }}
               className="flex items-center gap-1.5 w-full h-10 px-3 border border-(--gray-200) rounded-lg bg-white text-[13px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors"
             >
-              <span className="flex-1 text-left">{statusFilter}</span>
+              <span className="flex-1 text-left">{STATUS_LABEL[statusFilter]}</span>
               <ChevronDown
                 className={`w-4 h-4 text-(--gray-500) transition-transform ${statusOpen ? "rotate-180" : ""}`}
               />
             </button>
             {statusOpen && (
               <div className="absolute right-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-20 py-1 min-w-32">
-                {STATUSES.map((st) => (
+                {STATUS_OPTIONS.map((st) => (
                   <button
                     key={st}
                     type="button"
@@ -238,7 +235,7 @@ export default function InstructorsTable() {
                     }}
                     className={`w-full text-left px-4 py-2 text-[12px] cursor-pointer transition-colors ${st === statusFilter ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
                   >
-                    {st}
+                    {STATUS_LABEL[st]}
                   </button>
                 ))}
               </div>
@@ -249,37 +246,37 @@ export default function InstructorsTable() {
 
       {/* Table */}
       <div className="overflow-x-auto -mx-5 px-5">
-        <div className="min-w-180">
+        <div className="min-w-160">
           {/* Header */}
           <div
             className={`grid ${COLS} px-3 pb-2 border-b border-(--gray-100)`}
           >
-            {[
-              "Instructor",
-              "Department",
-              "Specialization",
-              "Courses",
-              "Rating",
-              "Status",
-            ].map((h) => (
-              <p
-                key={h}
-                className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase"
-              >
-                {h}
-              </p>
-            ))}
+            {["Expert", "Department", "Specialization", "Courses", "Status"].map(
+              (h) => (
+                <p
+                  key={h}
+                  className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase"
+                >
+                  {h}
+                </p>
+              ),
+            )}
             <p className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-center">
               Action
             </p>
           </div>
 
           {/* Rows */}
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="py-12 text-center">
+              <Loader2 className="w-6 h-6 text-(--gray-400) mx-auto mb-2 animate-spin" />
+              <p className="text-[14px] text-(--gray-500)">Loading experts…</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="py-12 text-center">
               <GraduationCap className="w-8 h-8 text-(--gray-300) mx-auto mb-2" />
               <p className="text-[14px] text-(--gray-500)">
-                No instructors match your filters.
+                No experts match your filters.
               </p>
             </div>
           ) : (
@@ -292,18 +289,14 @@ export default function InstructorsTable() {
                   }}
                   className={`opacity-0 grid ${COLS} items-center px-3 py-3 rounded-xl hover:bg-(--gray-50) transition-colors`}
                 >
-                  {/* Instructor */}
+                  {/* Expert */}
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
-                      <Image
-                        src={inst.avatar}
-                        alt={inst.name}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-9 h-9 rounded-full bg-(--primary-50) flex items-center justify-center shrink-0 text-[13px] font-semibold text-(--primary-600)">
+                      {inst.full_name.charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
                       <p className="text-[13px] font-semibold text-(--text-title) truncate">
-                        {inst.name}
+                        {inst.full_name}
                       </p>
                       <p className="text-[12px] text-(--gray-500) truncate">
                         {inst.email}
@@ -313,35 +306,23 @@ export default function InstructorsTable() {
 
                   {/* Department */}
                   <p className="text-[12px] text-(--gray-600) truncate">
-                    {inst.department}
+                    {inst.department?.name ?? "—"}
                   </p>
 
                   {/* Specialization */}
                   <p className="text-[12px] text-(--gray-600) truncate">
-                    {inst.specialization}
+                    {inst.specialization.length > 0
+                      ? inst.specialization.join(", ")
+                      : "—"}
                   </p>
 
                   {/* Courses */}
                   <p className="text-[13px] font-semibold text-(--text-title)">
-                    {inst.courses}
+                    {inst.course_count}
                   </p>
 
-                  {/* Rating */}
-                  <div className="flex items-center gap-1">
-                    {inst.rating > 0 ? (
-                      <>
-                        <Star className="w-4 h-4 text-yellow-400 fill-yellow-400 shrink-0" />
-                        <span className="text-[13px] font-semibold text-(--text-title)">
-                          {inst.rating}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-[12px] text-(--gray-400)">—</span>
-                    )}
-                  </div>
-
                   {/* Status */}
-                  <InstructorStatusBadge status={inst.status} />
+                  <InstructorStatusBadge status={inst.affiliation_status} />
 
                   {/* Action */}
                   <div className="flex justify-center">
@@ -351,6 +332,14 @@ export default function InstructorsTable() {
                         setOpenMenuId(openMenuId === inst.id ? null : inst.id)
                       }
                       setRef={(el) => menuRefs.current.set(inst.id, el)}
+                      status={inst.affiliation_status}
+                      busy={togglingId === inst.id}
+                      onEdit={() => {
+                        setEditingExpert(inst);
+                        setDrawerOpen(true);
+                        setOpenMenuId(null);
+                      }}
+                      onToggleActive={() => handleToggleActive(inst)}
                     />
                   </div>
                 </div>
@@ -359,7 +348,13 @@ export default function InstructorsTable() {
           )}
         </div>
       </div>
-      <AddInstructorDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <AddInstructorDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        departments={departments}
+        editingExpert={editingExpert}
+        onSaved={onRefresh}
+      />
     </div>
   );
 }

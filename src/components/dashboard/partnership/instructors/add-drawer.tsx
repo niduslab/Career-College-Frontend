@@ -10,53 +10,73 @@ import {
   Zap,
   ChevronDown,
   GraduationCap,
+  Loader2,
 } from "lucide-react";
-import { Department, InstructorStatus, Specialization } from "./types";
-import { DEPARTMENTS, SPECIALIZATIONS, STATUSES } from "./data";
+import type { Department, Expert } from "./types";
+import { onboardExpert, updateExpert } from "@/lib/partner-api";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
 
 interface AddDrawerProps {
   open: boolean;
   onClose: () => void;
+  departments: Department[];
+  /** When set, the drawer edits this expert instead of onboarding a new one. */
+  editingExpert?: Expert | null;
+  onSaved: () => void;
 }
 
 interface FormState {
-  name: string;
+  full_name: string;
   email: string;
-  department: Department | "";
-  specialization: Specialization | "";
-  status: InstructorStatus;
-  note: string;
+  department_id: number | "";
+  specialization: string;
+  headline: string;
+  bio: string;
 }
 
 const INITIAL: FormState = {
-  name: "",
+  full_name: "",
   email: "",
-  department: "",
+  department_id: "",
   specialization: "",
-  status: "Active",
-  note: "",
+  headline: "",
+  bio: "",
 };
 
-const STATUS_COLOR: Record<InstructorStatus, string> = {
-  Active: "text-green-600",
-  Pending: "text-orange-500",
-  Inactive: "text-gray-500",
-};
-
-export default function AddInstructorDrawer({ open, onClose }: AddDrawerProps) {
+export default function AddInstructorDrawer({
+  open,
+  onClose,
+  departments,
+  editingExpert,
+  onSaved,
+}: AddDrawerProps) {
   const [form, setForm] = useState<FormState>(INITIAL);
   const [deptOpen, setDeptOpen] = useState(false);
-  const [specOpen, setSpecOpen] = useState(false);
-  const [statusOpen, setStatusOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<
     Partial<Record<keyof FormState, string>>
   >({});
   const firstInputRef = useRef<HTMLInputElement>(null);
 
+  const isEditing = !!editingExpert;
+
   useEffect(() => {
     let t: ReturnType<typeof setTimeout>;
     if (open) {
       document.body.style.overflow = "hidden";
+      if (editingExpert) {
+        setForm({
+          full_name: editingExpert.full_name,
+          email: editingExpert.email,
+          department_id: editingExpert.department?.id ?? "",
+          specialization: editingExpert.specialization.join(", "),
+          headline: editingExpert.headline,
+          bio: editingExpert.bio,
+        });
+      } else {
+        setForm(INITIAL);
+      }
       t = setTimeout(() => firstInputRef.current?.focus(), 300);
     } else {
       document.body.style.overflow = "";
@@ -64,15 +84,13 @@ export default function AddInstructorDrawer({ open, onClose }: AddDrawerProps) {
         setForm(INITIAL);
         setErrors({});
         setDeptOpen(false);
-        setSpecOpen(false);
-        setStatusOpen(false);
       }, 300);
     }
     return () => {
       clearTimeout(t);
       document.body.style.overflow = "";
     };
-  }, [open]);
+  }, [open, editingExpert]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -84,30 +102,58 @@ export default function AddInstructorDrawer({ open, onClose }: AddDrawerProps) {
 
   const validate = (): boolean => {
     const errs: Partial<Record<keyof FormState, string>> = {};
-    if (!form.name.trim()) errs.name = "Name is required";
-    if (!form.email.trim()) errs.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      errs.email = "Invalid email address";
-    if (!form.department) errs.department = "Select a department";
-    if (!form.specialization) errs.specialization = "Select a specialization";
+    if (!form.full_name.trim()) errs.full_name = "Name is required";
+    if (!isEditing) {
+      if (!form.email.trim()) errs.email = "Email is required";
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+        errs.email = "Invalid email address";
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    // TODO: connect to API
-    onClose();
+
+    const specialization = form.specialization
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    setSubmitting(true);
+    try {
+      if (isEditing && editingExpert) {
+        await updateExpert(editingExpert.id, {
+          headline: form.headline,
+          bio: form.bio,
+          specialization,
+          department_id: form.department_id === "" ? null : form.department_id,
+        });
+        notify.success("Expert updated.");
+      } else {
+        await onboardExpert({
+          full_name: form.full_name,
+          email: form.email,
+          headline: form.headline,
+          bio: form.bio,
+          specialization,
+          department_id: form.department_id === "" ? undefined : form.department_id,
+        });
+        notify.success("Expert onboarded. Login credentials have been emailed.");
+      }
+      onSaved();
+      onClose();
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to save expert.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const DEPT_OPTIONS = DEPARTMENTS.filter((d) => d !== "All") as Department[];
-  const SPEC_OPTIONS = SPECIALIZATIONS.filter(
-    (s) => s !== "All",
-  ) as Specialization[];
-  const STATUS_OPTIONS = STATUSES.filter(
-    (s) => s !== "All",
-  ) as InstructorStatus[];
+  const selectedDept = departments.find((d) => d.id === form.department_id);
 
   return createPortal(
     <>
@@ -129,10 +175,12 @@ export default function AddInstructorDrawer({ open, onClose }: AddDrawerProps) {
             </div>
             <div>
               <p className="text-[15px] font-semibold text-(--text-title)">
-                Add Instructor
+                {isEditing ? "Edit Expert" : "Onboard Expert"}
               </p>
               <p className="text-[12px] text-(--gray-500)">
-                Fill in the details below
+                {isEditing
+                  ? "Update this expert's profile"
+                  : "Login credentials will be emailed automatically"}
               </p>
             </div>
           </div>
@@ -160,18 +208,19 @@ export default function AddInstructorDrawer({ open, onClose }: AddDrawerProps) {
               <input
                 ref={firstInputRef}
                 type="text"
-                value={form.name}
+                value={form.full_name}
                 onChange={(e) => {
-                  setForm((f) => ({ ...f, name: e.target.value }));
-                  if (errors.name)
-                    setErrors((err) => ({ ...err, name: undefined }));
+                  setForm((f) => ({ ...f, full_name: e.target.value }));
+                  if (errors.full_name)
+                    setErrors((err) => ({ ...err, full_name: undefined }));
                 }}
+                disabled={isEditing}
                 placeholder="e.g. Dr. Sarah Kim"
-                className={`w-full h-10 pl-9 pr-4 text-[14px] border rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow ${errors.name ? "border-red-400" : "border-(--gray-200)"}`}
+                className={`w-full h-10 pl-9 pr-4 text-[14px] border rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow disabled:bg-(--gray-50) disabled:text-(--gray-500) ${errors.full_name ? "border-red-400" : "border-(--gray-200)"}`}
               />
             </div>
-            {errors.name && (
-              <p className="text-[12px] text-red-500">{errors.name}</p>
+            {errors.full_name && (
+              <p className="text-[12px] text-red-500">{errors.full_name}</p>
             )}
           </div>
 
@@ -190,8 +239,9 @@ export default function AddInstructorDrawer({ open, onClose }: AddDrawerProps) {
                   if (errors.email)
                     setErrors((err) => ({ ...err, email: undefined }));
                 }}
+                disabled={isEditing}
                 placeholder="e.g. sarah@university.edu"
-                className={`w-full h-10 pl-9 pr-4 text-[14px] border rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow ${errors.email ? "border-red-400" : "border-(--gray-200)"}`}
+                className={`w-full h-10 pl-9 pr-4 text-[14px] border rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow disabled:bg-(--gray-50) disabled:text-(--gray-500) ${errors.email ? "border-red-400" : "border-(--gray-200)"}`}
               />
             </div>
             {errors.email && (
@@ -202,168 +252,105 @@ export default function AddInstructorDrawer({ open, onClose }: AddDrawerProps) {
           {/* Department */}
           <div className="space-y-1.5">
             <label className="text-[14px] font-medium text-(--text-title)">
-              Department <span className="text-red-500">*</span>
+              Department
             </label>
             <div className="relative">
               <button
                 type="button"
-                onClick={() => {
-                  setDeptOpen((v) => !v);
-                  setSpecOpen(false);
-                  setStatusOpen(false);
-                }}
-                className={`flex items-center gap-2 w-full h-10 px-3 border rounded-lg bg-white text-[14px] cursor-pointer hover:bg-(--gray-50) transition-colors ${errors.department ? "border-red-400" : "border-(--gray-200)"}`}
+                onClick={() => setDeptOpen((v) => !v)}
+                className="flex items-center gap-2 w-full h-10 px-3 border border-(--gray-200) rounded-lg bg-white text-[14px] cursor-pointer hover:bg-(--gray-50) transition-colors"
               >
                 <Building2 className="w-4 h-4 text-(--gray-400) shrink-0" />
                 <span
-                  className={`flex-1 text-left ${form.department ? "text-(--text-title)" : "text-(--gray-400)"}`}
+                  className={`flex-1 text-left ${selectedDept ? "text-(--text-title)" : "text-(--gray-400)"}`}
                 >
-                  {form.department || "Select department"}
+                  {selectedDept ? selectedDept.name : "Select department (optional)"}
                 </span>
                 <ChevronDown
                   className={`w-4 h-4 text-(--gray-400) transition-transform shrink-0 ${deptOpen ? "rotate-180" : ""}`}
                 />
               </button>
               {deptOpen && (
-                <div className="absolute left-0 top-full mt-1 w-full bg-white border border-(--gray-200) rounded-xl shadow-lg z-10 py-1">
-                  {DEPT_OPTIONS.map((d) => (
+                <div className="absolute left-0 top-full mt-1 w-full bg-white border border-(--gray-200) rounded-xl shadow-lg z-10 py-1 max-h-52 overflow-y-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm((f) => ({ ...f, department_id: "" }));
+                      setDeptOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${form.department_id === "" ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
+                  >
+                    None
+                  </button>
+                  {departments.map((d) => (
                     <button
-                      key={d}
+                      key={d.id}
                       type="button"
                       onClick={() => {
-                        setForm((f) => ({ ...f, department: d }));
+                        setForm((f) => ({ ...f, department_id: d.id }));
                         setDeptOpen(false);
-                        if (errors.department)
-                          setErrors((err) => ({
-                            ...err,
-                            department: undefined,
-                          }));
                       }}
-                      className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${form.department === d ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
+                      className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${form.department_id === d.id ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
                     >
-                      {d}
+                      {d.name}
                     </button>
                   ))}
                 </div>
               )}
             </div>
-            {errors.department && (
-              <p className="text-[12px] text-red-500">{errors.department}</p>
-            )}
           </div>
 
           {/* Specialization */}
           <div className="space-y-1.5">
             <label className="text-[14px] font-medium text-(--text-title)">
-              Specialization <span className="text-red-500">*</span>
+              Specialization{" "}
+              <span className="text-[12px] text-(--gray-400) font-normal">
+                (comma-separated)
+              </span>
             </label>
             <div className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setSpecOpen((v) => !v);
-                  setDeptOpen(false);
-                  setStatusOpen(false);
-                }}
-                className={`flex items-center gap-2 w-full h-10 px-3 border rounded-lg bg-white text-[14px] cursor-pointer hover:bg-(--gray-50) transition-colors ${errors.specialization ? "border-red-400" : "border-(--gray-200)"}`}
-              >
-                <Zap className="w-4 h-4 text-(--gray-400) shrink-0" />
-                <span
-                  className={`flex-1 text-left ${form.specialization ? "text-(--text-title)" : "text-(--gray-400)"}`}
-                >
-                  {form.specialization || "Select specialization"}
-                </span>
-                <ChevronDown
-                  className={`w-4 h-4 text-(--gray-400) transition-transform shrink-0 ${specOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-              {specOpen && (
-                <div className="absolute left-0 top-full mt-1 w-full bg-white border border-(--gray-200) rounded-xl shadow-lg z-10 py-1 max-h-52 overflow-y-auto">
-                  {SPEC_OPTIONS.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => {
-                        setForm((f) => ({ ...f, specialization: s }));
-                        setSpecOpen(false);
-                        if (errors.specialization)
-                          setErrors((err) => ({
-                            ...err,
-                            specialization: undefined,
-                          }));
-                      }}
-                      className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${form.specialization === s ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            {errors.specialization && (
-              <p className="text-[12px] text-red-500">
-                {errors.specialization}
-              </p>
-            )}
-          </div>
-
-          {/* Status */}
-          <div className="space-y-1.5">
-            <label className="text-[14px] font-medium text-(--text-title)">
-              Status
-            </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setStatusOpen((v) => !v);
-                  setDeptOpen(false);
-                  setSpecOpen(false);
-                }}
-                className="flex items-center gap-2 w-full h-10 px-3 border border-(--gray-200) rounded-lg bg-white text-[14px] cursor-pointer hover:bg-(--gray-50) transition-colors"
-              >
-                <span
-                  className={`flex-1 text-left font-medium ${STATUS_COLOR[form.status]}`}
-                >
-                  {form.status}
-                </span>
-                <ChevronDown
-                  className={`w-4 h-4 text-(--gray-400) transition-transform shrink-0 ${statusOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-              {statusOpen && (
-                <div className="absolute left-0 top-full mt-1 w-full bg-white border border-(--gray-200) rounded-xl shadow-lg z-10 py-1">
-                  {STATUS_OPTIONS.map((st) => (
-                    <button
-                      key={st}
-                      type="button"
-                      onClick={() => {
-                        setForm((f) => ({ ...f, status: st }));
-                        setStatusOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors font-medium ${STATUS_COLOR[st]} ${form.status === st ? "bg-(--gray-50)" : "hover:bg-(--gray-50)"}`}
-                    >
-                      {st}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <Zap className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--gray-400)" />
+              <input
+                type="text"
+                value={form.specialization}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, specialization: e.target.value }))
+                }
+                placeholder="e.g. NLP, Computer Vision"
+                className="w-full h-10 pl-9 pr-4 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+              />
             </div>
           </div>
 
-          {/* Note */}
+          {/* Headline */}
           <div className="space-y-1.5">
             <label className="text-[14px] font-medium text-(--text-title)">
-              Note{" "}
+              Headline
+            </label>
+            <input
+              type="text"
+              value={form.headline}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, headline: e.target.value }))
+              }
+              placeholder="e.g. Senior ML Engineer"
+              className="w-full h-10 px-3 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+            />
+          </div>
+
+          {/* Bio */}
+          <div className="space-y-1.5">
+            <label className="text-[14px] font-medium text-(--text-title)">
+              Bio{" "}
               <span className="text-[12px] text-(--gray-400) font-normal">
                 (optional)
               </span>
             </label>
             <textarea
               rows={3}
-              value={form.note}
-              onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-              placeholder="Any additional notes about this instructor..."
+              value={form.bio}
+              onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
+              placeholder="A short professional bio..."
               className="w-full px-3 py-2.5 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow resize-none"
             />
           </div>
@@ -381,9 +368,11 @@ export default function AddInstructorDrawer({ open, onClose }: AddDrawerProps) {
           <button
             type="button"
             onClick={handleSubmit}
-            className="flex-1 h-10 rounded-lg bg-(--primary-700) text-white text-[14px] font-medium hover:bg-(--primary-600) cursor-pointer transition-colors"
+            disabled={submitting}
+            className="flex-1 flex items-center justify-center gap-1.5 h-10 rounded-lg bg-(--primary-700) text-white text-[14px] font-medium hover:bg-(--primary-600) cursor-pointer transition-colors disabled:opacity-60"
           >
-            Add Instructor
+            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isEditing ? "Save Changes" : "Onboard Expert"}
           </button>
         </div>
       </div>

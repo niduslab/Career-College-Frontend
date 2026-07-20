@@ -1,29 +1,101 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Sparkles, BookOpen } from "lucide-react";
 import gsap from "gsap";
 import CoursesStatsCards from "./stats-cards";
 import CoursesTable from "./table";
-import { TOP_COURSES, TIPS, COURSES } from "./data";
-import { CourseStatus } from "./types";
+import { TIPS } from "./data";
+import { listCourses, getCourseCategories } from "@/lib/course-api";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
+import type { Course, CourseCategory, CourseStatus } from "./types";
+
+const STATUS_BAR: Record<CourseStatus, string> = {
+  draft: "bg-gray-400",
+  institution_review: "bg-purple-500",
+  under_review: "bg-blue-500",
+  published: "bg-green-500",
+  rejected: "bg-red-400",
+  archived: "bg-orange-400",
+};
+
+const STATUS_TEXT: Record<CourseStatus, string> = {
+  draft: "text-gray-500",
+  institution_review: "text-purple-600",
+  under_review: "text-blue-600",
+  published: "text-green-600",
+  rejected: "text-red-500",
+  archived: "text-orange-500",
+};
+
+const STATUS_ROW_LABEL: Record<CourseStatus, string> = {
+  draft: "Draft",
+  institution_review: "Institution Review",
+  under_review: "Under Review",
+  published: "Published",
+  rejected: "Rejected",
+  archived: "Archived",
+};
+
+async function fetchCoursesAndCategories(): Promise<{
+  courses: Course[];
+  categories: CourseCategory[];
+} | null> {
+  try {
+    const [coursesRes, categories] = await Promise.all([
+      listCourses(1, 100),
+      getCourseCategories(),
+    ]);
+    return { courses: coursesRes.results, categories };
+  } catch (err) {
+    notify.error(
+      err instanceof ApiError ? err.message : "Failed to load courses.",
+    );
+    return null;
+  }
+}
 
 export default function CoursesPageContent() {
-  const barRef = useRef<(HTMLDivElement | null)[]>([]);
+  const router = useRouter();
   const breakdownRef = useRef<(HTMLDivElement | null)[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [categories, setCategories] = useState<CourseCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const maxEnrolled = Math.max(...TOP_COURSES.map((c) => c.enrolled));
+  const refresh = () => {
+    setLoading(true);
+    setRefreshKey((k) => k + 1);
+  };
 
   useEffect(() => {
-    barRef.current.forEach((el, i) => {
-      if (!el) return;
-      gsap.fromTo(
-        el,
-        { width: "0%" },
-        { width: `${el.dataset.progress}%`, duration: 0.8, delay: 0.3 + i * 0.1, ease: "power3.out" },
-      );
+    let active = true;
+    fetchCoursesAndCategories().then((result) => {
+      if (!active || !result) return;
+      setCourses(result.courses);
+      setCategories(result.categories);
+      setLoading(false);
     });
+    return () => {
+      active = false;
+    };
+  }, [refreshKey]);
+
+  const topCourses = [...courses]
+    .filter((c) => c.status === "published")
+    .slice(0, 5);
+
+  const statusBreakdown = (
+    Object.keys(STATUS_ROW_LABEL) as CourseStatus[]
+  ).map((st) => ({
+    status: st,
+    count: courses.filter((c) => c.status === st).length,
+  }));
+
+  useEffect(() => {
     breakdownRef.current.forEach((el) => {
       if (!el) return;
       gsap.fromTo(
@@ -32,52 +104,60 @@ export default function CoursesPageContent() {
         { width: `${el.dataset.progress}%`, duration: 0.8, delay: 0.5, ease: "power3.out" },
       );
     });
-  }, []);
+  }, [statusBreakdown]);
 
   return (
     <div className="flex flex-col xl:flex-row gap-5">
       {/* Left */}
       <div className="flex-1 min-w-0 space-y-5">
-        <CoursesStatsCards />
-        <CoursesTable />
+        <CoursesStatsCards courses={courses} />
+        <CoursesTable
+          courses={courses}
+          categories={categories}
+          loading={loading}
+          onRefresh={refresh}
+        />
       </div>
 
       {/* Right sidebar */}
       <div className="w-full xl:w-60 2xl:w-72 shrink-0 space-y-4">
-
-        {/* Top Courses by Enrollment */}
+        {/* Published courses */}
         <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-3">
           <p className="text-[12px] font-semibold tracking-widest text-(--gray-500) uppercase">
-            Top by Enrollment
+            Published Courses
           </p>
-          <div className="space-y-3">
-            {TOP_COURSES.map((c, i) => {
-              const pct = Math.round((c.enrolled / maxEnrolled) * 100);
-              return (
-                <div key={c.id} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0">
-                    <Image src={c.thumbnail} alt={c.title} className="w-full h-full object-cover" />
+          {topCourses.length === 0 ? (
+            <p className="text-[12px] text-(--gray-400)">No published courses yet.</p>
+          ) : (
+            <div className="space-y-2.5">
+              {topCourses.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => router.push(`/dashboard/partnership/courses/${c.id}`)}
+                  className="w-full flex items-center gap-3 text-left cursor-pointer hover:bg-(--gray-50) rounded-lg px-1.5 py-1 -mx-1.5 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 bg-(--gray-100) flex items-center justify-center">
+                    {c.thumbnail ? (
+                      <Image
+                        src={c.thumbnail}
+                        alt={c.title}
+                        width={32}
+                        height={32}
+                        unoptimized
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <BookOpen className="w-4 h-4 text-(--gray-400)" />
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <p className="text-[12px] font-medium text-(--text-title) truncate leading-snug">{c.title}</p>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1.5 bg-(--gray-100) rounded-full overflow-hidden">
-                        <div
-                          ref={(el) => { barRef.current[i] = el; }}
-                          data-progress={pct}
-                          className="h-full rounded-full bg-(--primary-600)"
-                          style={{ width: "0%" }}
-                        />
-                      </div>
-                      <span className="text-[12px] text-(--gray-500) shrink-0">
-                        {c.enrolled.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                  <p className="text-[12px] font-medium text-(--text-title) truncate leading-snug flex-1">
+                    {c.title}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Status Breakdown */}
@@ -86,31 +166,22 @@ export default function CoursesPageContent() {
             Status Breakdown
           </p>
           <div className="space-y-2">
-            {(["Published", "Draft", "Under Review", "Archived"] as CourseStatus[]).map((st, i) => {
-              const count = COURSES.filter((c) => c.status === st).length;
-              const pct = Math.round((count / COURSES.length) * 100);
-              const bar =
-                st === "Published" ? "bg-green-500"
-                : st === "Draft" ? "bg-gray-400"
-                : st === "Under Review" ? "bg-blue-500"
-                : "bg-orange-400";
-              const text =
-                st === "Published" ? "text-green-600"
-                : st === "Draft" ? "text-gray-500"
-                : st === "Under Review" ? "text-blue-600"
-                : "text-orange-500";
+            {statusBreakdown.map(({ status, count }, i) => {
+              const pct = courses.length > 0 ? Math.round((count / courses.length) * 100) : 0;
               return (
-                <div key={st} className="flex items-center gap-3">
-                  <span className="text-[11px] text-(--gray-600) w-20 shrink-0 truncate">{st}</span>
+                <div key={status} className="flex items-center gap-3">
+                  <span className="text-[11px] text-(--gray-600) w-24 shrink-0 truncate">
+                    {STATUS_ROW_LABEL[status]}
+                  </span>
                   <div className="flex-1 h-2 bg-(--gray-100) rounded-full overflow-hidden">
                     <div
                       ref={(el) => { breakdownRef.current[i] = el; }}
                       data-progress={pct}
-                      className={`h-full rounded-full ${bar}`}
+                      className={`h-full rounded-full ${STATUS_BAR[status]}`}
                       style={{ width: "0%" }}
                     />
                   </div>
-                  <span className={`text-[12px] font-semibold ${text} w-8 text-right shrink-0`}>
+                  <span className={`text-[12px] font-semibold ${STATUS_TEXT[status]} w-8 text-right shrink-0`}>
                     {pct}%
                   </span>
                 </div>
