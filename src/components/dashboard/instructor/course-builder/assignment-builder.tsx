@@ -9,6 +9,8 @@ import {
   GripVertical,
   ChevronUp,
   ChevronDown,
+  Sparkles,
+  Info,
 } from "lucide-react";
 import {
   DndContext,
@@ -42,6 +44,7 @@ import {
   updateAssignmentQuestion,
   deleteAssignmentQuestion,
   reorderAssignmentQuestions,
+  previewRubricFromModelAnswer,
   type RubricCriterionType,
 } from "@/lib/course-api";
 import { ApiError } from "@/lib/api";
@@ -127,6 +130,95 @@ function CriterionTypeDropdown({
   );
 }
 
+function RubricHelpTooltip() {
+  return (
+    <span className="relative inline-flex group align-middle">
+      <button
+        type="button"
+        tabIndex={0}
+        aria-label="How to write a rubric"
+        className="text-(--primary-700) hover:text-(--primary-900) cursor-help transition-colors"
+      >
+        <Info className="w-3.5 h-3.5" />
+      </button>
+      <span className="absolute left-0 top-full mt-1.5 z-50 max-h-[60vh] w-96 overflow-y-auto overscroll-contain rounded-lg border border-(--gray-200) bg-white p-3.5 text-left text-[11px] leading-relaxed text-(--gray-600) shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-opacity">
+        <span className="block font-semibold text-(--text-title) mb-1">
+          How grading works
+        </span>
+        Assignments are graded automatically — no manual marking. The rubric is
+        the answer key: a list of checks run against each learner&apos;s answer.
+        Each check that matches awards its points; the learner&apos;s score is
+        the sum, capped at the question&apos;s points.
+
+        <span className="mt-2 block font-semibold text-(--text-title)">
+          Building the rubric
+        </span>
+        Break the Model Answer into its key ideas, add one criterion per idea,
+        and give each a share of the points. The criteria points must add up to
+        the question&apos;s points before you can save.
+
+        <span className="mt-2 block font-semibold text-(--text-title)">
+          Criterion types
+        </span>
+        <span className="mt-0.5 block space-y-0.5">
+          <span className="block">
+            <span className="font-medium text-(--text-title)">Keyword</span> —
+            answer contains this exact word/phrase.
+          </span>
+          <span className="block">
+            <span className="font-medium text-(--text-title)">Any Of</span> —
+            answer contains at least one word from a list (good for synonyms).
+          </span>
+          <span className="block">
+            <span className="font-medium text-(--text-title)">All Of</span> —
+            answer contains every word in the list.
+          </span>
+          <span className="block">
+            <span className="font-medium text-(--text-title)">
+              Min / Max Length
+            </span>{" "}
+            — answer is at least / at most N characters.
+          </span>
+          <span className="block">
+            <span className="font-medium text-(--text-title)">Regex</span> —
+            answer matches a pattern (advanced).
+          </span>
+        </span>
+        <span className="mt-1 block text-(--gray-500)">
+          Prefer <span className="font-medium">Any Of</span> /{" "}
+          <span className="font-medium">All Of</span> over a single{" "}
+          <span className="font-medium">Keyword</span> so paraphrases and
+          synonyms still match.
+        </span>
+
+        <span className="mt-2 block font-semibold text-(--text-title)">
+          Generate from Model Answer
+        </span>
+        The button pulls the most significant words from your Model Answer and
+        splits them into All Of groups for you. It leaves the points at 0 — you
+        set them. Review and edit the groups, then Save.
+
+        <span className="mt-2 block font-semibold text-(--text-title)">
+          Example — question worth 2 pts
+        </span>
+        <span className="block mt-0.5 italic">
+          Model Answer: &ldquo;Django middleware is a plugin that intercepts the
+          request/response cycle.&rdquo;
+        </span>
+        <span className="mt-1.5 block rounded-md bg-(--gray-50) p-2 font-mono text-[10.5px] text-(--text-title)">
+          All Of [request, response] → 1 pt
+          <br />
+          Any Of [middleware, plugin, hook] → 1 pt
+        </span>
+        <span className="mt-1.5 block text-(--gray-500)">
+          Keep it coarse when points are low: grade only the ideas that
+          separate a right answer from a wrong one.
+        </span>
+      </span>
+    </span>
+  );
+}
+
 function QuestionCard({
   question,
   index,
@@ -158,9 +250,44 @@ function QuestionCard({
     isDragging,
   } = useSortable({ id: question.id });
   const [pointsInput, setPointsInput] = useState(String(question.points));
+  const [generating, setGenerating] = useState(false);
 
   const total = rubricTotal(question.rubricDraft);
   const rubricMismatch = total !== question.points;
+
+  // Ask the backend to build a keyword rubric from the model answer, then load
+  // it into the local draft so the instructor can review/edit before saving.
+  // This is the visible twin of the server-side Option B fallback: saving a
+  // question with a model answer but no rubric generates the same criteria.
+  const generateFromModelAnswer = async () => {
+    if (!question.model_answer.trim()) {
+      notify.error("Write a Model Answer first to generate a rubric.");
+      return;
+    }
+    setGenerating(true);
+    try {
+      const rubric = await previewRubricFromModelAnswer({
+        model_answer: question.model_answer,
+        points: question.points,
+      });
+      if (rubric.length === 0) {
+        notify.error(
+          "Could not extract keywords from the Model Answer. Add criteria manually.",
+        );
+        return;
+      }
+      onRubricDraftChange(rubric.map(toUiRubricCriterion));
+      notify.success(
+        `Generated ${rubric.length} criteria. Now assign points to each (must sum to ${question.points}), then Save Rubric Changes.`,
+      );
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to generate rubric.",
+      );
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const setCriterion = (idx: number, patch: Partial<UiRubricCriterion>) => {
     onRubricDraftChange(
@@ -268,8 +395,9 @@ function QuestionCard({
         {/* Rubric */}
         <div className="border border-(--gray-200) rounded-lg p-3 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] font-semibold text-(--text-title)">
+            <span className="flex items-center gap-1.5 text-[13px] font-semibold text-(--text-title)">
               Rubric Criteria
+              <RubricHelpTooltip />
             </span>
             <span
               className={`text-[12px] font-medium ${
@@ -282,7 +410,13 @@ function QuestionCard({
 
           {question.rubricDraft.length === 0 ? (
             <p className="text-[12px] text-(--gray-500)">
-              No criteria yet. Add at least one to grade this question.
+              No criteria yet. Add one manually, or click{" "}
+              <span className="font-medium text-(--primary-700)">
+                Generate from Model Answer
+              </span>{" "}
+              below. If you leave this empty, the Model Answer&apos;s keywords
+              are split into <span className="font-medium">All Of</span> groups
+              (points divided across them) when the question is saved.
             </p>
           ) : (
             <div className="space-y-3">
@@ -395,14 +529,30 @@ function QuestionCard({
           )}
 
           <div className="flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={addCriterion}
-              className="flex items-center gap-1.5 text-[12px] font-medium text-(--primary-700) hover:text-(--primary-900) cursor-pointer transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Criterion
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={addCriterion}
+                className="flex items-center gap-1.5 text-[12px] font-medium text-(--primary-700) hover:text-(--primary-900) cursor-pointer transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Criterion
+              </button>
+              <button
+                type="button"
+                onClick={generateFromModelAnswer}
+                disabled={generating}
+                title="Split the Model Answer's keywords into All Of groups"
+                className="flex items-center gap-1.5 text-[12px] font-medium text-(--primary-700) hover:text-(--primary-900) cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {generating ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5" />
+                )}
+                Generate from Model Answer
+              </button>
+            </div>
             <button
               type="button"
               onClick={onSaveRubric}
@@ -418,10 +568,31 @@ function QuestionCard({
               Rubric points must sum to exactly {question.points} before saving.
             </p>
           )}
-          <p className="text-[11px] text-(--gray-400)">
-            Rubric changes are not saved automatically — the question is
-            recreated on the backend when you click Save Rubric Changes.
-          </p>
+          <div className="space-y-1 rounded-md bg-(--gray-50) p-2.5 text-[11px] leading-relaxed text-(--gray-500)">
+            <p className="font-medium text-(--gray-600)">Good to know</p>
+            <p>
+              •{" "}
+              <span className="font-medium">Rubric is not autosaved.</span>{" "}
+              Click <span className="font-medium">Save Rubric Changes</span> to
+              keep your edits — the question is recreated on the backend when
+              you do. (Question text, Model Answer, points, and hint autosave on
+              their own.)
+            </p>
+            <p>
+              • <span className="font-medium">Leave the rubric empty</span> and
+              the backend builds one for you on save: it takes the key words
+              from your Model Answer, splits them into All Of groups, and
+              divides the question&apos;s points evenly across the groups.
+            </p>
+            <p>
+              • A question with{" "}
+              <span className="font-medium">
+                no rubric and no Model Answer
+              </span>{" "}
+              can&apos;t be graded, so every answer scores 0. Add a rubric or a
+              Model Answer to grade it.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -445,7 +616,6 @@ export default function AssignmentBuilder({
   const [instructions, setInstructions] = useState("");
   const [totalScore, setTotalScore] = useState("");
   const [passingScore, setPassingScore] = useState("");
-  const [maxScore, setMaxScore] = useState(0);
   const [questions, setQuestions] = useState<UiAssignmentQuestion[]>([]);
   const [addingQuestion, setAddingQuestion] = useState(false);
   const [deletingAssignment, setDeletingAssignment] = useState(false);
@@ -458,6 +628,31 @@ export default function AssignmentBuilder({
     totalScore !== "" &&
     parseFloat(passingScore) > parseFloat(totalScore);
 
+  // Live sum of every question's points (local, always current — unlike the
+  // backend-provided maxScore, which isn't refreshed on each points edit).
+  const questionPointsSum = questions.reduce((sum, q) => sum + q.points, 0);
+
+  // Done is only valid when the question points add up to the declared Total
+  // Score, so the assignment can actually award its full worth.
+  const handleDone = () => {
+    if (passingScoreError) {
+      notify.error("Passing score cannot exceed total score.");
+      return;
+    }
+    const total = parseFloat(totalScore);
+    if (totalScore === "" || Number.isNaN(total)) {
+      notify.error("Set a Total Score before finishing.");
+      return;
+    }
+    if (questionPointsSum !== total) {
+      notify.error(
+        `Question points add up to ${questionPointsSum}, but Total Score is ${total}. Make them match before finishing.`,
+      );
+      return;
+    }
+    onDone();
+  };
+
   useEffect(() => {
     let active = true;
     getAssignment(assignmentId)
@@ -468,7 +663,6 @@ export default function AssignmentBuilder({
         setInstructions(assignment.instructions ?? "");
         setTotalScore(String(assignment.total_score));
         setPassingScore(String(assignment.passing_score));
-        setMaxScore(assignment.max_score);
         setQuestions(
           assignment.questions.map((q) => ({
             ...q,
@@ -527,11 +721,10 @@ export default function AssignmentBuilder({
   const handleScoresBlur = async () => {
     if (passingScoreError || totalScore === "" || passingScore === "") return;
     try {
-      const { data } = await updateAssignment(assignmentId, {
+      await updateAssignment(assignmentId, {
         total_score: parseFloat(totalScore),
         passing_score: parseFloat(passingScore),
       });
-      setMaxScore(data.max_score);
     } catch (err) {
       notify.error(
         err instanceof ApiError ? err.message : "Failed to update scores.",
@@ -547,7 +740,7 @@ export default function AssignmentBuilder({
         {
           question_text: "New question",
           model_answer: "",
-          points: 10,
+          points: 0,
           hint: "",
           rubric: [],
         },
@@ -576,7 +769,22 @@ export default function AssignmentBuilder({
     if (field === "question_text" && !value.trim()) return;
     debounceSave(`question-${questionId}-${field}`, async () => {
       try {
-        await updateAssignmentQuestion(questionId, { [field]: value });
+        const { data } = await updateAssignmentQuestion(questionId, {
+          [field]: value,
+        });
+        // The backend auto-generates a keyword rubric from the model answer
+        // when the saved rubric is empty. Surface it in the draft — but only
+        // when the local draft is still empty, so we never clobber unsaved
+        // criteria the instructor is editing (mirrors the server precondition).
+        setQuestions((prev) =>
+          prev.map((q) =>
+            q.id === questionId &&
+            q.rubricDraft.length === 0 &&
+            data.rubric.length > 0
+              ? { ...q, rubricDraft: data.rubric.map(toUiRubricCriterion) }
+              : q,
+          ),
+        );
       } catch (err) {
         notify.error(
           err instanceof ApiError ? err.message : "Failed to save question.",
@@ -592,7 +800,27 @@ export default function AssignmentBuilder({
       prev.map((q) => (q.id === questionId ? { ...q, points: parsed } : q)),
     );
     try {
-      await updateAssignmentQuestion(questionId, { points: parsed });
+      const { data } = await updateAssignmentQuestion(questionId, {
+        points: parsed,
+      });
+      // Changing points re-distributes the auto-generated rubric server-side
+      // (when the saved rubric is empty). Adopt the fresh points + rubric so
+      // the criteria and the "total / points" indicator stay in sync — but
+      // don't overwrite an unsaved manual draft the instructor is editing.
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === questionId
+            ? {
+                ...q,
+                points: data.points,
+                rubricDraft:
+                  q.rubricDraft.length === 0 && data.rubric.length > 0
+                    ? data.rubric.map(toUiRubricCriterion)
+                    : q.rubricDraft,
+              }
+            : q,
+        ),
+      );
     } catch (err) {
       notify.error(
         err instanceof ApiError ? err.message : "Failed to save points.",
@@ -771,8 +999,15 @@ export default function AssignmentBuilder({
               <div className="space-y-1.5">
                 <label className="text-[14px] font-normal text-(--text-title)">
                   Total Score{" "}
-                  <span className="text-[12px] text-(--gray-400) font-normal">
-                    (sum of question points: {maxScore})
+                  <span
+                    className={`text-[12px] font-normal ${
+                      totalScore !== "" &&
+                      questionPointsSum !== parseFloat(totalScore)
+                        ? "text-red-500"
+                        : "text-(--gray-400)"
+                    }`}
+                  >
+                    (sum of question points: {questionPointsSum})
                   </span>
                 </label>
                 <input
@@ -890,7 +1125,7 @@ export default function AssignmentBuilder({
           </button>
           <div className="flex items-center gap-2">
             <button
-              onClick={onDone}
+              onClick={handleDone}
               className="flex-1 sm:flex-none px-5 h-10 text-[14px] font-semibold bg-(--primary-700) hover:bg-(--primary-900) text-white rounded-md cursor-pointer transition-colors whitespace-nowrap"
             >
               Done

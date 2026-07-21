@@ -1391,6 +1391,25 @@ export async function createAssignmentQuestion(
   return withMessage(res);
 }
 
+/**
+ * Preview the rubric that Option B auto-generation would build from a model
+ * answer. Stateless — does not save anything. The builder calls this so the
+ * instructor can see and edit the generated keyword criteria before saving.
+ * Mirrors the backend fallback: if a question is saved with a model answer but
+ * an empty rubric, the same rubric is generated server-side.
+ */
+export async function previewRubricFromModelAnswer(input: {
+  model_answer: string;
+  points: number;
+  max_terms?: number;
+}): Promise<RubricCriterion[]> {
+  const res = await apiPost<{ rubric: RubricCriterion[] }>(
+    `/courses/assignments/rubric-preview/`,
+    input,
+  );
+  return (res.data?.rubric ?? []) as RubricCriterion[];
+}
+
 export async function listAssignmentQuestions(
   assignmentId: number,
 ): Promise<AssignmentQuestion[]> {
