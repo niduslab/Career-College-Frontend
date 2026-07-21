@@ -1,5 +1,25 @@
 import { config } from "./config";
 
+/** Read a cookie by name (browser-only; returns undefined during SSR). */
+function getCookie(name: string): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  const match = document.cookie.match(
+    new RegExp(
+      `(?:^|; )${name.replace(/([.$?*|{}()[\]\\/+^])/g, "\\$1")}=([^;]*)`,
+    ),
+  );
+  return match ? decodeURIComponent(match[1]) : undefined;
+}
+
+/**
+ * Admin-console writes are session-authenticated (see admin_console app).
+ */
+function csrfHeaders(path: string): Record<string, string> {
+  if (!path.startsWith("/admin-console")) return {};
+  const token = getCookie("csrftoken");
+  return token ? { "X-CSRFToken": token } : {};
+}
+
 export interface ApiEnvelope<T = unknown> {
   success: boolean;
   // The backend is inconsistent: `message` is usually a string, but some
@@ -86,7 +106,10 @@ export async function apiPost<T = unknown>(
   try {
     res = await fetch(`${config.apiBaseUrl}${path}`, {
       method: "POST",
-      headers: isFormData ? undefined : { "Content-Type": "application/json" },
+      headers: {
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...csrfHeaders(path),
+      },
       credentials: "include",
       body: isFormData ? (body as FormData) : JSON.stringify(body),
     });
@@ -130,7 +153,10 @@ export async function apiPatch<T = unknown>(
   try {
     res = await fetch(`${config.apiBaseUrl}${path}`, {
       method: "PATCH",
-      headers: isFormData ? undefined : { "Content-Type": "application/json" },
+      headers: {
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...csrfHeaders(path),
+      },
       credentials: "include",
       body: isFormData ? (body as FormData) : JSON.stringify(body),
     });
@@ -154,6 +180,7 @@ export async function apiDelete(path: string): Promise<string | undefined> {
   try {
     res = await fetch(`${config.apiBaseUrl}${path}`, {
       method: "DELETE",
+      headers: csrfHeaders(path),
       credentials: "include",
     });
   } catch {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Search, ChevronDown, Download } from "lucide-react";
+import { Search, ChevronDown, Download, Loader2 } from "lucide-react";
 import { ROLES, STATUSES, UserRole, UserStatus } from "./data";
 
 interface FilterDropdownProps<T extends string> {
@@ -87,6 +87,8 @@ interface UsersFilterBarProps {
   onRoleToggle: () => void;
   statusOpen: boolean;
   onStatusToggle: () => void;
+  onExport?: () => void;
+  exporting?: boolean;
 }
 
 export default function UsersFilterBar({
@@ -100,6 +102,8 @@ export default function UsersFilterBar({
   onRoleToggle,
   statusOpen,
   onStatusToggle,
+  onExport,
+  exporting,
 }: UsersFilterBarProps) {
   return (
     <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -130,9 +134,17 @@ export default function UsersFilterBar({
           onToggle={onStatusToggle}
           onSelect={onStatusChange}
         />
-        <button className="text-[12px] cursor-pointer font-medium text-(--gray-600) border border-(--gray-200) rounded-lg px-3 py-2 flex items-center gap-1.5 hover:bg-(--gray-50) transition-colors">
-          <Download className="w-4 h-4" />
-          Export
+        <button
+          onClick={onExport}
+          disabled={exporting}
+          className="text-[12px] cursor-pointer font-medium text-(--gray-600) border border-(--gray-200) rounded-lg px-3 py-2 flex items-center gap-1.5 hover:bg-(--gray-50) transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {exporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          {exporting ? "Exporting…" : "Export"}
         </button>
       </div>
     </div>
