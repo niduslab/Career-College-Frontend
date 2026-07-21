@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { fetchMe, dashboardPathFor, type AuthUser } from "@/lib/auth-api";
+import {
+  fetchMe,
+  fetchAdminSession,
+  dashboardPathFor,
+  isAdminUser,
+  type AuthUser,
+} from "@/lib/auth-api";
 import { notify } from "@/lib/toast";
 
 interface AuthGuardProps {
@@ -32,7 +38,9 @@ export function AuthGuard({
       }, 0);
     };
 
-    fetchMe().then((user) => {
+    const check = adminOnly ? fetchAdminSession() : fetchMe();
+
+    check.then((user) => {
       if (!active) return;
 
       if (!user) {
@@ -41,7 +49,7 @@ export function AuthGuard({
         return;
       }
 
-      if (adminOnly && !user.is_staff) {
+      if (adminOnly && !isAdminUser(user)) {
         redirect(dashboardPathFor(user));
         return;
       }
@@ -53,7 +61,7 @@ export function AuthGuard({
           : null;
       if (
         allowedRoles &&
-        !user.is_staff &&
+        !isAdminUser(user) &&
         !allowedRoles.includes(user.user_type)
       ) {
         redirect(dashboardPathFor(user));
