@@ -2,12 +2,63 @@
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { STATS } from "./data";
+import { Users, UserCheck, UserPlus, UserX, Loader2 } from "lucide-react";
+import { useAdminAnalyticsSummary, useSuspendedUserCount } from "@/hooks/use-admin-analytics";
+
+function formatNumber(n: number): string {
+  return n.toLocaleString();
+}
+
+function formatPct(pct: number | null): string {
+  if (pct === null) return "—";
+  const sign = pct > 0 ? "+" : "";
+  return `${sign}${pct}%`;
+}
 
 export default function UsersStatsCards() {
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const { data: summary, isLoading: summaryLoading } = useAdminAnalyticsSummary();
+  const { data: suspendedCount, isLoading: suspendedLoading } = useSuspendedUserCount();
+
+  const isLoading = summaryLoading || suspendedLoading;
+  const users = summary?.users;
+
+  const activePct =
+    users && users.total > 0 ? Math.round((users.active / users.total) * 1000) / 10 : null;
+  const suspendedPct =
+    users && users.total > 0 && suspendedCount !== undefined
+      ? Math.round((suspendedCount / users.total) * 1000) / 10
+      : null;
+
+  const stats = [
+    {
+      label: "Total Users",
+      value: users ? formatNumber(users.total) : "—",
+      change: users ? `${formatPct(users.growth_pct)} vs previous 30 days` : "",
+      icon: Users,
+    },
+    {
+      label: "Active Users",
+      value: users ? formatNumber(users.active) : "—",
+      change: activePct !== null ? `${activePct}% of total` : "",
+      icon: UserCheck,
+    },
+    {
+      label: "New Signups",
+      value: users ? formatNumber(users.new_this_window) : "—",
+      change: "Last 30 days",
+      icon: UserPlus,
+    },
+    {
+      label: "Suspended",
+      value: suspendedCount !== undefined ? formatNumber(suspendedCount) : "—",
+      change: suspendedPct !== null ? `${suspendedPct}% of total` : "",
+      icon: UserX,
+    },
+  ];
 
   useEffect(() => {
+    if (isLoading) return;
     cardsRef.current.forEach((el, i) => {
       if (!el) return;
       gsap.fromTo(
@@ -23,11 +74,11 @@ export default function UsersStatsCards() {
         },
       );
     });
-  }, []);
+  }, [isLoading]);
 
   return (
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-      {STATS.map((s, i) => {
+      {stats.map((s, i) => {
         const Icon = s.icon;
         return (
           <div
@@ -35,7 +86,7 @@ export default function UsersStatsCards() {
             ref={(el) => {
               cardsRef.current[i] = el;
             }}
-            className="opacity-0 bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3"
+            className={`${isLoading ? "" : "opacity-0"} bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3`}
           >
             <div className="flex items-start justify-between">
               <div>
@@ -43,7 +94,11 @@ export default function UsersStatsCards() {
                   {s.label}
                 </p>
                 <p className="text-[20px] lg:text-[24px] font-semibold text-(--text-title) leading-none">
-                  {s.value}
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-(--gray-300)" />
+                  ) : (
+                    s.value
+                  )}
                 </p>
               </div>
               <div className="w-10 h-10 xl:w-8 xl:h-8 rounded-[6px_4px_6px_6px] flex items-center justify-center shrink-0 bg-(--primary-50) text-(--primary-600)">
@@ -52,7 +107,7 @@ export default function UsersStatsCards() {
             </div>
             <div className="border border-dashed border-gray-200" />
             <p className="text-[12px] font-medium text-(--gray-500)">
-              {s.change}
+              {isLoading ? "Loading…" : s.change}
             </p>
           </div>
         );
