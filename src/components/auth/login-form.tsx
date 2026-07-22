@@ -26,6 +26,7 @@ export function LoginForm() {
   const [errors, setErrors] = useState<
     Partial<Record<keyof LoginFormData, string>>
   >({});
+  const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -46,18 +47,30 @@ export function LoginForm() {
     }
 
     setSubmitting(true);
+    setFormError("");
     try {
       const user = await login(formData.email, formData.password);
       notify.success("Logged in successfully.");
       router.push(dashboardPathFor(user));
     } catch (err) {
       if (err instanceof ApiError) {
-        if (Object.keys(err.fieldErrors).length > 0) {
-          setErrors(
-            err.fieldErrors as Partial<Record<keyof LoginFormData, string>>,
-          );
+        // Only email/password map to inputs; anything else (e.g.
+        // `non_field_errors` for invalid credentials) is form-level.
+        const fieldErrors: Partial<Record<keyof LoginFormData, string>> = {};
+        for (const key of ["email", "password"] as const) {
+          if (err.fieldErrors[key]) fieldErrors[key] = err.fieldErrors[key];
         }
-        notify.error(err.detail);
+
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors(fieldErrors);
+        }
+        if (err.status === 0) {
+          // Network/connectivity failure — keep as toast.
+          notify.error(err.detail);
+        } else if (Object.keys(fieldErrors).length === 0) {
+          // Invalid credentials (or other non-field auth error) — show on form.
+          setFormError(err.detail);
+        }
       } else {
         notify.error("Something went wrong. Please try again.");
       }
@@ -69,6 +82,7 @@ export function LoginForm() {
   const updateField = (field: keyof LoginFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
+    setFormError("");
   };
 
   return (
@@ -81,6 +95,15 @@ export function LoginForm() {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {formError && (
+          <div
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 sg-caption text-red-600"
+          >
+            {formError}
+          </div>
+        )}
+
         {/* Email */}
         <div>
           <Label
