@@ -1,98 +1,50 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Search, ChevronDown, Download } from "lucide-react";
-import { STATUSES, ApprovalStatus } from "./data";
+import { Search, ChevronDown, Download, Loader2 } from "lucide-react";
 
-interface FilterDropdownProps<T extends string> {
-  label: string;
-  value: T | "All";
-  options: T[];
-  open: boolean;
-  onToggle: () => void;
-  onSelect: (value: T | "All") => void;
-}
+const DELIVERY_MODES = ["self_paced", "scheduled"] as const;
+type DeliveryModeFilter = (typeof DELIVERY_MODES)[number];
 
-function FilterDropdown<T extends string>({
-  label,
-  value,
-  options,
-  open,
-  onToggle,
-  onSelect,
-}: FilterDropdownProps<T>) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        onToggle();
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open, onToggle]);
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={onToggle}
-        className="text-[12px] cursor-pointer text-(--gray-600) border border-(--gray-200) rounded-lg px-3 py-2 flex items-center gap-1.5 hover:bg-(--gray-50) transition-colors"
-      >
-        {value === "All" ? label : value}
-        <ChevronDown
-          className={`w-4 h-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-      {open && (
-        <div className="absolute left-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-10 py-1 min-w-32.5">
-          <button
-            onClick={() => onSelect("All")}
-            className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-colors ${
-              value === "All"
-                ? "bg-(--primary-50) text-(--primary-600) font-semibold"
-                : "text-(--gray-600) hover:bg-(--gray-50)"
-            }`}
-          >
-            All {label}
-          </button>
-          {options.map((o) => (
-            <button
-              key={o}
-              onClick={() => onSelect(o)}
-              className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-colors ${
-                o === value
-                  ? "bg-(--primary-50) text-(--primary-600) font-semibold"
-                  : "text-(--gray-600) hover:bg-(--gray-50)"
-              }`}
-            >
-              {o}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+const DELIVERY_MODE_LABEL: Record<DeliveryModeFilter, string> = {
+  self_paced: "Self-paced",
+  scheduled: "Scheduled",
+};
 
 interface ApprovalsFilterBarProps {
   search: string;
   onSearchChange: (v: string) => void;
-  status: ApprovalStatus | "All";
-  onStatusChange: (v: ApprovalStatus | "All") => void;
-  statusOpen: boolean;
-  onStatusToggle: () => void;
+  deliveryMode: DeliveryModeFilter | "All";
+  onDeliveryModeChange: (v: DeliveryModeFilter | "All") => void;
+  deliveryModeOpen: boolean;
+  onDeliveryModeToggle: () => void;
+  onExport?: () => void;
+  exporting?: boolean;
 }
 
 export default function ApprovalsFilterBar({
   search,
   onSearchChange,
-  status,
-  onStatusChange,
-  statusOpen,
-  onStatusToggle,
+  deliveryMode,
+  onDeliveryModeChange,
+  deliveryModeOpen,
+  onDeliveryModeToggle,
+  onExport,
+  exporting,
 }: ApprovalsFilterBarProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!deliveryModeOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onDeliveryModeToggle();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [deliveryModeOpen, onDeliveryModeToggle]);
+
   return (
     <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
       <div className="relative flex-1 min-w-0">
@@ -106,17 +58,55 @@ export default function ApprovalsFilterBar({
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        <FilterDropdown
-          label="Status"
-          value={status}
-          options={STATUSES}
-          open={statusOpen}
-          onToggle={onStatusToggle}
-          onSelect={onStatusChange}
-        />
-        <button className="text-[12px] cursor-pointer font-medium text-(--gray-600) border border-(--gray-200) rounded-lg px-3 py-2 flex items-center gap-1.5 hover:bg-(--gray-50) transition-colors">
-          <Download className="w-4 h-4" />
-          Export
+        <div className="relative" ref={ref}>
+          <button
+            onClick={onDeliveryModeToggle}
+            className="text-[12px] cursor-pointer text-(--gray-600) border border-(--gray-200) rounded-lg px-3 py-2 flex items-center gap-1.5 hover:bg-(--gray-50) transition-colors"
+          >
+            {deliveryMode === "All" ? "Delivery Mode" : DELIVERY_MODE_LABEL[deliveryMode]}
+            <ChevronDown
+              className={`w-4 h-4 transition-transform duration-200 ${deliveryModeOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+          {deliveryModeOpen && (
+            <div className="absolute left-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-10 py-1 min-w-36">
+              <button
+                onClick={() => onDeliveryModeChange("All")}
+                className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-colors ${
+                  deliveryMode === "All"
+                    ? "bg-(--primary-50) text-(--primary-600) font-semibold"
+                    : "text-(--gray-600) hover:bg-(--gray-50)"
+                }`}
+              >
+                All Delivery Modes
+              </button>
+              {DELIVERY_MODES.map((m) => (
+                <button
+                  key={m}
+                  onClick={() => onDeliveryModeChange(m)}
+                  className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-colors ${
+                    m === deliveryMode
+                      ? "bg-(--primary-50) text-(--primary-600) font-semibold"
+                      : "text-(--gray-600) hover:bg-(--gray-50)"
+                  }`}
+                >
+                  {DELIVERY_MODE_LABEL[m]}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <button
+          onClick={onExport}
+          disabled={exporting}
+          className="text-[12px] cursor-pointer font-medium text-(--gray-600) border border-(--gray-200) rounded-lg px-3 py-2 flex items-center gap-1.5 hover:bg-(--gray-50) transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {exporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          {exporting ? "Exporting…" : "Export"}
         </button>
       </div>
     </div>
