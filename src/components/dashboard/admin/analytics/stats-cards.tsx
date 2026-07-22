@@ -2,12 +2,66 @@
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { STATS } from "./data";
+import { Users, GraduationCap, Wallet, BookOpen, Loader2 } from "lucide-react";
+import { useAdminAnalyticsSummary } from "@/hooks/use-admin-analytics";
+
+function formatNumber(n: number): string {
+  return n.toLocaleString();
+}
+
+function formatCurrency(n: number, currency: string): string {
+  return `${currency} ${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
+
+function formatPct(pct: number | null): string {
+  if (pct === null) return "—";
+  const sign = pct > 0 ? "+" : "";
+  return `${sign}${pct}%`;
+}
 
 export default function AnalyticsStatsCards() {
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const { data: summary, isLoading } = useAdminAnalyticsSummary();
+
+  const stats = [
+    {
+      label: "Total Users",
+      value: summary ? formatNumber(summary.users.total) : "—",
+      change: summary
+        ? `${formatPct(summary.users.growth_pct)} vs previous window`
+        : "",
+      icon: Users,
+    },
+    {
+      label: "Total Enrollments",
+      value: summary ? formatNumber(summary.enrollments.total) : "—",
+      change: summary
+        ? `${formatPct(summary.enrollments.growth_pct)} vs previous window`
+        : "",
+      icon: GraduationCap,
+    },
+    {
+      label: "Platform Revenue",
+      value: summary
+        ? summary.revenue.enabled
+          ? formatCurrency(summary.revenue.gross, summary.revenue.currency)
+          : "—"
+        : "—",
+      change: summary?.revenue.enabled
+        ? `${formatPct(summary.revenue.growth_pct)} vs previous window`
+        : "",
+      icon: Wallet,
+    },
+    {
+      label: "Active Courses",
+      value: summary ? formatNumber(summary.courses.published) : "—",
+      change: summary ? `${summary.courses.total} total courses` : "",
+      icon: BookOpen,
+    },
+  ];
 
   useEffect(() => {
+    if (isLoading) return;
     cardsRef.current.forEach((el, i) => {
       if (!el) return;
       gsap.fromTo(
@@ -23,11 +77,11 @@ export default function AnalyticsStatsCards() {
         },
       );
     });
-  }, []);
+  }, [isLoading]);
 
   return (
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-      {STATS.map((s, i) => {
+      {stats.map((s, i) => {
         const Icon = s.icon;
         return (
           <div
@@ -35,7 +89,7 @@ export default function AnalyticsStatsCards() {
             ref={(el) => {
               cardsRef.current[i] = el;
             }}
-            className="opacity-0 bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3"
+            className={`${isLoading ? "" : "opacity-0"} bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3`}
           >
             <div className="flex items-start justify-between">
               <div>
@@ -43,7 +97,11 @@ export default function AnalyticsStatsCards() {
                   {s.label}
                 </p>
                 <p className="text-[20px] lg:text-[24px] font-semibold text-(--text-title) leading-none">
-                  {s.value}
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-(--gray-300)" />
+                  ) : (
+                    s.value
+                  )}
                 </p>
               </div>
               <div className="w-10 h-10 xl:w-8 xl:h-8 rounded-[6px_4px_6px_6px] flex items-center justify-center shrink-0 bg-(--primary-50) text-(--primary-600)">
@@ -51,8 +109,8 @@ export default function AnalyticsStatsCards() {
               </div>
             </div>
             <div className="border border-dashed border-gray-200" />
-            <p className="text-[12px] font-medium text-(--success-500)">
-              {s.change}
+            <p className="text-[12px] font-medium text-(--gray-500)">
+              {isLoading ? "Loading…" : s.change}
             </p>
           </div>
         );
