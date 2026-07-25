@@ -11,12 +11,14 @@ import {
   Users,
   BookOpen,
   ShieldCheck,
+  BadgeCheck,
   GraduationCap,
   Building2,
   Flag,
   DollarSign,
   Wallet,
-  Activity,
+  Tag,
+  History,
   Settings,
 } from "lucide-react";
 
@@ -64,6 +66,11 @@ const navSections = [
         label: "Partners",
         href: "/dashboard/admin/partners",
       },
+      {
+        icon: Tag,
+        label: "Categories",
+        href: "/dashboard/admin/categories",
+      },
     ],
   },
   {
@@ -73,6 +80,11 @@ const navSections = [
         icon: Flag,
         label: "Moderation",
         href: "/dashboard/admin/moderation",
+      },
+      {
+        icon: BadgeCheck,
+        label: "Verification",
+        href: "/dashboard/admin/verification",
       },
     ],
   },
@@ -94,6 +106,11 @@ const navSections = [
   {
     label: "System",
     items: [
+      {
+        icon: History,
+        label: "Audit Log",
+        href: "/dashboard/admin/audit-log",
+      },
       {
         icon: Settings,
         label: "Settings",

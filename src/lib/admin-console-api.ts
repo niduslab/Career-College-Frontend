@@ -128,3 +128,38 @@ export async function changeUserRole(
   const res = await apiPost<AdminUser>(`/admin-console/users/${id}/role/`, args);
   return res.data as AdminUser;
 }
+
+export type AdminActionType = "suspend" | "reactivate" | "role_change";
+
+export interface AdminActionActor {
+  id: number;
+  full_name: string;
+  email: string;
+}
+
+export interface AdminActionLogEntry {
+  id: number;
+  action: AdminActionType;
+  actor: AdminActionActor | null;
+  target_user: AdminActionActor | null;
+  reason: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface ListAuditLogParams {
+  target_user_id?: number;
+  actor_id?: number;
+  action?: AdminActionType;
+  page?: number;
+  page_size?: number;
+}
+
+export async function listAuditLog(
+  params: ListAuditLogParams = {},
+): Promise<PaginatedResult<AdminActionLogEntry>> {
+  const res = (await apiGet(
+    `/admin-console/audit/${buildQuery({ ...params })}`,
+  )) as ApiEnvelope<PaginatedResult<AdminActionLogEntry>>;
+  return res.data ?? { count: 0, next: null, previous: null, results: [] };
+}
