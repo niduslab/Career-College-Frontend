@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   listPendingReviewCourses,
   reviewCourse,
+  archiveCourse,
+  restoreCourse,
   type ListPendingReviewParams,
 } from "@/lib/admin-courses-api";
 
@@ -30,5 +32,19 @@ export function useReviewCourse() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-pending-review"] });
     },
+  });
+}
+
+/** Archive any published course (admin override of owner scope). */
+export function useArchiveCourse() {
+  return useMutation({
+    mutationFn: (id: number) => archiveCourse(id),
+  });
+}
+
+/** Restore any archived course back to draft (admin override of owner scope). */
+export function useRestoreCourse() {
+  return useMutation({
+    mutationFn: (id: number) => restoreCourse(id),
   });
 }

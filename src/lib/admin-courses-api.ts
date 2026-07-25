@@ -92,3 +92,13 @@ export async function reviewCourse(
   });
   return res.data as AdminCourse;
 }
+
+export async function archiveCourse(id: number): Promise<AdminCourse> {
+  const res = await apiPost<AdminCourse>(`/courses/${id}/archive/`, {});
+  return res.data as AdminCourse;
+}
+
+export async function restoreCourse(id: number): Promise<AdminCourse> {
+  const res = await apiPost<AdminCourse>(`/courses/${id}/restore/`, {});
+  return res.data as AdminCourse;
+}
