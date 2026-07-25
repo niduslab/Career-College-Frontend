@@ -19,6 +19,8 @@ import {
   Wallet,
   Tag,
   History,
+  Archive,
+  ArchiveRestore,
   Settings,
 } from "lucide-react";
 
@@ -110,6 +112,16 @@ const navSections = [
         icon: History,
         label: "Audit Log",
         href: "/dashboard/admin/audit-log",
+      },
+      {
+        icon: Archive,
+        label: "Webinar Archive",
+        href: "/dashboard/admin/webinar-archive",
+      },
+      {
+        icon: ArchiveRestore,
+        label: "Course Archive",
+        href: "/dashboard/admin/course-archive",
       },
       {
         icon: Settings,
