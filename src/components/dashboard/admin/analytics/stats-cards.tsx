@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import gsap from "gsap";
 import { Users, GraduationCap, Wallet, BookOpen, Loader2 } from "lucide-react";
 import { useAdminAnalyticsSummary } from "@/hooks/use-admin-analytics";
@@ -20,7 +21,7 @@ function formatPct(pct: number | null): string {
 }
 
 export default function AnalyticsStatsCards() {
-  const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const cardsRef = useRef<(HTMLDivElement | HTMLAnchorElement | null)[]>([]);
   const { data: summary, isLoading } = useAdminAnalyticsSummary();
 
   const stats = [
@@ -31,6 +32,7 @@ export default function AnalyticsStatsCards() {
         ? `${formatPct(summary.users.growth_pct)} vs previous window`
         : "",
       icon: Users,
+      href: "/dashboard/admin/users",
     },
     {
       label: "Total Enrollments",
@@ -39,6 +41,7 @@ export default function AnalyticsStatsCards() {
         ? `${formatPct(summary.enrollments.growth_pct)} vs previous window`
         : "",
       icon: GraduationCap,
+      href: undefined,
     },
     {
       label: "Platform Revenue",
@@ -51,12 +54,14 @@ export default function AnalyticsStatsCards() {
         ? `${formatPct(summary.revenue.growth_pct)} vs previous window`
         : "",
       icon: Wallet,
+      href: "/dashboard/admin/revenue",
     },
     {
       label: "Active Courses",
       value: summary ? formatNumber(summary.courses.published) : "—",
       change: summary ? `${summary.courses.total} total courses` : "",
       icon: BookOpen,
+      href: "/dashboard/admin/courses",
     },
   ];
 
@@ -83,14 +88,11 @@ export default function AnalyticsStatsCards() {
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
       {stats.map((s, i) => {
         const Icon = s.icon;
-        return (
-          <div
-            key={s.label}
-            ref={(el) => {
-              cardsRef.current[i] = el;
-            }}
-            className={`${isLoading ? "" : "opacity-0"} bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3`}
-          >
+        const cardClassName = `${isLoading ? "" : "opacity-0"} bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3 ${
+          s.href ? "hover:border-(--primary-200) hover:shadow-sm transition-all cursor-pointer" : ""
+        }`;
+        const content = (
+          <>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[12px] text-(--gray-500) font-normal mb-2">
@@ -112,6 +114,33 @@ export default function AnalyticsStatsCards() {
             <p className="text-[12px] font-medium text-(--gray-500)">
               {isLoading ? "Loading…" : s.change}
             </p>
+          </>
+        );
+
+        if (s.href) {
+          return (
+            <Link
+              key={s.label}
+              href={s.href}
+              ref={(el) => {
+                cardsRef.current[i] = el;
+              }}
+              className={cardClassName}
+            >
+              {content}
+            </Link>
+          );
+        }
+
+        return (
+          <div
+            key={s.label}
+            ref={(el) => {
+              cardsRef.current[i] = el;
+            }}
+            className={cardClassName}
+          >
+            {content}
           </div>
         );
       })}

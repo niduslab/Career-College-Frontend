@@ -6,7 +6,7 @@ export default function AdminDashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title="Welcome back, Al Amin."
-        subtitle="18 courses are flagged for review and 3 partner applications are awaiting verification."
+        subtitle="Platform-wide performance across users, enrollments, courses, and revenue."
       />
 
       <AdminDashboard />

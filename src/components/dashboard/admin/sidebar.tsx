@@ -7,11 +7,9 @@ import {
   X,
   BookOpenText,
   LayoutDashboard,
-  ChartColumn,
   Users,
   BookOpen,
   ShieldCheck,
-  BadgeCheck,
   GraduationCap,
   Building2,
   Flag,
@@ -22,9 +20,22 @@ import {
   Archive,
   ArchiveRestore,
   Settings,
+  ChevronDown,
 } from "lucide-react";
 
-const navSections = [
+interface NavChild {
+  label: string;
+  href: string;
+}
+
+interface NavItem {
+  icon: typeof ShieldCheck;
+  label: string;
+  href?: string;
+  children?: NavChild[];
+}
+
+const navSections: { label: string; items: NavItem[] }[] = [
   {
     label: "Overview",
     items: [
@@ -32,11 +43,6 @@ const navSections = [
         icon: LayoutDashboard,
         label: "Dashboard",
         href: "/dashboard/admin",
-      },
-      {
-        icon: ChartColumn,
-        label: "Analytics",
-        href: "/dashboard/admin/analytics",
       },
     ],
   },
@@ -56,7 +62,10 @@ const navSections = [
       {
         icon: ShieldCheck,
         label: "Approvals",
-        href: "/dashboard/admin/approvals",
+        children: [
+          { label: "Course Approvals", href: "/dashboard/admin/approvals" },
+          { label: "Verification", href: "/dashboard/admin/verification" },
+        ],
       },
       {
         icon: GraduationCap,
@@ -82,11 +91,6 @@ const navSections = [
         icon: Flag,
         label: "Moderation",
         href: "/dashboard/admin/moderation",
-      },
-      {
-        icon: BadgeCheck,
-        label: "Verification",
-        href: "/dashboard/admin/verification",
       },
     ],
   },
@@ -135,6 +139,12 @@ const navSections = [
 export default function AdminSidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState<string[]>(() =>
+    navSections
+      .flatMap((s) => s.items)
+      .filter((item) => item.children?.some((c) => c.href === pathname))
+      .map((item) => item.label),
+  );
 
   useEffect(() => {
     const handler = () => setOpen((v) => !v);
@@ -143,6 +153,12 @@ export default function AdminSidebar() {
   }, []);
 
   const close = () => setOpen(false);
+
+  const toggleExpanded = (label: string) => {
+    setExpanded((prev) =>
+      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label],
+    );
+  };
 
   return (
     <>
@@ -187,12 +203,64 @@ export default function AdminSidebar() {
                 {section.label}
               </p>
               <ul className="space-y-1.5">
-                {section.items.map(({ icon: Icon, label, href }) => {
-                  const active = pathname === href;
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+
+                  if (item.children) {
+                    const isExpanded = expanded.includes(item.label);
+                    const hasActiveChild = item.children.some(
+                      (c) => c.href === pathname,
+                    );
+                    return (
+                      <li key={item.label}>
+                        <button
+                          type="button"
+                          onClick={() => toggleExpanded(item.label)}
+                          className={`w-full flex items-center gap-3 h-9 px-3 py-2 rounded-lg text-[14px] transition-colors cursor-pointer ${
+                            hasActiveChild
+                              ? "bg-(--primary-50) font-medium text-(--primary-600)"
+                              : "text-(--gray-600) font-normal hover:bg-(--gray-100) hover:text-(--text-title)"
+                          }`}
+                        >
+                          <Icon
+                            className={`w-4 h-4 shrink-0 ${hasActiveChild ? "text-(--primary-600)" : "text-(--gray-500)"}`}
+                          />
+                          <span className="flex-1 text-left">{item.label}</span>
+                          <ChevronDown
+                            className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                          />
+                        </button>
+                        {isExpanded && (
+                          <ul className="mt-1 space-y-1 pl-9">
+                            {item.children.map((child) => {
+                              const childActive = pathname === child.href;
+                              return (
+                                <li key={child.href}>
+                                  <Link
+                                    href={child.href}
+                                    onClick={close}
+                                    className={`block h-8 px-3 py-1.5 rounded-lg text-[13px] transition-colors ${
+                                      childActive
+                                        ? "bg-(--primary-600) font-medium text-white hover:bg-(--primary-700)"
+                                        : "text-(--gray-500) font-normal hover:bg-(--gray-100) hover:text-(--text-title)"
+                                    }`}
+                                  >
+                                    {child.label}
+                                  </Link>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </li>
+                    );
+                  }
+
+                  const active = pathname === item.href;
                   return (
-                    <li key={href}>
+                    <li key={item.href}>
                       <Link
-                        href={href}
+                        href={item.href as string}
                         onClick={close}
                         className={`flex items-center gap-3 h-9 px-3 py-2 rounded-lg text-[14px] transition-colors ${
                           active
@@ -203,7 +271,7 @@ export default function AdminSidebar() {
                         <Icon
                           className={`w-4 h-4 shrink-0 ${active ? "text-white" : "text-(--gray-500)"}`}
                         />
-                        {label}
+                        {item.label}
                       </Link>
                     </li>
                   );

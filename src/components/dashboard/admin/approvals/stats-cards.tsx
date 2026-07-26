@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { Clock, CheckCircle2, FileEdit, XCircle, Loader2 } from "lucide-react";
+import { Clock, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { useAdminAnalyticsSummary } from "@/hooks/use-admin-analytics";
 
 function formatNumber(n: number): string {
@@ -28,12 +28,6 @@ export default function ApprovalsStatsCards() {
       value: courses ? formatNumber(courses.published) : "—",
       change: "Live on the platform",
       icon: CheckCircle2,
-    },
-    {
-      label: "Draft",
-      value: courses ? formatNumber(courses.draft) : "—",
-      change: "Not yet submitted",
-      icon: FileEdit,
     },
     {
       label: "Rejected",
@@ -63,7 +57,7 @@ export default function ApprovalsStatsCards() {
   }, [isLoading]);
 
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
       {stats.map((s, i) => {
         const Icon = s.icon;
         return (
