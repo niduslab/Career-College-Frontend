@@ -12,6 +12,7 @@ import SetupTab, {
   type SetupForm,
 } from "@/components/dashboard/instructor/course-builder/setup-tab";
 import ScheduleTab from "@/components/dashboard/instructor/course-builder/schedule-tab";
+import TeamTab from "@/components/dashboard/instructor/course-builder/team-tab";
 import CurriculumTab from "@/components/dashboard/instructor/course-builder/curriculum-tab";
 import ReviewTab from "@/components/dashboard/instructor/course-builder/review-tab";
 import { createCourse, updateCourse, getCourse } from "@/lib/course-api";
@@ -39,12 +40,14 @@ const INITIAL_FORM: SetupForm = {
 
 const STEP_TO_PARAM: Record<Step, string> = {
   Setup: "setup",
+  Team: "team",
   Schedule: "schedule",
   Curriculum: "curriculum",
   Review: "review",
 };
 const PARAM_TO_STEP: Record<string, Step> = {
   setup: "Setup",
+  team: "Team",
   schedule: "Schedule",
   curriculum: "Curriculum",
   review: "Review",
@@ -72,12 +75,16 @@ export default function CourseBuilderPage() {
   const [savingCourse, setSavingCourse] = useState(false);
   const [loadingCourse, setLoadingCourse] = useState(!!urlCourseId);
   const [isInstitution, setIsInstitution] = useState(false);
+  const [myUserId, setMyUserId] = useState<number | null>(null);
+  const [courseOwnerId, setCourseOwnerId] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
     fetchMe().then((user) => {
-      if (active && user)
+      if (active && user) {
         setIsInstitution(user.user_type === "partner_institution");
+        setMyUserId(user.user_id);
+      }
     });
     return () => {
       active = false;
@@ -86,11 +93,12 @@ export default function CourseBuilderPage() {
 
   // Partner institutions own the course and assign an expert to build it —
   // they never author curriculum content themselves, so Setup is their only step.
+  // Individual instructors get a "Team" step to invite co-instructors.
   const activeSteps = isInstitution
     ? SELF_PACED_STEPS.filter((s) => s.key === "Setup")
-    : form.deliveryMode === "scheduled"
-      ? SCHEDULED_STEPS
-      : SELF_PACED_STEPS;
+    : (form.deliveryMode === "scheduled" ? SCHEDULED_STEPS : SELF_PACED_STEPS);
+
+  const isOwner = myUserId !== null && myUserId === courseOwnerId;
 
   const updateUrl = (nextCourseId: number | null, nextStep: Step) => {
     const params = new URLSearchParams();
@@ -104,11 +112,13 @@ export default function CourseBuilderPage() {
     updateUrl(courseId, step);
   };
 
-  const nextStepAfterSetup: Step =
+  const nextStepAfterSetup: Step = "Team";
+  const nextStepAfterTeam: Step =
     form.deliveryMode === "scheduled" ? "Schedule" : "Curriculum";
 
-  const goToNextStepFor = (id: number) => {
+  const goToNextStepFor = (id: number, ownerId: number | null) => {
     setCourseIdState(id);
+    setCourseOwnerId(ownerId);
     // (Assign Expert) section can render now that the course exists.
     const nextStep = isInstitution ? "Setup" : nextStepAfterSetup;
     setActiveStepState(nextStep);
@@ -123,6 +133,7 @@ export default function CourseBuilderPage() {
       .then((course) => {
         if (!active) return;
         setCourseSlug(course.slug);
+        setCourseOwnerId(course.created_by?.id ?? null);
         setForm({
           title: course.title,
           categoryId: course.category?.id ?? null,
@@ -202,11 +213,15 @@ export default function CourseBuilderPage() {
         });
         notify.success(message ?? "Course created.");
         setCourseSlug(course.slug);
-        goToNextStepFor(course.id);
+        goToNextStepFor(course.id, course.created_by?.id ?? null);
       } else {
-        const { message } = await updateCourse(courseId, payload);
+        const { data: course, message } = await updateCourse(
+          courseId,
+          payload,
+        );
         notify.success(message ?? "Course updated.");
-        setActiveStep(nextStepAfterSetup);
+        setCourseOwnerId(course.created_by?.id ?? null);
+        setActiveStep(isInstitution ? "Setup" : nextStepAfterSetup);
       }
     } catch (err) {
       notify.error(
@@ -284,6 +299,19 @@ export default function CourseBuilderPage() {
           isInstitution={isInstitution}
         />
       )}
+
+      {activeStep === "Team" &&
+        (courseId !== null ? (
+          <TeamTab
+            courseId={courseId}
+            isOwner={isOwner}
+            onContinue={() => setActiveStep(nextStepAfterTeam)}
+          />
+        ) : (
+          <div className="bg-white border border-(--gray-200) rounded-xl p-10 text-center text-(--gray-500) text-[14px]">
+            Please complete Course Setup first to unlock team management.
+          </div>
+        ))}
 
       {activeStep === "Schedule" &&
         (courseId !== null ? (

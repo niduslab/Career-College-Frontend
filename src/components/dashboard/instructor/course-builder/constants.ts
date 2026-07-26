@@ -6,17 +6,20 @@ import {
   Settings,
   Rocket,
   CalendarClock,
+  Users,
 } from "lucide-react";
 import type { Step, LessonType, Module } from "./types";
 
 export const SELF_PACED_STEPS: { key: Step; icon: React.ElementType }[] = [
   { key: "Setup", icon: Settings },
+  { key: "Team", icon: Users },
   { key: "Curriculum", icon: BookOpen },
   { key: "Review", icon: Rocket },
 ];
 
 export const SCHEDULED_STEPS: { key: Step; icon: React.ElementType }[] = [
   { key: "Setup", icon: Settings },
+  { key: "Team", icon: Users },
   { key: "Schedule", icon: CalendarClock },
   { key: "Curriculum", icon: BookOpen },
   { key: "Review", icon: Rocket },

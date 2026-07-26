@@ -16,6 +16,7 @@ import {
   ChartColumn,
   MessageSquareMore,
   PenLine,
+  Mail,
 } from "lucide-react";
 
 const navSections = [
@@ -62,6 +63,11 @@ const navSections = [
         icon: MessageSquareMore,
         label: "Messages",
         href: "/dashboard/instructor/messages",
+      },
+      {
+        icon: Mail,
+        label: "My Invites",
+        href: "/dashboard/instructor/my-invites",
       },
     ],
   },

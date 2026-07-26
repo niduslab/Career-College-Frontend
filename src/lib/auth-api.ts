@@ -75,9 +75,12 @@ export async function login(
 
 export async function fetchMe(): Promise<AuthUser | null> {
   try {
-    const res = await apiGet<{ user: AuthUser }>("/auth/profile/me/");
+    const res = await apiGet<{
+      user: Omit<AuthUser, "user_id"> & { id: number };
+    }>("/auth/profile/me/");
+    const user = res.data?.user;
     setLoggedIn(true);
-    return (res.data?.user ?? null) as AuthUser | null;
+    return user ? { ...user, user_id: user.id } : null;
   } catch {
     setLoggedIn(false);
     return null;
