@@ -1,4 +1,4 @@
-export type Step = "Setup" | "Schedule" | "Curriculum" | "Review";
+export type Step = "Setup" | "Team" | "Schedule" | "Curriculum" | "Review";
 
 export type LessonType = "Lecture" | "Quiz" | "Coding Exercise" | "Assignment";
 export type LectureType = "Video" | "Article";
