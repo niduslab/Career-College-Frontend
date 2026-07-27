@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { User, Shield, Bell, Settings2, ChevronRight } from "lucide-react";
 import { ProfileTab } from "./profile-tab";
 import { AccountTab } from "./account-tab";
@@ -16,8 +17,16 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "platform", label: "Platform", icon: Settings2 },
 ];
 
+function isTab(value: string | null): value is Tab {
+  return TABS.some((t) => t.id === value);
+}
+
 export default function AdminSettingsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("profile");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<Tab>(
+    isTab(initialTab) ? initialTab : "profile",
+  );
 
   const ActiveContent = {
     profile: ProfileTab,

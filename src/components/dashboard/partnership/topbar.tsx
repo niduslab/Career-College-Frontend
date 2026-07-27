@@ -3,14 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Bell,
-  Menu,
-  ChevronDown,
-  Settings,
-  LogOut,
-  Loader2,
-} from "lucide-react";
+import { Menu, ChevronDown, Settings, LogOut, Loader2 } from "lucide-react";
 import {
   getMyPartnerProfile,
   INSTITUTION_TYPE_OPTIONS,
@@ -18,6 +11,7 @@ import {
 import { useAuth } from "@/lib/use-auth";
 import { onProfileUpdated } from "@/lib/profile-events";
 import { mediaUrl, initialsOf } from "../settings-shared/helpers";
+import { NotificationBell } from "../common/notification-bell";
 
 const INSTITUTION_TYPE_LABEL = (v: string) =>
   INSTITUTION_TYPE_OPTIONS.find((o) => o.value === v)?.label ?? v;
@@ -92,10 +86,7 @@ export default function PartnershipTopbar() {
       <div className="hidden lg:block flex-1" />
 
       <div className="flex items-center gap-3">
-        <button className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-(--gray-100) transition-colors">
-          <Bell className="w-6 h-6 text-(--gray-500)" />
-          <span className="absolute top-1.5 right-1.5 w-3 h-3 bg-(--danger-500) rounded-xl" />
-        </button>
+        <NotificationBell settingsHref="/dashboard/partnership/settings" />
 
         {/* Institution menu */}
         <div ref={menuRef} className="relative">
