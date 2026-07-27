@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { Bell, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import logo from "@/assets/images/dashboard/logo.webp";
+import { NotificationBell } from "../common/notification-bell";
 
 export default function AdminTopbar() {
   const handleMenuClick = () => {
@@ -24,10 +25,7 @@ export default function AdminTopbar() {
       <div className="hidden lg:block flex-1" />
 
       <div className="flex items-center gap-3">
-        <button className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-(--gray-100) transition-colors">
-          <Bell className="w-6 h-6 text-(--gray-500)" />
-          <span className="absolute top-1.5 right-1.5 w-3 h-3 bg-(--danger-500) rounded-xl" />
-        </button>
+        <NotificationBell settingsHref="/dashboard/admin/settings" />
 
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 lg:w-9 lg:h-9 rounded-full overflow-hidden shrink-0">

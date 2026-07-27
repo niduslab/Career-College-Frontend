@@ -3,18 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Bell,
-  Menu,
-  ChevronDown,
-  Settings,
-  LogOut,
-  Loader2,
-} from "lucide-react";
+import { Menu, ChevronDown, Settings, LogOut, Loader2 } from "lucide-react";
 import { getMyInstructorProfile } from "@/lib/profile-api";
 import { useAuth } from "@/lib/use-auth";
 import { onProfileUpdated } from "@/lib/profile-events";
 import { mediaUrl, initialsOf } from "../settings-shared/helpers";
+import { NotificationBell } from "../common/notification-bell";
 
 // Map a backend user_type to a friendly role label.
 const ROLE_LABELS: Record<string, string> = {
@@ -93,10 +87,7 @@ export default function InstructorTopbar() {
       <div className="hidden lg:block flex-1" />
 
       <div className="flex items-center gap-3">
-        <button className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-(--gray-100) transition-colors">
-          <Bell className="w-6 h-6 text-(--gray-500)" />
-          <span className="absolute top-1.5 right-1.5 w-3 h-3 bg-(--danger-500) rounded-xl" />
-        </button>
+        <NotificationBell settingsHref="/dashboard/instructor/settings" />
 
         {/* User menu */}
         <div ref={menuRef} className="relative">
