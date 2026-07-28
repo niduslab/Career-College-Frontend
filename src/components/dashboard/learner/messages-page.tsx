@@ -8,15 +8,22 @@ import {
   Send,
   Clock,
   AlertCircle,
-  MoreVertical,
   ChevronLeft,
   MessageSquareDashed,
-  MailOpen,
+  Plus,
+  X,
 } from "lucide-react";
 
-import { useConversationList, useConversationThread, type ThreadMessage } from "@/hooks/use-conversations";
-import type { Conversation } from "@/lib/messaging-api";
+import {
+  useConversationList,
+  useConversationThread,
+  type ThreadMessage,
+} from "@/hooks/use-conversations";
+import { createConversation, type Conversation } from "@/lib/messaging-api";
+import { getMyCourses, type Enrollment, type CourseBrief } from "@/lib/course-api";
 import { fetchMe } from "@/lib/auth-api";
+import { notify } from "@/lib/toast";
+import { SelectDropdown } from "@/components/common/select-dropdown";
 
 type FilterTab = "All" | "Unread";
 
@@ -79,7 +86,7 @@ function Avatar({
   return (
     <div className="relative shrink-0">
       <div
-        className={`${sz} ${AVATAR_COLORS[colorIdx % AVATAR_COLORS.length]} rounded-full flex items-center justify-center font-semibold`}
+        className={`${sz} ${AVATAR_COLORS[colorIdx % AVATAR_COLORS.length]} rounded-full flex items-center justify-center font-bold`}
       >
         {initials}
       </div>
@@ -124,7 +131,7 @@ function ConversationItem({
           </span>
         </div>
         <p className="text-[12px] text-(--primary-700) truncate mt-0.5">
-          {conv.course_title ?? "Expert"}
+          {conv.course_title ?? "Direct message"}
         </p>
         <div className="flex items-center justify-end gap-2 mt-1">
           {conv.unread_count > 0 && (
@@ -182,7 +189,129 @@ function DateSep({ label }: { label: string }) {
   );
 }
 
-export default function PartnershipMessagesPage() {
+interface NewConversationModalProps {
+  enrollments: Enrollment[];
+  onClose: () => void;
+  onCreated: (conv: Conversation) => void;
+}
+
+function NewConversationModal({
+  enrollments,
+  onClose,
+  onCreated,
+}: NewConversationModalProps) {
+  const [courseId, setCourseId] = useState<number | "">("");
+  const [instructorId, setInstructorId] = useState<number | "">("");
+  const [body, setBody] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const selectedCourse = enrollments.find((e) => e.course.id === courseId)?.course;
+  const instructors: CourseBrief[] = selectedCourse?.instructors ?? [];
+
+  async function handleSubmit() {
+    if (!courseId || !instructorId || !body.trim()) return;
+    setSubmitting(true);
+    try {
+      const conv = await createConversation({
+        conversation_type: "learner_instructor",
+        course_id: courseId,
+        instructor_id: instructorId,
+        body: body.trim(),
+      });
+      onCreated(conv);
+      onClose();
+    } catch (err) {
+      notify.error(err instanceof Error ? err.message : "Failed to start conversation.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-(--gray-200)">
+          <h3 className="text-[16px] font-semibold text-(--text-title)">
+            New Conversation
+          </h3>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-(--gray-100) transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4 text-(--gray-500)" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-[13px] font-medium text-(--text-title) mb-1.5 block">
+              Course
+            </label>
+            <SelectDropdown
+              value={courseId === "" ? "" : String(courseId)}
+              onChange={(v) => {
+                setCourseId(v ? Number(v) : "");
+                setInstructorId("");
+              }}
+              placeholder="Select a course…"
+              options={enrollments.map((e) => ({
+                value: String(e.course.id),
+                label: e.course.title,
+              }))}
+            />
+          </div>
+
+          <div>
+            <label className="text-[13px] font-medium text-(--text-title) mb-1.5 block">
+              Instructor
+            </label>
+            <SelectDropdown
+              value={instructorId === "" ? "" : String(instructorId)}
+              onChange={(v) => setInstructorId(v ? Number(v) : "")}
+              disabled={!courseId}
+              placeholder="Select an instructor…"
+              options={instructors.map((i) => ({
+                value: String(i.id),
+                label: i.full_name,
+              }))}
+            />
+          </div>
+
+          <div>
+            <label className="text-[13px] font-medium text-(--text-title) mb-1.5 block">
+              Message
+            </label>
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={4}
+              placeholder="What would you like to ask?"
+              className="w-full px-3 py-2 text-[13px] bg-(--gray-50) border border-(--gray-200) rounded-md focus:outline-none focus:ring-2 focus:ring-(--primary-700) text-(--text-title) placeholder:text-(--gray-400) resize-none"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 px-5 py-4 border-t border-(--gray-200)">
+          <button
+            onClick={onClose}
+            className="h-9 px-4 text-[13px] font-medium text-(--gray-600) rounded-lg hover:bg-(--gray-100) transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!courseId || !instructorId || !body.trim() || submitting}
+            className="h-9 px-4 text-[13px] font-medium bg-(--primary-700) text-white rounded-lg hover:bg-(--primary-900) transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          >
+            {submitting ? "Starting…" : "Start Conversation"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LearnerMessagesPage() {
   const searchParams = useSearchParams();
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [filter, setFilter] = useState<FilterTab>("All");
@@ -195,16 +324,18 @@ export default function PartnershipMessagesPage() {
   const [mobileView, setMobileView] = useState<"list" | "chat">(() =>
     searchParams.get("conversation") ? "chat" : "list",
   );
-  const [inboxMenuOpen, setInboxMenuOpen] = useState(false);
-  const inboxMenuRef = useRef<HTMLDivElement>(null);
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+
   const listRef = useRef<(HTMLDivElement | null)[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     void fetchMe().then((user) => setCurrentUserId(user?.user_id ?? null));
+    void getMyCourses().then((res) => setEnrollments(res.results));
   }, []);
 
-  const { conversations } = useConversationList(currentUserId);
+  const { conversations, refresh } = useConversationList(currentUserId);
   const { messages, sendMessage, retrySend } = useConversationThread(
     selectedId,
     currentUserId,
@@ -212,7 +343,9 @@ export default function PartnershipMessagesPage() {
 
   const filtered = conversations.filter((c) => {
     const other = otherParticipant(c, currentUserId);
-    const matchSearch = other.full_name.toLowerCase().includes(search.toLowerCase());
+    const matchSearch =
+      other.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.course_title ?? "").toLowerCase().includes(search.toLowerCase());
     if (!matchSearch) return false;
     if (filter === "Unread") return c.unread_count > 0;
     return true;
@@ -221,18 +354,6 @@ export default function PartnershipMessagesPage() {
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
   const selectedOther = selected ? otherParticipant(selected, currentUserId) : null;
   const selectedColorIdx = conversations.findIndex((c) => c.id === selectedId);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (
-        inboxMenuRef.current &&
-        !inboxMenuRef.current.contains(e.target as Node)
-      )
-        setInboxMenuOpen(false);
-    };
-    if (inboxMenuOpen) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [inboxMenuOpen]);
 
   useEffect(() => {
     listRef.current.forEach((el, i) => {
@@ -271,6 +392,17 @@ export default function PartnershipMessagesPage() {
 
   return (
     <div className="bg-white border border-(--gray-200) rounded-2xl overflow-hidden flex h-[calc(100vh-180px)] min-h-130">
+      {showNewModal && (
+        <NewConversationModal
+          enrollments={enrollments}
+          onClose={() => setShowNewModal(false)}
+          onCreated={(conv) => {
+            void refresh();
+            selectConversation(conv.id);
+          }}
+        />
+      )}
+
       <div
         className={`flex flex-col w-full md:w-80 lg:w-88 shrink-0 border-r border-(--gray-200) ${mobileView === "chat" ? "hidden md:flex" : "flex"}`}
       >
@@ -284,28 +416,13 @@ export default function PartnershipMessagesPage() {
                 </span>
               )}
             </h2>
-            <div className="relative" ref={inboxMenuRef}>
-              <button
-                onClick={() => setInboxMenuOpen((v) => !v)}
-                className="w-8 h-8 cursor-pointer flex items-center justify-center rounded-md hover:bg-(--gray-100) transition-colors"
-              >
-                <MoreVertical className="w-5 h-5 text-(--gray-500)" />
-              </button>
-              {inboxMenuOpen && (
-                <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-white border border-(--gray-200) rounded-xl shadow-lg py-1">
-                  <button
-                    onClick={() => {
-                      setFilter("Unread");
-                      setInboxMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-(--text-title) hover:bg-(--gray-50) transition-colors"
-                  >
-                    <MailOpen className="w-4 h-4 text-(--gray-400)" /> Filter
-                    unread
-                  </button>
-                </div>
-              )}
-            </div>
+            <button
+              onClick={() => setShowNewModal(true)}
+              className="w-8 h-8 cursor-pointer flex items-center justify-center rounded-md hover:bg-(--gray-100) transition-colors"
+              aria-label="New conversation"
+            >
+              <Plus className="w-5 h-5 text-(--gray-500)" />
+            </button>
           </div>
 
           <div className="relative">
@@ -313,7 +430,7 @@ export default function PartnershipMessagesPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search experts…"
+              placeholder="Search instructors…"
               className="w-full h-9 pl-8 pr-3 text-[12px] bg-(--gray-50) border border-(--gray-200) rounded-md focus:outline-none focus:ring-2 focus:ring-(--primary-700) focus:bg-white placeholder:text-(--gray-400) text-(--text-title) transition-colors"
             />
           </div>
@@ -342,6 +459,12 @@ export default function PartnershipMessagesPage() {
               <p className="text-[16px] text-(--gray-500)">
                 No conversations found
               </p>
+              <button
+                onClick={() => setShowNewModal(true)}
+                className="text-[13px] font-medium text-(--primary-700) hover:underline cursor-pointer"
+              >
+                Message an instructor
+              </button>
             </div>
           ) : (
             filtered.map((conv, i) => (
@@ -387,7 +510,7 @@ export default function PartnershipMessagesPage() {
                   {selectedOther.full_name}
                 </p>
                 <p className="text-[12px] text-(--gray-400) truncate">
-                  {selected.course_title ?? "Affiliated expert"}
+                  {selected.course_title ?? "Direct message"}
                 </p>
               </div>
             </div>
@@ -455,9 +578,15 @@ export default function PartnershipMessagesPage() {
                 No conversation selected
               </p>
               <p className="text-[14px] text-(--gray-500) mt-1">
-                Choose a partner from the list to start messaging.
+                Choose an instructor from the list, or start a new conversation.
               </p>
             </div>
+            <button
+              onClick={() => setShowNewModal(true)}
+              className="h-9 px-4 text-[13px] font-medium bg-(--primary-700) text-white rounded-lg hover:bg-(--primary-900) transition-colors cursor-pointer"
+            >
+              New Conversation
+            </button>
           </div>
         )}
       </div>

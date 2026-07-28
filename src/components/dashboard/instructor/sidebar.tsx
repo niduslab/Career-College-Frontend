@@ -18,6 +18,7 @@ import {
   PenLine,
   Mail,
 } from "lucide-react";
+import { useConversationUnreadBadge } from "@/hooks/use-conversations";
 
 const navSections = [
   {
@@ -101,6 +102,7 @@ const navSections = [
 export default function InstructorSidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const unreadMessages = useConversationUnreadBadge();
 
   useEffect(() => {
     const handler = () => setOpen((v) => !v);
@@ -170,6 +172,17 @@ export default function InstructorSidebar() {
                           className={`w-4 h-4 shrink-0 ${active ? "text-white" : "text-(--gray-500)"}`}
                         />
                         {label}
+                        {label === "Messages" && unreadMessages > 0 && (
+                          <span
+                            className={`ml-auto inline-flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full text-[10px] font-semibold ${
+                              active
+                                ? "bg-white text-(--primary-700)"
+                                : "bg-(--primary-700) text-white"
+                            }`}
+                          >
+                            {unreadMessages > 99 ? "99+" : unreadMessages}
+                          </span>
+                        )}
                       </Link>
                     </li>
                   );

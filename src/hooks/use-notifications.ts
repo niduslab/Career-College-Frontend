@@ -32,6 +32,7 @@ type NotificationsStreamPayload = NotificationPushPayload | UnreadCountPayload;
 /** Bell-icon state: recent notifications + unread badge count, kept live via WS with REST as the source of truth. */
 export function useNotifications() {
   const [items, setItems] = useState<NotificationItem[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const loadedOnce = useRef(false);
@@ -45,6 +46,7 @@ export function useNotifications() {
         fetchUnreadCount(),
       ]);
       setItems(list.results);
+      setTotalCount(list.count);
       setUnreadCount(count);
     } catch {
       // Bell just stays stale; next refresh() call (open, poll, WS event) retries.
@@ -69,6 +71,7 @@ export function useNotifications() {
         setUnreadCount(payload.count);
       } else if (payload.type === "notification") {
         setUnreadCount((c) => c + 1);
+        setTotalCount((c) => c + 1);
         setItems((prev) => [
           {
             id: payload.id,
@@ -118,5 +121,5 @@ export function useNotifications() {
     }
   }, []);
 
-  return { items, unreadCount, loading, refresh, markRead, markAllRead };
+  return { items, totalCount, unreadCount, loading, refresh, markRead, markAllRead };
 }

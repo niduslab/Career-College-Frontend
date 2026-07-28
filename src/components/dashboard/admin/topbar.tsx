@@ -25,7 +25,10 @@ export default function AdminTopbar() {
       <div className="hidden lg:block flex-1" />
 
       <div className="flex items-center gap-3">
-        <NotificationBell settingsHref="/dashboard/admin/settings" />
+        <NotificationBell
+          settingsHref="/dashboard/admin/settings"
+          viewAllHref="/dashboard/admin/notifications"
+        />
 
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 lg:w-9 lg:h-9 rounded-full overflow-hidden shrink-0">

@@ -3,10 +3,10 @@ import { config } from "./config";
 
 /**
  * The backend WebSocket only accepts a raw JWT as `?token=` — it can't read
- * our HttpOnly `access_token` cookie. This endpoint is not built yet; ask the
- * backend team for `GET /auth/ws-token/` returning `{ token }` from the
- * caller's existing session cookie. Until then this rejects and callers
- * should treat realtime push as unavailable (REST polling still works).
+ * our HttpOnly `access_token` cookie. `GET /auth/ws-token/` exchanges the
+ * caller's existing session cookie for that raw token. If this call ever
+ * fails (endpoint down, auth expired), callers should treat realtime push as
+ * unavailable for this session — REST polling remains the source of truth.
  */
 async function fetchWsToken(): Promise<string> {
   const res = await apiGet<{ token: string }>("/auth/ws-token/");
@@ -24,11 +24,6 @@ type Listener = (envelope: StreamEnvelope) => void;
 
 const RECONNECT_DELAYS_MS = [1000, 2000, 5000, 10000, 30000];
 
-/**
- * One shared connection to `/ws/`, multiplexing all stream types
- * (notifications, messaging, …). Components subscribe via `onMessage` /
- * `send` rather than opening their own sockets.
- */
 class PlatformSocket {
   private socket: WebSocket | null = null;
   private listeners = new Set<Listener>();
@@ -39,7 +34,8 @@ class PlatformSocket {
   private unavailable = false;
 
   connect(): void {
-    if (this.socket || this.connecting || this.stopped || this.unavailable) return;
+    if (this.socket || this.connecting || this.stopped || this.unavailable)
+      return;
     this.connecting = true;
 
     fetchWsToken()
@@ -71,8 +67,6 @@ class PlatformSocket {
         this.socket = ws;
       })
       .catch(() => {
-        // No ws-token endpoint yet (or auth failed) — disable realtime push
-        // for this session; REST polling remains the source of truth.
         this.unavailable = true;
       })
       .finally(() => {
@@ -101,6 +95,11 @@ class PlatformSocket {
     if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify({ stream, payload }));
     }
+  }
+
+  /** True when the socket is open and `send()` will actually deliver. */
+  isOpen(): boolean {
+    return this.socket?.readyState === WebSocket.OPEN;
   }
 
   onMessage(fn: Listener): () => void {

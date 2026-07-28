@@ -2,7 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, CheckCheck, Loader2 } from "lucide-react";
+import {
+  Bell,
+  CheckCheck,
+  Loader2,
+  PlayCircle,
+  GraduationCap,
+  CreditCard,
+  ShieldCheck,
+  BookOpen,
+  Users,
+  MessageSquare,
+  Star,
+  type LucideIcon,
+} from "lucide-react";
 import { useNotifications } from "@/hooks/use-notifications";
 import type { NotificationItem } from "@/lib/notifications-api";
 
@@ -19,22 +32,105 @@ function timeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
-/** Where a notification's deep-link data should send the user, per event type family. */
-function linkFor(item: NotificationItem): string | null {
-  const data = item.data as { course_slug?: string; conversation_id?: number };
+/** "Today" / "Yesterday" / "Earlier" bucket for a notification's created_at. */
+function dayBucket(iso: string): string {
+  const created = new Date(iso);
+  const now = new Date();
+  const startOf = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const diffDays = Math.round(
+    (startOf(now) - startOf(created)) / (1000 * 60 * 60 * 24),
+  );
+  if (diffDays <= 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  return "Earlier";
+}
+
+/** Icon + accent color per event-type family — quick visual scan of the feed. */
+function iconFor(eventType: string): { Icon: LucideIcon; color: string } {
+  if (
+    eventType.startsWith("lecture.") ||
+    eventType.startsWith("course.completed")
+  ) {
+    return { Icon: PlayCircle, color: "text-blue-500" };
+  }
+  if (eventType.startsWith("course.")) {
+    return { Icon: BookOpen, color: "text-indigo-500" };
+  }
+  if (eventType.startsWith("payment.")) {
+    return { Icon: CreditCard, color: "text-emerald-500" };
+  }
+  if (
+    eventType.startsWith("verification.") ||
+    eventType.startsWith("institution_verification.")
+  ) {
+    return { Icon: ShieldCheck, color: "text-amber-500" };
+  }
+  if (eventType.startsWith("invite.") || eventType === "learner.enrolled") {
+    return { Icon: Users, color: "text-violet-500" };
+  }
+  if (eventType === "message.received") {
+    return { Icon: MessageSquare, color: "text-sky-500" };
+  }
+  if (eventType === "review.received") {
+    return { Icon: Star, color: "text-yellow-500" };
+  }
+  if (eventType === "enrollment.created") {
+    return { Icon: GraduationCap, color: "text-teal-500" };
+  }
+  return { Icon: Bell, color: "text-(--gray-400)" };
+}
+
+function linkFor(
+  item: NotificationItem,
+  coursePlayerBase: string | null,
+  messagesBase: string | null,
+): string | null {
+  const data = item.data as {
+    course_slug?: string;
+    conversation_id?: number;
+    item_type?: "course" | "webinar";
+    item_slug?: string;
+  };
   if (item.event_type === "message.received" && data.conversation_id != null) {
-    return null; // messaging inbox route TBD — surfaced as text only for now
+    return messagesBase
+      ? `${messagesBase}?conversation=${data.conversation_id}`
+      : null;
+  }
+  if (!coursePlayerBase) return null;
+
+  // payment.successful / payment.failed carry item_type + item_slug instead
+  // of course_slug — only "course" has a working route today, webinar doesn't.
+  if (data.item_slug && data.item_type === "course") {
+    return `${coursePlayerBase}/${data.item_slug}`;
   }
   if (data.course_slug) {
-    return `/courses/${data.course_slug}`;
+    return `${coursePlayerBase}/${data.course_slug}`;
   }
   return null;
 }
 
 /** Shared bell icon + dropdown, used across every dashboard topbar (learner/instructor/partnership/admin). */
-export function NotificationBell({ settingsHref }: { settingsHref: string }) {
-  const { items, unreadCount, loading, refresh, markRead, markAllRead } =
-    useNotifications();
+export function NotificationBell({
+  settingsHref,
+  viewAllHref,
+  coursePlayerBase = null,
+  messagesBase = null,
+}: {
+  settingsHref: string;
+  viewAllHref: string;
+  coursePlayerBase?: string | null;
+  messagesBase?: string | null;
+}) {
+  const {
+    items,
+    totalCount,
+    unreadCount,
+    loading,
+    refresh,
+    markRead,
+    markAllRead,
+  } = useNotifications();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -79,6 +175,11 @@ export function NotificationBell({ settingsHref }: { settingsHref: string }) {
           <div className="flex items-center justify-between px-4 py-3 border-b border-(--gray-100)">
             <p className="text-[14px] font-semibold text-(--text-title)">
               Notifications
+              {totalCount > 0 && (
+                <span className="ml-1.5 text-[12px] font-normal text-(--gray-400)">
+                  ({totalCount} total)
+                </span>
+              )}
             </p>
             {unreadCount > 0 && (
               <button
@@ -102,31 +203,50 @@ export function NotificationBell({ settingsHref }: { settingsHref: string }) {
                 You&apos;re all caught up.
               </p>
             ) : (
-              items.map((item) => {
-                const href = linkFor(item);
+              items.map((item, i) => {
+                const href = linkFor(item, coursePlayerBase, messagesBase);
+                const { Icon, color } = iconFor(item.event_type);
+                const bucket = dayBucket(item.created_at);
+                const showBucketHeader =
+                  i === 0 || dayBucket(items[i - 1].created_at) !== bucket;
+
                 const content = (
-                  <div
-                    className={`px-4 py-3 border-b border-(--gray-50) transition-colors ${
-                      item.is_read ? "bg-white" : "bg-(--primary-50)"
-                    } hover:bg-(--gray-50)`}
-                  >
-                    <div className="flex items-start gap-2">
-                      {!item.is_read && (
-                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-(--primary-600) shrink-0" />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-semibold text-(--text-title) truncate">
-                          {item.title}
-                        </p>
-                        <p className="text-[13px] text-(--gray-500) line-clamp-2">
-                          {item.body}
-                        </p>
-                        <p className="text-[11px] text-(--gray-400) mt-1">
-                          {timeAgo(item.created_at)}
-                        </p>
+                  <>
+                    {showBucketHeader && (
+                      <p className="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-(--gray-400) bg-(--gray-50)">
+                        {bucket}
+                      </p>
+                    )}
+                    <div
+                      className={`px-4 py-3 border-b border-(--gray-50) border-l-[3px] transition-colors ${
+                        item.is_read
+                          ? "border-l-transparent bg-white"
+                          : "border-l-(--primary-600) bg-(--primary-50)"
+                      } hover:bg-(--gray-50)`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <div
+                          className={`mt-0.5 w-7 h-7 rounded-full bg-(--gray-100) flex items-center justify-center shrink-0 ${color}`}
+                        >
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[14px] font-semibold text-(--text-title) truncate">
+                            {item.title}
+                          </p>
+                          <p className="text-[13px] text-(--gray-500) line-clamp-2">
+                            {item.body}
+                          </p>
+                          <p className="text-[11px] text-(--gray-400) mt-1">
+                            {timeAgo(item.created_at)}
+                          </p>
+                        </div>
+                        {!item.is_read && (
+                          <span className="mt-1.5 w-2 h-2 rounded-full bg-(--primary-600) shrink-0" />
+                        )}
                       </div>
                     </div>
-                  </div>
+                  </>
                 );
 
                 return href ? (
@@ -155,13 +275,22 @@ export function NotificationBell({ settingsHref }: { settingsHref: string }) {
             )}
           </div>
 
-          <Link
-            href={`${settingsHref}?tab=notifications`}
-            onClick={() => setOpen(false)}
-            className="px-4 py-2.5 text-[13px] text-center text-(--gray-500) hover:text-(--text-title) border-t border-(--gray-100) transition-colors"
-          >
-            Notification settings
-          </Link>
+          <div className="border-t border-(--gray-100)">
+            <Link
+              href={viewAllHref}
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2.5 text-[13px] text-center font-semibold text-(--primary-700) hover:bg-(--gray-50) transition-colors"
+            >
+              View all notifications
+            </Link>
+            <Link
+              href={`${settingsHref}?tab=notifications`}
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2 text-[12px] text-center text-(--gray-400) hover:text-(--text-title) transition-colors"
+            >
+              Notification settings
+            </Link>
+          </div>
         </div>
       )}
     </div>

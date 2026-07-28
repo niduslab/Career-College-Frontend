@@ -86,7 +86,12 @@ export default function PartnershipTopbar() {
       <div className="hidden lg:block flex-1" />
 
       <div className="flex items-center gap-3">
-        <NotificationBell settingsHref="/dashboard/partnership/settings" />
+        <NotificationBell
+          settingsHref="/dashboard/partnership/settings"
+          viewAllHref="/dashboard/partnership/notifications"
+          coursePlayerBase="/course-player"
+          messagesBase="/dashboard/partnership/messages"
+        />
 
         {/* Institution menu */}
         <div ref={menuRef} className="relative">
