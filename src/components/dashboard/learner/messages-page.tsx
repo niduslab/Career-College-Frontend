@@ -19,6 +19,8 @@ import {
   useConversationThread,
   type ThreadMessage,
 } from "@/hooks/use-conversations";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { dayLabel } from "@/lib/date-groups";
 import { createConversation, type Conversation } from "@/lib/messaging-api";
 import { getMyCourses, type Enrollment, type CourseBrief } from "@/lib/course-api";
 import { fetchMe } from "@/lib/auth-api";
@@ -121,21 +123,31 @@ function ConversationItem({
       <Avatar initials={initialsOf(other.full_name)} colorIdx={colorIdx} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <span
-            className={`text-[14px] truncate ${conv.unread_count > 0 ? "font-semibold text-(--text-title)" : "font-medium text-(--text-title)"}`}
-          >
-            {other.full_name}
+          <span className="flex items-baseline gap-1 min-w-0">
+            <span
+              className={`text-[14px] truncate ${conv.unread_count > 0 ? "font-semibold text-(--text-title)" : "font-medium text-(--text-title)"}`}
+            >
+              {other.full_name}
+            </span>
+            <span className="text-[11px] text-(--gray-400) shrink-0">·</span>
+            <span className="text-[11px] text-(--primary-700) truncate">
+              {conv.course_title ?? "Direct message"}
+            </span>
           </span>
           <span className="text-[12px] text-(--gray-400) shrink-0">
             {relativeTime(conv.updated_at)}
           </span>
         </div>
-        <p className="text-[12px] text-(--primary-700) truncate mt-0.5">
-          {conv.course_title ?? "Direct message"}
-        </p>
-        <div className="flex items-center justify-end gap-2 mt-1">
+        <div className="flex items-center justify-between gap-2 mt-1">
+          <p
+            className={`text-[12px] truncate ${conv.unread_count > 0 ? "text-(--text-title) font-medium" : "text-(--gray-500)"}`}
+          >
+            {conv.last_message
+              ? `${conv.last_message.sender_id === currentUserId ? "You: " : ""}${conv.last_message.body}`
+              : "No messages yet"}
+          </p>
           {conv.unread_count > 0 && (
-            <span className="min-w-4.5 h-4.5 px-1 bg-(--primary-700) text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+            <span className="min-w-4.5 h-4.5 px-1 bg-(--primary-700) text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
               {conv.unread_count}
             </span>
           )}
@@ -330,12 +342,14 @@ export default function LearnerMessagesPage() {
   const listRef = useRef<(HTMLDivElement | null)[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  useBodyScrollLock(showNewModal);
+
   useEffect(() => {
     void fetchMe().then((user) => setCurrentUserId(user?.user_id ?? null));
     void getMyCourses().then((res) => setEnrollments(res.results));
   }, []);
 
-  const { conversations, refresh } = useConversationList(currentUserId);
+  const { conversations, refresh, markLocallyRead } = useConversationList(currentUserId);
   const { messages, sendMessage, retrySend } = useConversationThread(
     selectedId,
     currentUserId,
@@ -375,6 +389,10 @@ export default function LearnerMessagesPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selectedId, messages]);
+
+  useEffect(() => {
+    if (selectedId != null) markLocallyRead(selectedId);
+  }, [selectedId, markLocallyRead]);
 
   function selectConversation(id: number) {
     setSelectedId(id);
@@ -516,22 +534,29 @@ export default function LearnerMessagesPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-              <DateSep label="Conversation" />
-              {messages.map((msg) => (
-                <div key={msg.client_id ?? msg.id} className="group">
-                  <ChatBubble msg={msg} />
-                  {msg.send_status === "failed" && msg.client_id && (
-                    <div className="flex justify-end mt-0.5">
-                      <button
-                        onClick={() => retrySend(msg.client_id as string)}
-                        className="text-[11px] text-red-500 hover:underline cursor-pointer"
-                      >
-                        Retry
-                      </button>
+              {messages.map((msg, i) => {
+                const label = dayLabel(msg.created_at);
+                const showSep =
+                  i === 0 || dayLabel(messages[i - 1].created_at) !== label;
+                return (
+                  <div key={msg.client_id ?? msg.id}>
+                    {showSep && <DateSep label={label} />}
+                    <div className="group">
+                      <ChatBubble msg={msg} />
+                      {msg.send_status === "failed" && msg.client_id && (
+                        <div className="flex justify-end mt-0.5">
+                          <button
+                            onClick={() => retrySend(msg.client_id as string)}
+                            className="text-[11px] text-red-500 hover:underline cursor-pointer"
+                          >
+                            Retry
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
 

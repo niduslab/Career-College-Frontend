@@ -124,6 +124,11 @@ export function useConversationList(currentUserId: number | null) {
           next[idx] = {
             ...next[idx],
             updated_at: msg.created_at,
+            last_message: {
+              body: msg.body,
+              sender_id: msg.sender_id,
+              created_at: msg.created_at,
+            },
             unread_count: isOwn
               ? next[idx].unread_count
               : next[idx].unread_count + 1,
@@ -146,6 +151,30 @@ export function useConversationList(currentUserId: number | null) {
             c.id === payload.conversation_id ? { ...c, unread_count: 0 } : c,
           ),
         );
+        return;
+      }
+
+      if (payload.type === "message_sent") {
+        const msg = payload.message;
+        setConversations((prev) => {
+          const idx = prev.findIndex((c) => c.id === msg.conversation_id);
+          if (idx === -1) return prev;
+          const next = [...prev];
+          next[idx] = {
+            ...next[idx],
+            updated_at: msg.created_at,
+            last_message: {
+              body: msg.body,
+              sender_id: msg.sender_id,
+              created_at: msg.created_at,
+            },
+          };
+          return next.sort(
+            (a, b) =>
+              new Date(b.updated_at).getTime() -
+              new Date(a.updated_at).getTime(),
+          );
+        });
       }
     });
 
@@ -159,7 +188,21 @@ export function useConversationList(currentUserId: number | null) {
 
   useEffect(() => onAuthChange(() => void refresh()), [refresh]);
 
-  return { conversations, unreadConversations, loading, refresh };
+  /** Zero out a conversation's unread badge immediately in the list — call this when the user opens that thread, since `useConversationThread` marks it read server-side but has no way to update this separate list's state itself. */
+  const markLocallyRead = useCallback((conversationId: number) => {
+    const wasUnread = conversations.some(
+      (c) => c.id === conversationId && c.unread_count > 0,
+    );
+    if (!wasUnread) return;
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === conversationId ? { ...c, unread_count: 0 } : c,
+      ),
+    );
+    setUnreadConversations((c) => Math.max(0, c - 1));
+  }, [conversations]);
+
+  return { conversations, unreadConversations, loading, refresh, markLocallyRead };
 }
 
 /** One open conversation thread: paginated history + live WS append + optimistic send with pending-queue fallback. */

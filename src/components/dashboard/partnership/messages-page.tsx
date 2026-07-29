@@ -12,11 +12,23 @@ import {
   ChevronLeft,
   MessageSquareDashed,
   MailOpen,
+  Plus,
+  X,
 } from "lucide-react";
 
-import { useConversationList, useConversationThread, type ThreadMessage } from "@/hooks/use-conversations";
-import type { Conversation } from "@/lib/messaging-api";
+import {
+  useConversationList,
+  useConversationThread,
+  type ThreadMessage,
+} from "@/hooks/use-conversations";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { dayLabel } from "@/lib/date-groups";
+import { createConversation, type Conversation } from "@/lib/messaging-api";
+import { listCourses, type Course } from "@/lib/course-api";
+import { getExperts, type Expert } from "@/lib/partner-api";
 import { fetchMe } from "@/lib/auth-api";
+import { notify } from "@/lib/toast";
+import { SelectDropdown } from "@/components/common/select-dropdown";
 
 type FilterTab = "All" | "Unread";
 
@@ -114,21 +126,31 @@ function ConversationItem({
       <Avatar initials={initialsOf(other.full_name)} colorIdx={colorIdx} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <span
-            className={`text-[14px] truncate ${conv.unread_count > 0 ? "font-semibold text-(--text-title)" : "font-medium text-(--text-title)"}`}
-          >
-            {other.full_name}
+          <span className="flex items-baseline gap-1 min-w-0">
+            <span
+              className={`text-[14px] truncate ${conv.unread_count > 0 ? "font-semibold text-(--text-title)" : "font-medium text-(--text-title)"}`}
+            >
+              {other.full_name}
+            </span>
+            <span className="text-[11px] text-(--gray-400) shrink-0">·</span>
+            <span className="text-[11px] text-(--primary-700) truncate">
+              {conv.course_title ?? "Expert"}
+            </span>
           </span>
           <span className="text-[12px] text-(--gray-400) shrink-0">
             {relativeTime(conv.updated_at)}
           </span>
         </div>
-        <p className="text-[12px] text-(--primary-700) truncate mt-0.5">
-          {conv.course_title ?? "Expert"}
-        </p>
-        <div className="flex items-center justify-end gap-2 mt-1">
+        <div className="flex items-center justify-between gap-2 mt-1">
+          <p
+            className={`text-[12px] truncate ${conv.unread_count > 0 ? "text-(--text-title) font-medium" : "text-(--gray-500)"}`}
+          >
+            {conv.last_message
+              ? `${conv.last_message.sender_id === currentUserId ? "You: " : ""}${conv.last_message.body}`
+              : "No messages yet"}
+          </p>
           {conv.unread_count > 0 && (
-            <span className="min-w-4.5 h-4.5 px-1 bg-(--primary-700) text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+            <span className="min-w-4.5 h-4.5 px-1 bg-(--primary-700) text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
               {conv.unread_count}
             </span>
           )}
@@ -182,6 +204,138 @@ function DateSep({ label }: { label: string }) {
   );
 }
 
+const NO_COURSE_VALUE = "none";
+
+interface NewConversationModalProps {
+  experts: Expert[];
+  courses: Course[];
+  onClose: () => void;
+  onCreated: (conv: Conversation) => void;
+}
+
+function NewConversationModal({
+  experts,
+  courses,
+  onClose,
+  onCreated,
+}: NewConversationModalProps) {
+  const [expertUserId, setExpertUserId] = useState<number | "">("");
+  const [courseChoice, setCourseChoice] = useState<string>(NO_COURSE_VALUE);
+  const [body, setBody] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit() {
+    if (!expertUserId || !body.trim()) return;
+    setSubmitting(true);
+    try {
+      const courseId =
+        courseChoice === NO_COURSE_VALUE ? undefined : Number(courseChoice);
+      const conv = await createConversation({
+        conversation_type: "institution_expert",
+        expert_user_id: expertUserId,
+        course_id: courseId,
+        body: body.trim(),
+      });
+      onCreated(conv);
+      onClose();
+    } catch (err) {
+      notify.error(
+        err instanceof Error ? err.message : "Failed to start conversation.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-(--gray-200)">
+          <h3 className="text-[16px] font-semibold text-(--text-title)">
+            New Conversation
+          </h3>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-(--gray-100) transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4 text-(--gray-500)" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-[13px] font-medium text-(--text-title) mb-1.5 block">
+              Expert
+            </label>
+            <SelectDropdown
+              value={expertUserId === "" ? "" : String(expertUserId)}
+              onChange={(v) => setExpertUserId(v ? Number(v) : "")}
+              placeholder="Select an expert…"
+              options={experts.map((e) => ({
+                value: String(e.user_id),
+                label: e.full_name,
+              }))}
+            />
+            {experts.length === 0 && (
+              <p className="text-[12px] text-(--gray-400) mt-1.5">
+                No experts available — your institution must be verified and
+                have at least one active affiliated expert.
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="text-[13px] font-medium text-(--text-title) mb-1.5 block">
+              Course (optional)
+            </label>
+            <SelectDropdown
+              value={courseChoice}
+              onChange={(v) => setCourseChoice(v || NO_COURSE_VALUE)}
+              placeholder="Select a course…"
+              options={[
+                { value: NO_COURSE_VALUE, label: "No course (general)" },
+                ...courses.map((c) => ({
+                  value: String(c.id),
+                  label: c.title,
+                })),
+              ]}
+            />
+          </div>
+
+          <div>
+            <label className="text-[13px] font-medium text-(--text-title) mb-1.5 block">
+              Message
+            </label>
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={4}
+              placeholder="What would you like to say?"
+              className="w-full px-3 py-2 text-[13px] bg-(--gray-50) border border-(--gray-200) rounded-md focus:outline-none focus:ring-2 focus:ring-(--primary-700) text-(--text-title) placeholder:text-(--gray-400) resize-none"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 px-5 py-4 border-t border-(--gray-200)">
+          <button
+            onClick={onClose}
+            className="h-9 px-4 text-[13px] font-medium text-(--gray-600) rounded-lg hover:bg-(--gray-100) transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!expertUserId || !body.trim() || submitting}
+            className="h-9 px-4 text-[13px] font-medium bg-(--primary-700) text-white rounded-lg hover:bg-(--primary-900) transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          >
+            {submitting ? "Starting…" : "Start Conversation"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PartnershipMessagesPage() {
   const searchParams = useSearchParams();
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
@@ -197,14 +351,30 @@ export default function PartnershipMessagesPage() {
   );
   const [inboxMenuOpen, setInboxMenuOpen] = useState(false);
   const inboxMenuRef = useRef<HTMLDivElement>(null);
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [experts, setExperts] = useState<Expert[]>([]);
+  const [myCourses, setMyCourses] = useState<Course[]>([]);
   const listRef = useRef<(HTMLDivElement | null)[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  useBodyScrollLock(showNewModal);
+
   useEffect(() => {
     void fetchMe().then((user) => setCurrentUserId(user?.user_id ?? null));
+    void getExperts()
+      .then((res) =>
+        setExperts(
+          res.results.filter((e) => e.affiliation_status === "active"),
+        ),
+      )
+      .catch(() => {});
+    void listCourses(1, 100)
+      .then((res) => setMyCourses(res.results))
+      .catch(() => {});
   }, []);
 
-  const { conversations } = useConversationList(currentUserId);
+  const { conversations, refresh, markLocallyRead } =
+    useConversationList(currentUserId);
   const { messages, sendMessage, retrySend } = useConversationThread(
     selectedId,
     currentUserId,
@@ -212,14 +382,18 @@ export default function PartnershipMessagesPage() {
 
   const filtered = conversations.filter((c) => {
     const other = otherParticipant(c, currentUserId);
-    const matchSearch = other.full_name.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = other.full_name
+      .toLowerCase()
+      .includes(search.toLowerCase());
     if (!matchSearch) return false;
     if (filter === "Unread") return c.unread_count > 0;
     return true;
   });
 
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
-  const selectedOther = selected ? otherParticipant(selected, currentUserId) : null;
+  const selectedOther = selected
+    ? otherParticipant(selected, currentUserId)
+    : null;
   const selectedColorIdx = conversations.findIndex((c) => c.id === selectedId);
 
   useEffect(() => {
@@ -255,6 +429,10 @@ export default function PartnershipMessagesPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selectedId, messages]);
 
+  useEffect(() => {
+    if (selectedId != null) markLocallyRead(selectedId);
+  }, [selectedId, markLocallyRead]);
+
   function selectConversation(id: number) {
     setSelectedId(id);
     setMobileView("chat");
@@ -271,6 +449,18 @@ export default function PartnershipMessagesPage() {
 
   return (
     <div className="bg-white border border-(--gray-200) rounded-2xl overflow-hidden flex h-[calc(100vh-180px)] min-h-130">
+      {showNewModal && (
+        <NewConversationModal
+          experts={experts}
+          courses={myCourses}
+          onClose={() => setShowNewModal(false)}
+          onCreated={(conv) => {
+            void refresh();
+            selectConversation(conv.id);
+          }}
+        />
+      )}
+
       <div
         className={`flex flex-col w-full md:w-80 lg:w-88 shrink-0 border-r border-(--gray-200) ${mobileView === "chat" ? "hidden md:flex" : "flex"}`}
       >
@@ -284,27 +474,36 @@ export default function PartnershipMessagesPage() {
                 </span>
               )}
             </h2>
-            <div className="relative" ref={inboxMenuRef}>
+            <div className="flex items-center gap-1">
               <button
-                onClick={() => setInboxMenuOpen((v) => !v)}
+                onClick={() => setShowNewModal(true)}
                 className="w-8 h-8 cursor-pointer flex items-center justify-center rounded-md hover:bg-(--gray-100) transition-colors"
+                aria-label="New conversation"
               >
-                <MoreVertical className="w-5 h-5 text-(--gray-500)" />
+                <Plus className="w-5 h-5 text-(--gray-500)" />
               </button>
-              {inboxMenuOpen && (
-                <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-white border border-(--gray-200) rounded-xl shadow-lg py-1">
-                  <button
-                    onClick={() => {
-                      setFilter("Unread");
-                      setInboxMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-(--text-title) hover:bg-(--gray-50) transition-colors"
-                  >
-                    <MailOpen className="w-4 h-4 text-(--gray-400)" /> Filter
-                    unread
-                  </button>
-                </div>
-              )}
+              <div className="relative" ref={inboxMenuRef}>
+                <button
+                  onClick={() => setInboxMenuOpen((v) => !v)}
+                  className="w-8 h-8 cursor-pointer flex items-center justify-center rounded-md hover:bg-(--gray-100) transition-colors"
+                >
+                  <MoreVertical className="w-5 h-5 text-(--gray-500)" />
+                </button>
+                {inboxMenuOpen && (
+                  <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-white border border-(--gray-200) rounded-xl shadow-lg py-1">
+                    <button
+                      onClick={() => {
+                        setFilter("Unread");
+                        setInboxMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-(--text-title) hover:bg-(--gray-50) transition-colors"
+                    >
+                      <MailOpen className="w-4 h-4 text-(--gray-400)" /> Filter
+                      unread
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -393,22 +592,29 @@ export default function PartnershipMessagesPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-              <DateSep label="Conversation" />
-              {messages.map((msg) => (
-                <div key={msg.client_id ?? msg.id} className="group">
-                  <ChatBubble msg={msg} />
-                  {msg.send_status === "failed" && msg.client_id && (
-                    <div className="flex justify-end mt-0.5">
-                      <button
-                        onClick={() => retrySend(msg.client_id as string)}
-                        className="text-[11px] text-red-500 hover:underline cursor-pointer"
-                      >
-                        Retry
-                      </button>
+              {messages.map((msg, i) => {
+                const label = dayLabel(msg.created_at);
+                const showSep =
+                  i === 0 || dayLabel(messages[i - 1].created_at) !== label;
+                return (
+                  <div key={msg.client_id ?? msg.id}>
+                    {showSep && <DateSep label={label} />}
+                    <div className="group">
+                      <ChatBubble msg={msg} />
+                      {msg.send_status === "failed" && msg.client_id && (
+                        <div className="flex justify-end mt-0.5">
+                          <button
+                            onClick={() => retrySend(msg.client_id as string)}
+                            className="text-[11px] text-red-500 hover:underline cursor-pointer"
+                          >
+                            Retry
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
 

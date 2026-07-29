@@ -18,6 +18,12 @@ export interface ConversationParticipant {
   last_read_at: string | null;
 }
 
+export interface ConversationLastMessage {
+  body: string;
+  sender_id: number;
+  created_at: string;
+}
+
 export interface Conversation {
   id: number;
   conversation_type: ConversationType;
@@ -26,6 +32,7 @@ export interface Conversation {
   course_slug: string | null;
   participants: ConversationParticipant[];
   unread_count: number;
+  last_message: ConversationLastMessage | null;
   updated_at: string;
   created_at: string;
 }
