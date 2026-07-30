@@ -87,7 +87,12 @@ export default function InstructorTopbar() {
       <div className="hidden lg:block flex-1" />
 
       <div className="flex items-center gap-3">
-        <NotificationBell settingsHref="/dashboard/instructor/settings" />
+        <NotificationBell
+          settingsHref="/dashboard/instructor/settings"
+          viewAllHref="/dashboard/instructor/notifications"
+          coursePlayerBase="/course-player"
+          messagesBase="/dashboard/instructor/messages"
+        />
 
         {/* User menu */}
         <div ref={menuRef} className="relative">

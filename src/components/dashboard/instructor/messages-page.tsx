@@ -1,30 +1,32 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import gsap from "gsap";
 import {
   Search,
   Send,
-  Star,
+  Clock,
+  AlertCircle,
   MoreVertical,
-  Paperclip,
   ChevronLeft,
   MessageSquareDashed,
-  Trash2,
-  BellOff,
-  UserX,
   MailOpen,
+  Plus,
+  X,
 } from "lucide-react";
 
-import {
-  type Message,
-  type Conversation,
-  SEED_CONVERSATIONS,
-} from "@/data/messages";
+import { useConversationList, useConversationThread, type ThreadMessage } from "@/hooks/use-conversations";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { dayLabel } from "@/lib/date-groups";
+import { createConversation, type Conversation } from "@/lib/messaging-api";
+import { listCourses, type Course, type CourseBrief } from "@/lib/course-api";
+import { fetchMe } from "@/lib/auth-api";
+import { notify } from "@/lib/toast";
+import { SelectDropdown } from "@/components/common/select-dropdown";
 
-type FilterTab = "All" | "Unread" | "Starred";
+type FilterTab = "All" | "Unread";
 
-// Avatar Component
 const AVATAR_COLORS = [
   "bg-violet-100 text-violet-700",
   "bg-blue-100 text-blue-700",
@@ -34,16 +36,46 @@ const AVATAR_COLORS = [
   "bg-cyan-100 text-cyan-700",
 ];
 
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function relativeTime(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const seconds = Math.floor(diffMs / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
+function otherParticipant(conv: Conversation, currentUserId: number | null) {
+  return (
+    conv.participants.find((p) => p.user_id !== currentUserId) ??
+    conv.participants[0]
+  );
+}
+
 function Avatar({
   initials,
   size = "md",
   colorIdx = 0,
-  online = false,
 }: {
   initials: string;
   size?: "sm" | "md" | "lg";
   colorIdx?: number;
-  online?: boolean;
 }) {
   const sz =
     size === "sm"
@@ -51,7 +83,6 @@ function Avatar({
       : size === "lg"
         ? "w-11 h-11 text-[14px]"
         : "w-9 h-9 text-[12px]";
-  const dotSz = size === "lg" ? "w-2.5 h-2.5" : "w-2 h-2";
   return (
     <div className="relative shrink-0">
       <div
@@ -59,27 +90,29 @@ function Avatar({
       >
         {initials}
       </div>
-      {online && (
-        <span
-          className={`absolute bottom-0 right-0 ${dotSz} bg-green-500 border-2 border-white rounded-full`}
-        />
-      )}
     </div>
   );
 }
 
-//  Conversation Item
 function ConversationItem({
   conv,
+  currentUserId,
   active,
   colorIdx,
   onClick,
 }: {
   conv: Conversation;
+  currentUserId: number | null;
   active: boolean;
   colorIdx: number;
   onClick: () => void;
 }) {
+  const other = otherParticipant(conv, currentUserId);
+  const subtitle =
+    conv.conversation_type === "co_instructor"
+      ? (conv.course_title ?? "Co-instructor")
+      : (conv.course_title ?? "Direct message");
+
   return (
     <button
       onClick={onClick}
@@ -89,51 +122,45 @@ function ConversationItem({
           : "hover:bg-(--gray-50) border-r-2 border-transparent"
       }`}
     >
-      <Avatar
-        initials={conv.studentAvatar}
-        online={conv.online}
-        colorIdx={colorIdx}
-      />
+      <Avatar initials={initialsOf(other.full_name)} colorIdx={colorIdx} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <span
-            className={`text-[14px] truncate ${conv.unread > 0 ? "font-semibold text-(--text-title)" : "font-medium text-(--text-title)"}`}
-          >
-            {conv.studentName}
+          <span className="flex items-baseline gap-1 min-w-0">
+            <span
+              className={`text-[14px] truncate ${conv.unread_count > 0 ? "font-semibold text-(--text-title)" : "font-medium text-(--text-title)"}`}
+            >
+              {other.full_name}
+            </span>
+            <span className="text-[11px] text-(--gray-400) shrink-0">·</span>
+            <span className="text-[11px] text-(--primary-700) truncate">
+              {subtitle}
+            </span>
           </span>
           <span className="text-[12px] text-(--gray-400) shrink-0">
-            {conv.lastTime}
+            {relativeTime(conv.updated_at)}
           </span>
         </div>
-        <p className="text-[12px] text-(--primary-700) truncate mt-0.5">
-          {conv.course}
-        </p>
         <div className="flex items-center justify-between gap-2 mt-1">
           <p
-            className={`text-[12px] truncate ${conv.unread > 0 ? "text-(--gray-500) font-normal" : "text-(--gray-500)"}`}
+            className={`text-[12px] truncate ${conv.unread_count > 0 ? "text-(--text-title) font-medium" : "text-(--gray-500)"}`}
           >
-            {conv.lastMessage}
+            {conv.last_message
+              ? `${conv.last_message.sender_id === currentUserId ? "You: " : ""}${conv.last_message.body}`
+              : "No messages yet"}
           </p>
-          <div className="flex items-center gap-1 shrink-0">
-            {conv.starred && (
-              <Star className="w-3 h-3 text-yellow-400 fill-current" />
-            )}
-            {conv.unread > 0 && (
-              <span className="min-w-4.5 h-4.5 px-1 bg-(--primary-700) text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                {conv.unread}
-              </span>
-            )}
-          </div>
+          {conv.unread_count > 0 && (
+            <span className="min-w-4.5 h-4.5 px-1 bg-(--primary-700) text-white text-[10px] font-bold rounded-full flex items-center justify-center shrink-0">
+              {conv.unread_count}
+            </span>
+          )}
         </div>
       </div>
     </button>
   );
 }
 
-// Chat Bubble
-
-function ChatBubble({ msg }: { msg: Message }) {
-  const isMe = msg.from === "instructor";
+function ChatBubble({ msg }: { msg: ThreadMessage }) {
+  const isMe = msg.is_own;
   return (
     <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
       <div
@@ -146,15 +173,23 @@ function ChatBubble({ msg }: { msg: Message }) {
               : "bg-(--gray-100) text-(--text-title) rounded-bl-sm"
           }`}
         >
-          {msg.text}
+          {msg.body}
         </div>
-        <span className="text-[12px] text-(--gray-400) px-1">{msg.time}</span>
+        <div className="flex items-center gap-1 px-1">
+          <span className="text-[12px] text-(--gray-400)">
+            {formatTime(msg.created_at)}
+          </span>
+          {isMe && msg.send_status === "pending" && (
+            <Clock className="w-3 h-3 text-(--gray-400)" />
+          )}
+          {isMe && msg.send_status === "failed" && (
+            <AlertCircle className="w-3 h-3 text-red-500" />
+          )}
+        </div>
       </div>
     </div>
   );
 }
-
-// Date Separator
 
 function DateSep({ label }: { label: string }) {
   return (
@@ -168,40 +203,182 @@ function DateSep({ label }: { label: string }) {
   );
 }
 
-// Main Component
+interface NewConversationModalProps {
+  courses: Course[];
+  currentUserId: number | null;
+  onClose: () => void;
+  onCreated: (conv: Conversation) => void;
+}
+
+function NewConversationModal({
+  courses,
+  currentUserId,
+  onClose,
+  onCreated,
+}: NewConversationModalProps) {
+  const [courseId, setCourseId] = useState<number | "">("");
+  const [peerInstructorId, setPeerInstructorId] = useState<number | "">("");
+  const [body, setBody] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const selectedCourse = courses.find((c) => c.id === courseId);
+  const peers: CourseBrief[] = (selectedCourse?.instructors ?? []).filter(
+    (i) => i.id !== currentUserId,
+  );
+
+  async function handleSubmit() {
+    if (!courseId || !peerInstructorId || !body.trim()) return;
+    setSubmitting(true);
+    try {
+      const conv = await createConversation({
+        conversation_type: "co_instructor",
+        course_id: courseId,
+        peer_instructor_id: peerInstructorId,
+        body: body.trim(),
+      });
+      onCreated(conv);
+      onClose();
+    } catch (err) {
+      notify.error(err instanceof Error ? err.message : "Failed to start conversation.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-(--gray-200)">
+          <h3 className="text-[16px] font-semibold text-(--text-title)">
+            New Conversation
+          </h3>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-(--gray-100) transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4 text-(--gray-500)" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="text-[13px] font-medium text-(--text-title) mb-1.5 block">
+              Course
+            </label>
+            <SelectDropdown
+              value={courseId === "" ? "" : String(courseId)}
+              onChange={(v) => {
+                setCourseId(v ? Number(v) : "");
+                setPeerInstructorId("");
+              }}
+              placeholder="Select a course…"
+              options={courses.map((c) => ({
+                value: String(c.id),
+                label: c.title,
+              }))}
+            />
+          </div>
+
+          <div>
+            <label className="text-[13px] font-medium text-(--text-title) mb-1.5 block">
+              Co-Instructor
+            </label>
+            <SelectDropdown
+              value={peerInstructorId === "" ? "" : String(peerInstructorId)}
+              onChange={(v) => setPeerInstructorId(v ? Number(v) : "")}
+              disabled={!courseId}
+              placeholder="Select a co-instructor…"
+              options={peers.map((i) => ({
+                value: String(i.id),
+                label: i.full_name,
+              }))}
+            />
+          </div>
+
+          <div>
+            <label className="text-[13px] font-medium text-(--text-title) mb-1.5 block">
+              Message
+            </label>
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={4}
+              placeholder="What would you like to discuss?"
+              className="w-full px-3 py-2 text-[13px] bg-(--gray-50) border border-(--gray-200) rounded-md focus:outline-none focus:ring-2 focus:ring-(--primary-700) text-(--text-title) placeholder:text-(--gray-400) resize-none"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 px-5 py-4 border-t border-(--gray-200)">
+          <button
+            onClick={onClose}
+            className="h-9 px-4 text-[13px] font-medium text-(--gray-600) rounded-lg hover:bg-(--gray-100) transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!courseId || !peerInstructorId || !body.trim() || submitting}
+            className="h-9 px-4 text-[13px] font-medium bg-(--primary-700) text-white rounded-lg hover:bg-(--primary-900) transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          >
+            {submitting ? "Starting…" : "Start Conversation"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function MessagesPage() {
+  const searchParams = useSearchParams();
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [filter, setFilter] = useState<FilterTab>("All");
   const [search, setSearch] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(() => {
+    const raw = searchParams.get("conversation");
+    return raw ? Number(raw) : null;
+  });
   const [input, setInput] = useState("");
-  const [conversations, setConversations] =
-    useState<Conversation[]>(SEED_CONVERSATIONS);
-  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+  const [mobileView, setMobileView] = useState<"list" | "chat">(() =>
+    searchParams.get("conversation") ? "chat" : "list",
+  );
   const [inboxMenuOpen, setInboxMenuOpen] = useState(false);
-  const [chatMenuOpen, setChatMenuOpen] = useState(false);
   const inboxMenuRef = useRef<HTMLDivElement>(null);
-  const chatMenuRef = useRef<HTMLDivElement>(null);
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [myCourses, setMyCourses] = useState<Course[]>([]);
 
   const listRef = useRef<(HTMLDivElement | null)[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  useBodyScrollLock(showNewModal);
+
+  useEffect(() => {
+    void fetchMe().then((user) => setCurrentUserId(user?.user_id ?? null));
+    void listCourses(1, 100)
+      .then((res) => setMyCourses(res.results))
+      .catch(() => {});
+  }, []);
+
+  const { conversations, refresh, markLocallyRead } = useConversationList(currentUserId);
+  const { messages, sendMessage, retrySend } = useConversationThread(
+    selectedId,
+    currentUserId,
+  );
+
   const filtered = conversations.filter((c) => {
+    const other = otherParticipant(c, currentUserId);
     const matchSearch =
-      c.studentName.toLowerCase().includes(search.toLowerCase()) ||
-      c.course.toLowerCase().includes(search.toLowerCase());
+      other.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.course_title ?? "").toLowerCase().includes(search.toLowerCase());
     if (!matchSearch) return false;
-    if (filter === "Unread") return c.unread > 0;
-    if (filter === "Starred") return c.starred;
+    if (filter === "Unread") return c.unread_count > 0;
     return true;
   });
 
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
-  const selectedColorIdx = SEED_CONVERSATIONS.findIndex(
-    (c) => c.id === selectedId,
-  );
+  const selectedOther = selected ? otherParticipant(selected, currentUserId) : null;
+  const selectedColorIdx = conversations.findIndex((c) => c.id === selectedId);
 
-  // Outside-click: close inbox menu
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (
@@ -214,20 +391,6 @@ export default function MessagesPage() {
     return () => document.removeEventListener("mousedown", handler);
   }, [inboxMenuOpen]);
 
-  // Outside-click: close chat menu
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (
-        chatMenuRef.current &&
-        !chatMenuRef.current.contains(e.target as Node)
-      )
-        setChatMenuOpen(false);
-    };
-    if (chatMenuOpen) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [chatMenuOpen]);
-
-  // GSAP entrance for list items
   useEffect(() => {
     listRef.current.forEach((el, i) => {
       if (!el) return;
@@ -243,54 +406,49 @@ export default function MessagesPage() {
         },
       );
     });
-  }, [filter, search]);
+  }, [filter, search, conversations.length]);
 
-  // Scroll to bottom when conversation changes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [selectedId, conversations]);
+  }, [selectedId, messages]);
 
-  function selectConversation(id: string) {
+  useEffect(() => {
+    if (selectedId != null) markLocallyRead(selectedId);
+  }, [selectedId, markLocallyRead]);
+
+  function selectConversation(id: number) {
     setSelectedId(id);
     setMobileView("chat");
-    // Mark as read
-    setConversations((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, unread: 0 } : c)),
-    );
   }
 
-  function sendMessage() {
+  function handleSend() {
     const text = input.trim();
     if (!text || !selectedId) return;
-    const now = new Date();
-    const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === selectedId
-          ? {
-              ...c,
-              messages: [
-                ...c.messages,
-                { id: `m${Date.now()}`, from: "instructor", text, time },
-              ],
-              lastMessage: text,
-              lastTime: "just now",
-            }
-          : c,
-      ),
-    );
+    sendMessage(text);
     setInput("");
   }
 
-  const totalUnread = conversations.reduce((acc, c) => acc + c.unread, 0);
+  const totalUnread = conversations.reduce((acc, c) => acc + c.unread_count, 0);
+
+  const coInstructorCourses = myCourses.filter((c) => c.instructors.length > 1);
 
   return (
     <div className="bg-white border border-(--gray-200) rounded-2xl overflow-hidden flex h-[calc(100vh-180px)] min-h-130">
-      {/* ── Left: Conversation List ── */}
+      {showNewModal && (
+        <NewConversationModal
+          courses={coInstructorCourses}
+          currentUserId={currentUserId}
+          onClose={() => setShowNewModal(false)}
+          onCreated={(conv) => {
+            void refresh();
+            selectConversation(conv.id);
+          }}
+        />
+      )}
+
       <div
         className={`flex flex-col w-full md:w-80 lg:w-88 shrink-0 border-r border-(--gray-200) ${mobileView === "chat" ? "hidden md:flex" : "flex"}`}
       >
-        {/* Header */}
         <div className="px-4 pt-4 pb-3 border-b border-(--gray-200) space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-[16px] font-semibold text-(--text-title)">
@@ -301,7 +459,15 @@ export default function MessagesPage() {
                 </span>
               )}
             </h2>
-            <div className="relative" ref={inboxMenuRef}>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setShowNewModal(true)}
+                className="w-8 h-8 cursor-pointer flex items-center justify-center rounded-md hover:bg-(--gray-100) transition-colors"
+                aria-label="New conversation"
+              >
+                <Plus className="w-5 h-5 text-(--gray-500)" />
+              </button>
+              <div className="relative" ref={inboxMenuRef}>
               <button
                 onClick={() => setInboxMenuOpen((v) => !v)}
                 className="w-8 h-8 cursor-pointer flex items-center justify-center rounded-md hover:bg-(--gray-100) transition-colors"
@@ -312,32 +478,20 @@ export default function MessagesPage() {
                 <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-white border border-(--gray-200) rounded-xl shadow-lg py-1 overflow-hidden">
                   <button
                     onClick={() => {
-                      setConversations((prev) =>
-                        prev.map((c) => ({ ...c, unread: 0 })),
-                      );
-                      setInboxMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-(--text-title) hover:bg-(--gray-50) transition-colors"
-                  >
-                    <MailOpen className="w-4 h-4 text-(--gray-400)" />
-                    Mark all as read
-                  </button>
-                  <button
-                    onClick={() => {
                       setFilter("Unread");
                       setInboxMenuOpen(false);
                     }}
                     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-(--text-title) hover:bg-(--gray-50) transition-colors"
                   >
-                    <BellOff className="w-4 h-4 text-(--gray-400)" />
+                    <MailOpen className="w-4 h-4 text-(--gray-400)" />
                     Filter unread
                   </button>
                 </div>
               )}
+              </div>
             </div>
           </div>
 
-          {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--gray-500)" />
             <input
@@ -348,9 +502,8 @@ export default function MessagesPage() {
             />
           </div>
 
-          {/* Filter tabs */}
           <div className="flex gap-1">
-            {(["All", "Unread", "Starred"] as FilterTab[]).map((tab) => (
+            {(["All", "Unread"] as FilterTab[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setFilter(tab)}
@@ -366,7 +519,6 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        {/* List */}
         <div className="flex-1 overflow-y-auto">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-center px-6">
@@ -386,10 +538,9 @@ export default function MessagesPage() {
               >
                 <ConversationItem
                   conv={conv}
+                  currentUserId={currentUserId}
                   active={conv.id === selectedId}
-                  colorIdx={SEED_CONVERSATIONS.findIndex(
-                    (c) => c.id === conv.id,
-                  )}
+                  colorIdx={conversations.findIndex((c) => c.id === conv.id)}
                   onClick={() => selectConversation(conv.id)}
                 />
               </div>
@@ -398,15 +549,12 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      {/* ── Right: Chat Area ── */}
       <div
         className={`flex-1 flex flex-col min-w-0 ${mobileView === "list" ? "hidden md:flex" : "flex"}`}
       >
-        {selected ? (
+        {selected && selectedOther ? (
           <>
-            {/* Chat Header */}
             <div className="flex items-center gap-3 px-4 h-16 border-b border-(--gray-200) shrink-0">
-              {/* Mobile back button */}
               <button
                 className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg hover:bg-(--gray-100) transition-colors -ml-1"
                 onClick={() => setMobileView("list")}
@@ -415,146 +563,50 @@ export default function MessagesPage() {
               </button>
 
               <Avatar
-                initials={selected.studentAvatar}
+                initials={initialsOf(selectedOther.full_name)}
                 size="lg"
-                online={selected.online}
                 colorIdx={selectedColorIdx >= 0 ? selectedColorIdx : 0}
               />
 
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] font-semibold text-(--text-title) truncate">
-                  {selected.studentName}
+                  {selectedOther.full_name}
                 </p>
-                <div className="flex items-center gap-1.5">
-                  {selected.online ? (
-                    <>
-                      {/* <Circle className="w-2 h-2 fill-green-500 text-green-500" /> */}
-                      <span className="text-[12px] font-medium text-green-600">
-                        Online
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-[12px] font-medium text-(--gray-400) truncate">
-                      {selected.course}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  onClick={() =>
-                    setConversations((prev) =>
-                      prev.map((c) =>
-                        c.id === selected.id
-                          ? { ...c, starred: !c.starred }
-                          : c,
-                      ),
-                    )
-                  }
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-(--gray-100) transition-colors"
-                >
-                  <Star
-                    className={`w-4 h-4 ${selected.starred ? "fill-yellow-400 text-yellow-400" : "text-(--gray-400)"}`}
-                  />
-                </button>
-                <div className="relative" ref={chatMenuRef}>
-                  <button
-                    onClick={() => setChatMenuOpen((v) => !v)}
-                    className="w-8 h-8 flex items-center cursor-pointer justify-center rounded-lg hover:bg-(--gray-100) transition-colors"
-                  >
-                    <MoreVertical className="w-5 h-5 text-(--gray-500)" />
-                  </button>
-                  {chatMenuOpen && (
-                    <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-white border border-(--gray-200) rounded-xl shadow-lg py-1 overflow-hidden">
-                      <button
-                        onClick={() => {
-                          setConversations((prev) =>
-                            prev.map((c) =>
-                              c.id === selected.id ? { ...c, unread: 1 } : c,
-                            ),
-                          );
-                          setChatMenuOpen(false);
-                        }}
-                        className="w-full cursor-pointer flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-(--text-title) hover:bg-(--gray-50) transition-colors"
-                      >
-                        <MailOpen className="w-4 h-4 text-(--gray-400)" />
-                        Mark as unread
-                      </button>
-                      <button
-                        onClick={() => {
-                          setConversations((prev) =>
-                            prev.map((c) =>
-                              c.id === selected.id
-                                ? { ...c, starred: !c.starred }
-                                : c,
-                            ),
-                          );
-                          setChatMenuOpen(false);
-                        }}
-                        className="w-full cursor-pointer flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-(--text-title) hover:bg-(--gray-50) transition-colors"
-                      >
-                        <Star className="w-4 h-4 text-(--gray-400)" />
-                        {selected.starred ? "Unstar" : "Star"} conversation
-                      </button>
-                      <button
-                        onClick={() => {
-                          setChatMenuOpen(false);
-                        }}
-                        className="w-full cursor-pointer flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-(--text-title) hover:bg-(--gray-50) transition-colors"
-                      >
-                        <BellOff className="w-4 h-4 text-(--gray-400)" />
-                        Mute notifications
-                      </button>
-                      <div className="h-px bg-(--gray-100) my-1" />
-                      <button
-                        onClick={() => {
-                          setConversations((prev) =>
-                            prev.map((c) =>
-                              c.id === selected.id ? { ...c, messages: [] } : c,
-                            ),
-                          );
-                          setChatMenuOpen(false);
-                        }}
-                        className="w-full cursor-pointer flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-red-500 hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Clear conversation
-                      </button>
-                      <button
-                        onClick={() => {
-                          setConversations((prev) =>
-                            prev.filter((c) => c.id !== selected.id),
-                          );
-                          setSelectedId(null);
-                          setChatMenuOpen(false);
-                        }}
-                        className="w-full cursor-pointer flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-red-500 hover:bg-red-50 transition-colors"
-                      >
-                        <UserX className="w-4 h-4" />
-                        Remove student
-                      </button>
-                    </div>
-                  )}
-                </div>
+                <span className="text-[12px] font-medium text-(--gray-400) truncate">
+                  {selected.course_title ?? "Direct message"}
+                </span>
               </div>
             </div>
 
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-              <DateSep label="Today" />
-              {selected.messages.map((msg) => (
-                <ChatBubble key={msg.id} msg={msg} />
-              ))}
+              {messages.map((msg, i) => {
+                const label = dayLabel(msg.created_at);
+                const showSep =
+                  i === 0 || dayLabel(messages[i - 1].created_at) !== label;
+                return (
+                  <div key={msg.client_id ?? msg.id}>
+                    {showSep && <DateSep label={label} />}
+                    <div className="group">
+                      <ChatBubble msg={msg} />
+                      {msg.send_status === "failed" && msg.client_id && (
+                        <div className="flex justify-end mt-0.5">
+                          <button
+                            onClick={() => retrySend(msg.client_id as string)}
+                            className="text-[11px] text-red-500 hover:underline cursor-pointer"
+                          >
+                            Retry
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
             <div className="px-4 py-3 border-t border-(--gray-200) shrink-0">
               <div className="flex items-end gap-2 bg-(--gray-50) border border-(--gray-200) rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-(--primary-700) focus-within:bg-white transition-colors">
-                <button className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-(--gray-200) transition-colors shrink-0 mb-0.5">
-                  <Paperclip className="w-4 h-4 text-(--gray-400)" />
-                </button>
                 <textarea
                   rows={1}
                   value={input}
@@ -567,14 +619,14 @@ export default function MessagesPage() {
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
-                      sendMessage();
+                      handleSend();
                     }
                   }}
                   placeholder="Type a message… (Enter to send)"
                   className="flex-1 bg-transparent h-7 resize-none text-[13px] text-(--text-title) placeholder:text-(--gray-400) focus:outline-none leading-relaxed max-h-28 min-h-7"
                 />
                 <button
-                  onClick={sendMessage}
+                  onClick={handleSend}
                   disabled={!input.trim()}
                   className="w-8 h-8 flex items-center justify-center rounded-lg bg-(--primary-700) hover:bg-(--primary-900) text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 mb-0.5"
                 >
@@ -587,7 +639,6 @@ export default function MessagesPage() {
             </div>
           </>
         ) : (
-          /* Empty state */
           <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-8">
             <div className="w-16 h-16 rounded-2xl bg-(--primary-50) flex items-center justify-center">
               <MessageSquareDashed className="w-7 h-7 text-(--primary-700)" />

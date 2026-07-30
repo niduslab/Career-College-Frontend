@@ -87,7 +87,12 @@ export default function LearnerTopbar() {
       <div className="hidden lg:block flex-1" />
 
       <div className="flex items-center gap-3">
-        <NotificationBell settingsHref="/dashboard/learner/settings" />
+        <NotificationBell
+          settingsHref="/dashboard/learner/settings"
+          viewAllHref="/dashboard/learner/notifications"
+          coursePlayerBase="/dashboard/learner/course-player"
+          messagesBase="/dashboard/learner/messages"
+        />
 
         {/* User menu */}
         <div ref={menuRef} className="relative">

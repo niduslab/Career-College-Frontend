@@ -13,6 +13,7 @@ interface SelectDropdownProps {
   onChange: (value: string) => void;
   options: SelectOption[];
   placeholder?: string;
+  disabled?: boolean;
 }
 
 export function SelectDropdown({
@@ -20,6 +21,7 @@ export function SelectDropdown({
   onChange,
   options,
   placeholder = "Select…",
+  disabled = false,
 }: SelectDropdownProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -40,8 +42,9 @@ export function SelectDropdown({
     <div ref={ref} className="relative">
       <button
         type="button"
+        disabled={disabled}
         onClick={() => setOpen((p) => !p)}
-        className="w-full h-12 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-500 focus:outline-none text-left flex items-center justify-between cursor-pointer"
+        className="w-full h-12 px-4 py-3 rounded-lg border border-gray-200 bg-white text-gray-500 focus:outline-none text-left flex items-center justify-between cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span>{selected?.label ?? placeholder}</span>
         {open ? (
@@ -52,6 +55,11 @@ export function SelectDropdown({
       </button>
       {open && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+          {options.length === 0 && (
+            <p className="px-4 py-3 text-gray-400 sg-p-default">
+              No options available
+            </p>
+          )}
           {options.map((o) => (
             <button
               key={o.value}

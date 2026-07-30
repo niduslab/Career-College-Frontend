@@ -8,10 +8,8 @@ import {
   Send,
   Clock,
   AlertCircle,
-  MoreVertical,
   ChevronLeft,
   MessageSquareDashed,
-  MailOpen,
   Plus,
   X,
 } from "lucide-react";
@@ -24,8 +22,7 @@ import {
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { dayLabel } from "@/lib/date-groups";
 import { createConversation, type Conversation } from "@/lib/messaging-api";
-import { listCourses, type Course } from "@/lib/course-api";
-import { getExperts, type Expert } from "@/lib/partner-api";
+import { getMyCourses, type Enrollment, type CourseBrief } from "@/lib/course-api";
 import { fetchMe } from "@/lib/auth-api";
 import { notify } from "@/lib/toast";
 import { SelectDropdown } from "@/components/common/select-dropdown";
@@ -91,7 +88,7 @@ function Avatar({
   return (
     <div className="relative shrink-0">
       <div
-        className={`${sz} ${AVATAR_COLORS[colorIdx % AVATAR_COLORS.length]} rounded-full flex items-center justify-center font-semibold`}
+        className={`${sz} ${AVATAR_COLORS[colorIdx % AVATAR_COLORS.length]} rounded-full flex items-center justify-center font-bold`}
       >
         {initials}
       </div>
@@ -134,7 +131,7 @@ function ConversationItem({
             </span>
             <span className="text-[11px] text-(--gray-400) shrink-0">·</span>
             <span className="text-[11px] text-(--primary-700) truncate">
-              {conv.course_title ?? "Expert"}
+              {conv.course_title ?? "Direct message"}
             </span>
           </span>
           <span className="text-[12px] text-(--gray-400) shrink-0">
@@ -204,44 +201,39 @@ function DateSep({ label }: { label: string }) {
   );
 }
 
-const NO_COURSE_VALUE = "none";
-
 interface NewConversationModalProps {
-  experts: Expert[];
-  courses: Course[];
+  enrollments: Enrollment[];
   onClose: () => void;
   onCreated: (conv: Conversation) => void;
 }
 
 function NewConversationModal({
-  experts,
-  courses,
+  enrollments,
   onClose,
   onCreated,
 }: NewConversationModalProps) {
-  const [expertUserId, setExpertUserId] = useState<number | "">("");
-  const [courseChoice, setCourseChoice] = useState<string>(NO_COURSE_VALUE);
+  const [courseId, setCourseId] = useState<number | "">("");
+  const [instructorId, setInstructorId] = useState<number | "">("");
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const selectedCourse = enrollments.find((e) => e.course.id === courseId)?.course;
+  const instructors: CourseBrief[] = selectedCourse?.instructors ?? [];
+
   async function handleSubmit() {
-    if (!expertUserId || !body.trim()) return;
+    if (!courseId || !instructorId || !body.trim()) return;
     setSubmitting(true);
     try {
-      const courseId =
-        courseChoice === NO_COURSE_VALUE ? undefined : Number(courseChoice);
       const conv = await createConversation({
-        conversation_type: "institution_expert",
-        expert_user_id: expertUserId,
+        conversation_type: "learner_instructor",
         course_id: courseId,
+        instructor_id: instructorId,
         body: body.trim(),
       });
       onCreated(conv);
       onClose();
     } catch (err) {
-      notify.error(
-        err instanceof Error ? err.message : "Failed to start conversation.",
-      );
+      notify.error(err instanceof Error ? err.message : "Failed to start conversation.");
     } finally {
       setSubmitting(false);
     }
@@ -265,40 +257,35 @@ function NewConversationModal({
         <div className="p-5 space-y-4">
           <div>
             <label className="text-[13px] font-medium text-(--text-title) mb-1.5 block">
-              Expert
+              Course
             </label>
             <SelectDropdown
-              value={expertUserId === "" ? "" : String(expertUserId)}
-              onChange={(v) => setExpertUserId(v ? Number(v) : "")}
-              placeholder="Select an expert…"
-              options={experts.map((e) => ({
-                value: String(e.user_id),
-                label: e.full_name,
+              value={courseId === "" ? "" : String(courseId)}
+              onChange={(v) => {
+                setCourseId(v ? Number(v) : "");
+                setInstructorId("");
+              }}
+              placeholder="Select a course…"
+              options={enrollments.map((e) => ({
+                value: String(e.course.id),
+                label: e.course.title,
               }))}
             />
-            {experts.length === 0 && (
-              <p className="text-[12px] text-(--gray-400) mt-1.5">
-                No experts available — your institution must be verified and
-                have at least one active affiliated expert.
-              </p>
-            )}
           </div>
 
           <div>
             <label className="text-[13px] font-medium text-(--text-title) mb-1.5 block">
-              Course (optional)
+              Instructor
             </label>
             <SelectDropdown
-              value={courseChoice}
-              onChange={(v) => setCourseChoice(v || NO_COURSE_VALUE)}
-              placeholder="Select a course…"
-              options={[
-                { value: NO_COURSE_VALUE, label: "No course (general)" },
-                ...courses.map((c) => ({
-                  value: String(c.id),
-                  label: c.title,
-                })),
-              ]}
+              value={instructorId === "" ? "" : String(instructorId)}
+              onChange={(v) => setInstructorId(v ? Number(v) : "")}
+              disabled={!courseId}
+              placeholder="Select an instructor…"
+              options={instructors.map((i) => ({
+                value: String(i.id),
+                label: i.full_name,
+              }))}
             />
           </div>
 
@@ -310,7 +297,7 @@ function NewConversationModal({
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={4}
-              placeholder="What would you like to say?"
+              placeholder="What would you like to ask?"
               className="w-full px-3 py-2 text-[13px] bg-(--gray-50) border border-(--gray-200) rounded-md focus:outline-none focus:ring-2 focus:ring-(--primary-700) text-(--text-title) placeholder:text-(--gray-400) resize-none"
             />
           </div>
@@ -325,7 +312,7 @@ function NewConversationModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={!expertUserId || !body.trim() || submitting}
+            disabled={!courseId || !instructorId || !body.trim() || submitting}
             className="h-9 px-4 text-[13px] font-medium bg-(--primary-700) text-white rounded-lg hover:bg-(--primary-900) transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             {submitting ? "Starting…" : "Start Conversation"}
@@ -336,7 +323,7 @@ function NewConversationModal({
   );
 }
 
-export default function PartnershipMessagesPage() {
+export default function LearnerMessagesPage() {
   const searchParams = useSearchParams();
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [filter, setFilter] = useState<FilterTab>("All");
@@ -349,11 +336,9 @@ export default function PartnershipMessagesPage() {
   const [mobileView, setMobileView] = useState<"list" | "chat">(() =>
     searchParams.get("conversation") ? "chat" : "list",
   );
-  const [inboxMenuOpen, setInboxMenuOpen] = useState(false);
-  const inboxMenuRef = useRef<HTMLDivElement>(null);
   const [showNewModal, setShowNewModal] = useState(false);
-  const [experts, setExperts] = useState<Expert[]>([]);
-  const [myCourses, setMyCourses] = useState<Course[]>([]);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+
   const listRef = useRef<(HTMLDivElement | null)[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -361,20 +346,10 @@ export default function PartnershipMessagesPage() {
 
   useEffect(() => {
     void fetchMe().then((user) => setCurrentUserId(user?.user_id ?? null));
-    void getExperts()
-      .then((res) =>
-        setExperts(
-          res.results.filter((e) => e.affiliation_status === "active"),
-        ),
-      )
-      .catch(() => {});
-    void listCourses(1, 100)
-      .then((res) => setMyCourses(res.results))
-      .catch(() => {});
+    void getMyCourses().then((res) => setEnrollments(res.results));
   }, []);
 
-  const { conversations, refresh, markLocallyRead } =
-    useConversationList(currentUserId);
+  const { conversations, refresh, markLocallyRead } = useConversationList(currentUserId);
   const { messages, sendMessage, retrySend } = useConversationThread(
     selectedId,
     currentUserId,
@@ -382,31 +357,17 @@ export default function PartnershipMessagesPage() {
 
   const filtered = conversations.filter((c) => {
     const other = otherParticipant(c, currentUserId);
-    const matchSearch = other.full_name
-      .toLowerCase()
-      .includes(search.toLowerCase());
+    const matchSearch =
+      other.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.course_title ?? "").toLowerCase().includes(search.toLowerCase());
     if (!matchSearch) return false;
     if (filter === "Unread") return c.unread_count > 0;
     return true;
   });
 
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
-  const selectedOther = selected
-    ? otherParticipant(selected, currentUserId)
-    : null;
+  const selectedOther = selected ? otherParticipant(selected, currentUserId) : null;
   const selectedColorIdx = conversations.findIndex((c) => c.id === selectedId);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (
-        inboxMenuRef.current &&
-        !inboxMenuRef.current.contains(e.target as Node)
-      )
-        setInboxMenuOpen(false);
-    };
-    if (inboxMenuOpen) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [inboxMenuOpen]);
 
   useEffect(() => {
     listRef.current.forEach((el, i) => {
@@ -451,8 +412,7 @@ export default function PartnershipMessagesPage() {
     <div className="bg-white border border-(--gray-200) rounded-2xl overflow-hidden flex h-[calc(100vh-180px)] min-h-130">
       {showNewModal && (
         <NewConversationModal
-          experts={experts}
-          courses={myCourses}
+          enrollments={enrollments}
           onClose={() => setShowNewModal(false)}
           onCreated={(conv) => {
             void refresh();
@@ -474,37 +434,13 @@ export default function PartnershipMessagesPage() {
                 </span>
               )}
             </h2>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setShowNewModal(true)}
-                className="w-8 h-8 cursor-pointer flex items-center justify-center rounded-md hover:bg-(--gray-100) transition-colors"
-                aria-label="New conversation"
-              >
-                <Plus className="w-5 h-5 text-(--gray-500)" />
-              </button>
-              <div className="relative" ref={inboxMenuRef}>
-                <button
-                  onClick={() => setInboxMenuOpen((v) => !v)}
-                  className="w-8 h-8 cursor-pointer flex items-center justify-center rounded-md hover:bg-(--gray-100) transition-colors"
-                >
-                  <MoreVertical className="w-5 h-5 text-(--gray-500)" />
-                </button>
-                {inboxMenuOpen && (
-                  <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-white border border-(--gray-200) rounded-xl shadow-lg py-1">
-                    <button
-                      onClick={() => {
-                        setFilter("Unread");
-                        setInboxMenuOpen(false);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-(--text-title) hover:bg-(--gray-50) transition-colors"
-                    >
-                      <MailOpen className="w-4 h-4 text-(--gray-400)" /> Filter
-                      unread
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+            <button
+              onClick={() => setShowNewModal(true)}
+              className="w-8 h-8 cursor-pointer flex items-center justify-center rounded-md hover:bg-(--gray-100) transition-colors"
+              aria-label="New conversation"
+            >
+              <Plus className="w-5 h-5 text-(--gray-500)" />
+            </button>
           </div>
 
           <div className="relative">
@@ -512,7 +448,7 @@ export default function PartnershipMessagesPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search experts…"
+              placeholder="Search instructors…"
               className="w-full h-9 pl-8 pr-3 text-[12px] bg-(--gray-50) border border-(--gray-200) rounded-md focus:outline-none focus:ring-2 focus:ring-(--primary-700) focus:bg-white placeholder:text-(--gray-400) text-(--text-title) transition-colors"
             />
           </div>
@@ -541,6 +477,12 @@ export default function PartnershipMessagesPage() {
               <p className="text-[16px] text-(--gray-500)">
                 No conversations found
               </p>
+              <button
+                onClick={() => setShowNewModal(true)}
+                className="text-[13px] font-medium text-(--primary-700) hover:underline cursor-pointer"
+              >
+                Message an instructor
+              </button>
             </div>
           ) : (
             filtered.map((conv, i) => (
@@ -586,7 +528,7 @@ export default function PartnershipMessagesPage() {
                   {selectedOther.full_name}
                 </p>
                 <p className="text-[12px] text-(--gray-400) truncate">
-                  {selected.course_title ?? "Affiliated expert"}
+                  {selected.course_title ?? "Direct message"}
                 </p>
               </div>
             </div>
@@ -661,9 +603,15 @@ export default function PartnershipMessagesPage() {
                 No conversation selected
               </p>
               <p className="text-[14px] text-(--gray-500) mt-1">
-                Choose a partner from the list to start messaging.
+                Choose an instructor from the list, or start a new conversation.
               </p>
             </div>
+            <button
+              onClick={() => setShowNewModal(true)}
+              className="h-9 px-4 text-[13px] font-medium bg-(--primary-700) text-white rounded-lg hover:bg-(--primary-900) transition-colors cursor-pointer"
+            >
+              New Conversation
+            </button>
           </div>
         )}
       </div>

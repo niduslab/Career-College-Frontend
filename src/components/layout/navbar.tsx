@@ -1,9 +1,18 @@
 "use client";
 import Link from "next/link";
-import { Menu, Search, Sparkles, X, ChevronDown } from "lucide-react";
+import {
+  Menu,
+  Search,
+  Sparkles,
+  X,
+  ChevronDown,
+  LayoutDashboard,
+  LogOut,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "@/lib/gsap";
 import { useAuth } from "@/lib/use-auth";
+import { dashboardPathFor } from "@/lib/auth-api";
 
 const NAV_LINKS = [
   { label: "Categories", href: "#" },
@@ -27,14 +36,26 @@ const COURSES_DROPDOWN = [
 ];
 
 export function Navbar() {
-  const { authed, logout } = useAuth();
+  const { authed, user, logout } = useAuth({ withUser: true });
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileDropdown, setMobileDropdown] = useState<
     "categories" | "courses" | null
   >(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const searchBorderRefs = useRef<Array<HTMLDivElement | null>>([]);
   const mobilePanelRef = useRef<HTMLDivElement | null>(null);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const dashboardHref = user ? dashboardPathFor(user) : "/dashboard/learner";
+  const displayName = user?.full_name?.trim() || "";
+  const initials =
+    displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "U";
 
   const toggleMobileMenu = () => {
     setIsMobileOpen((prev) => !prev);
@@ -124,6 +145,31 @@ export function Navbar() {
       window.removeEventListener("resize", onResize);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isProfileOpen) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsProfileOpen(false);
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isProfileOpen]);
 
   return (
     <header
@@ -227,13 +273,63 @@ export function Navbar() {
 
         <div className="hidden items-center gap-4 xl:flex">
           {authed ? (
-            <button
-              type="button"
-              onClick={logout}
-              className="h-10 cursor-pointer shrink-0 whitespace-nowrap rounded-md border border-(--primary-700) px-5 sg-p-default font-semibold text-(--primary-700) transition-colors hover:bg-(--primary-50) inline-flex items-center justify-center"
-            >
-              Logout
-            </button>
+            <div className="relative" ref={profileMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsProfileOpen((prev) => !prev)}
+                aria-haspopup="menu"
+                aria-expanded={isProfileOpen}
+                className="flex h-10 cursor-pointer items-center gap-2 rounded-full border border-(--gray-200) pl-1 pr-3 transition-colors hover:border-(--primary-300)"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--primary-700) text-xs font-semibold text-(--text-white)">
+                  {initials}
+                </span>
+                <ChevronDown
+                  size={16}
+                  strokeWidth={2.2}
+                  className={`text-(--text-title) transition-transform ${
+                    isProfileOpen ? "rotate-180" : "rotate-0"
+                  }`}
+                />
+              </button>
+
+              <div
+                role="menu"
+                className={`absolute right-0 top-full z-30 mt-3 min-w-52 origin-top-right rounded-2xl border border-(--gray-200) bg-(--text-white) p-2 shadow-lg transition-all duration-150 ${
+                  isProfileOpen
+                    ? "visible translate-y-0 opacity-100"
+                    : "invisible translate-y-1 opacity-0"
+                }`}
+              >
+                {displayName && (
+                  <div className="truncate px-3 py-2 text-sm font-medium text-(--text-title)">
+                    {displayName}
+                  </div>
+                )}
+                <Link
+                  href={dashboardHref}
+                  role="menuitem"
+                  onClick={() => setIsProfileOpen(false)}
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-(--text-title) transition-colors hover:bg-(--primary-50) hover:text-(--primary-700)"
+                >
+                  <LayoutDashboard size={16} strokeWidth={2.2} />
+                  Dashboard
+                </Link>
+                <div className="my-1 h-px bg-(--gray-200)" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    logout();
+                  }}
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-(--primary-700) transition-colors hover:bg-(--primary-50)"
+                >
+                  <LogOut size={16} strokeWidth={2.2} />
+                  Logout
+                </button>
+              </div>
+            </div>
           ) : (
             <>
               <Link
@@ -432,16 +528,27 @@ export function Navbar() {
               className="mt-4 flex flex-wrap items-center justify-start gap-3"
             >
               {authed ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileOpen(false);
-                    logout();
-                  }}
-                  className="h-10 min-w-35 rounded-md border border-(--primary-500) px-8 text-sm font-semibold text-(--primary-600) transition-colors hover:bg-(--primary-50) sm:min-w-42 inline-flex items-center justify-center"
-                >
-                  Logout
-                </button>
+                <>
+                  <Link
+                    href={dashboardHref}
+                    onClick={() => setIsMobileOpen(false)}
+                    className="h-10 min-w-35 rounded-md border border-(--primary-500) px-8 text-sm font-semibold text-(--primary-600) transition-colors hover:bg-(--primary-50) sm:min-w-42 inline-flex items-center justify-center gap-2"
+                  >
+                    <LayoutDashboard size={16} strokeWidth={2.2} />
+                    Dashboard
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileOpen(false);
+                      logout();
+                    }}
+                    className="h-10 min-w-35 rounded-md bg-(--primary-600) px-8 text-sm font-semibold text-(--text-white) transition-colors hover:bg-(--primary-700) sm:min-w-42 inline-flex items-center justify-center gap-2"
+                  >
+                    <LogOut size={16} strokeWidth={2.2} />
+                    Logout
+                  </button>
+                </>
               ) : (
                 <>
                   <Link
