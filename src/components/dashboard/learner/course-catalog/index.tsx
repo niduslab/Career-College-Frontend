@@ -67,18 +67,21 @@ function CourseCard({
   course,
   isEnrolled,
   onEnrollChange,
+  isPriority,
 }: {
   course: CatalogCourse;
   isEnrolled: boolean;
   onEnrollChange: (slug: string, enrolled: boolean) => void;
+  isPriority?: boolean;
 }) {
   const [wished, setWished] = useState(false);
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const instructor = course.instructors[0];
   const price = Number(course.price);
   const isFree = price <= 0;
   const levelLabel =
     course.level.charAt(0).toUpperCase() + course.level.slice(1);
-  const thumbnail = mediaUrl(course.thumbnail);
+  const thumbnail = thumbnailFailed ? null : mediaUrl(course.thumbnail);
   const enrollMutation = useEnrollInCourse();
   const unenrollMutation = useUnenrollFromCourse();
   const checkoutMutation = useCreateCheckoutSession();
@@ -142,6 +145,8 @@ function CourseCard({
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover transition-transform duration-300 hover:scale-105"
+            onError={() => setThumbnailFailed(true)}
+            priority={isPriority}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-(--gray-300) text-[12px]">
@@ -333,6 +338,7 @@ export default function CourseCatalogPage() {
   useEffect(() => {
     if (!gridRef.current) return;
     const cards = Array.from(gridRef.current.querySelectorAll(".course-card"));
+    if (cards.length === 0) return;
     gsap.killTweensOf(cards);
     const ctx = gsap.context(() => {
       gsap.fromTo(
@@ -513,12 +519,13 @@ export default function CourseCatalogPage() {
                   className="h-85 rounded-2xl border border-(--gray-200) bg-(--gray-50) animate-pulse"
                 />
               ))
-            : courses.map((course) => (
+            : courses.map((course, i) => (
                 <CourseCard
                   key={course.id}
                   course={course}
                   isEnrolled={enrolledSlugs.has(course.slug)}
                   onEnrollChange={handleEnrollChange}
+                  isPriority={i === 0}
                 />
               ))}
           {!isLoading && courses.length === 0 && (

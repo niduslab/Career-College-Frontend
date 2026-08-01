@@ -217,11 +217,19 @@ export default function MyCoursesPage() {
                   className="h-75 rounded-2xl border border-(--gray-200) bg-(--gray-50) animate-pulse"
                 />
               ))
-            : paginated.map((enrollment) =>
+            : paginated.map((enrollment, i) =>
                 view === "grid" ? (
-                  <GridCard key={enrollment.id} enrollment={enrollment} />
+                  <GridCard
+                    key={enrollment.id}
+                    enrollment={enrollment}
+                    isPriority={i === 0}
+                  />
                 ) : (
-                  <ListCard key={enrollment.id} enrollment={enrollment} />
+                  <ListCard
+                    key={enrollment.id}
+                    enrollment={enrollment}
+                    isPriority={i === 0}
+                  />
                 ),
               )}
           {!isLoading && paginated.length === 0 && (
@@ -252,10 +260,17 @@ function ProgressBar({ percent }: { percent: number }) {
   );
 }
 
-function GridCard({ enrollment }: { enrollment: Enrollment }) {
+function GridCard({
+  enrollment,
+  isPriority,
+}: {
+  enrollment: Enrollment;
+  isPriority?: boolean;
+}) {
   const router = useRouter();
   const { course } = enrollment;
-  const thumbnail = mediaUrl(course.thumbnail);
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  const thumbnail = thumbnailFailed ? null : mediaUrl(course.thumbnail);
   const instructor = course.instructors[0];
   const levelLabel =
     course.level.charAt(0).toUpperCase() + course.level.slice(1);
@@ -275,6 +290,8 @@ function GridCard({ enrollment }: { enrollment: Enrollment }) {
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover group-hover:scale-105 transition-transform duration-500"
+            onError={() => setThumbnailFailed(true)}
+            priority={isPriority}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-(--gray-300) text-[12px]">
@@ -330,10 +347,17 @@ function GridCard({ enrollment }: { enrollment: Enrollment }) {
   );
 }
 
-function ListCard({ enrollment }: { enrollment: Enrollment }) {
+function ListCard({
+  enrollment,
+  isPriority,
+}: {
+  enrollment: Enrollment;
+  isPriority?: boolean;
+}) {
   const router = useRouter();
   const { course } = enrollment;
-  const thumbnail = mediaUrl(course.thumbnail);
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  const thumbnail = thumbnailFailed ? null : mediaUrl(course.thumbnail);
   const instructor = course.instructors[0];
   const levelLabel =
     course.level.charAt(0).toUpperCase() + course.level.slice(1);
@@ -353,6 +377,8 @@ function ListCard({ enrollment }: { enrollment: Enrollment }) {
             fill
             sizes="64px"
             className="object-cover group-hover:scale-105 transition-transform duration-500"
+            onError={() => setThumbnailFailed(true)}
+            priority={isPriority}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-(--gray-300) text-[10px]">
