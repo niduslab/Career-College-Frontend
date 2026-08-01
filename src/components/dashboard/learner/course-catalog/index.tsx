@@ -194,7 +194,7 @@ function CourseCard({
         <div className="flex items-center justify-between pt-3 border-t border-(--gray-100)">
           <div className="flex items-baseline gap-1.5">
             <span className="text-[18px] font-bold text-(--text-title)">
-              {price > 0 ? `$${price.toFixed(2)}` : "Free"}
+              {price > 0 ? `BDT ${price.toFixed(2)}` : "Free"}
             </span>
           </div>
           {isEnrolled ? (
