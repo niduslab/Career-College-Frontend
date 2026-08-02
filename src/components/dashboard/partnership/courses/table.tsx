@@ -18,7 +18,7 @@ import { archiveCourse, reworkCourse } from "@/lib/course-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 
-const COLS = "grid-cols-[2fr_1fr_1fr_90px_80px_130px_40px]";
+const COLS = "grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_90px_80px_130px_40px]";
 
 const LEVEL_COLOR: Record<string, string> = {
   beginner: "text-green-600 bg-green-50",
@@ -300,7 +300,7 @@ export default function CoursesTable({
 
                   {/* Price */}
                   <p className="text-[13px] font-semibold text-(--text-title)">
-                    {Number(c.price) > 0 ? `$${c.price}` : "Free"}
+                    {Number(c.price) > 0 ? `BDT ${c.price}` : "Free"}
                   </p>
 
                   {/* Status */}

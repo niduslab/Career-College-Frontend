@@ -16,6 +16,7 @@ import {
   Trophy,
   Search,
   Video,
+  Radio,
   MessageCircle,
   MessageSquareMore,
   Users,
@@ -69,6 +70,11 @@ const navSections = [
         icon: Search,
         label: "Course Catalog",
         href: "/dashboard/learner/course-catalog",
+      },
+      {
+        icon: Radio,
+        label: "Webinars",
+        href: "/dashboard/learner/webinars",
       },
       {
         icon: Heart,
