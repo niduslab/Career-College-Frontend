@@ -66,11 +66,11 @@ const navSections = [
         label: "Achievements",
         href: "/dashboard/learner/achievements",
       },
-      {
-        icon: Search,
-        label: "Course Catalog",
-        href: "/dashboard/learner/course-catalog",
-      },
+      // {
+      //   icon: Search,
+      //   label: "Course Catalog",
+      //   href: "/dashboard/learner/course-catalog",
+      // },
       {
         icon: Radio,
         label: "Webinars",
@@ -86,31 +86,31 @@ const navSections = [
   {
     label: "Connect",
     items: [
-      {
-        icon: Video,
-        label: "Live Sessions",
-        href: "/dashboard/learner/live-sessions",
-      },
+      // {
+      //   icon: Video,
+      //   label: "Live Sessions",
+      //   href: "/dashboard/learner/live-sessions",
+      // },
       {
         icon: MessageSquareMore,
         label: "Messages",
         href: "/dashboard/learner/messages",
       },
-      {
-        icon: MessageCircle,
-        label: "Discussions",
-        href: "/dashboard/learner/discussions",
-      },
-      {
-        icon: Users,
-        label: "Study Groups",
-        href: "/dashboard/learner/study-groups",
-      },
-      {
-        icon: Calendar,
-        label: "Consultancy",
-        href: "/dashboard/learner/consultancy",
-      },
+      // {
+      //   icon: MessageCircle,
+      //   label: "Discussions",
+      //   href: "/dashboard/learner/discussions",
+      // },
+      // {
+      //   icon: Users,
+      //   label: "Study Groups",
+      //   href: "/dashboard/learner/study-groups",
+      // },
+      // {
+      //   icon: Calendar,
+      //   label: "Consultancy",
+      //   href: "/dashboard/learner/consultancy",
+      // },
     ],
   },
   {
@@ -121,11 +121,11 @@ const navSections = [
         label: "AI Assistant",
         href: "/dashboard/learner/ai-assistant",
       },
-      {
-        icon: NotebookPen,
-        label: "Notes",
-        href: "/dashboard/learner/notes",
-      },
+      // {
+      //   icon: NotebookPen,
+      //   label: "Notes",
+      //   href: "/dashboard/learner/notes",
+      // },
       {
         icon: CreditCard,
         label: "Payment History",

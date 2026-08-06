@@ -48,7 +48,11 @@ export interface Webinar {
   host_expert: CourseBrief | null;
   institutional_speakers: CourseBrief[];
   guest_speakers: GuestSpeaker[];
-  partner_institution: { id: number; institution_name: string; slug: string } | null;
+  partner_institution: {
+    id: number;
+    institution_name: string;
+    slug: string;
+  } | null;
   category: { id: number; name: string; slug: string } | null;
   created_by: CourseBrief;
   last_edited_by: CourseBrief;
@@ -175,7 +179,11 @@ export interface CatalogWebinar {
   duration_minutes: number;
   max_capacity: number | null;
   price: string;
-  partner_institution: { id: number; institution_name: string; slug: string } | null;
+  partner_institution: {
+    id: number;
+    institution_name: string;
+    slug: string;
+  } | null;
   category: { id: number; name: string; slug: string } | null;
   host_expert: CourseBrief | null;
   institutional_speakers: CourseBrief[];
@@ -184,7 +192,12 @@ export interface CatalogWebinar {
 }
 
 export async function getWebinarCatalog(
-  params: { category?: string; upcoming?: boolean; page?: number; page_size?: number } = {},
+  params: {
+    category?: string;
+    upcoming?: boolean;
+    page?: number;
+    page_size?: number;
+  } = {},
 ): Promise<PaginatedResponse<CatalogWebinar>> {
   const qs = new URLSearchParams();
   if (params.category) qs.set("category", params.category);
@@ -214,7 +227,6 @@ export interface WebinarRegistration {
   joined_at: string | null;
   created_at: string;
   updated_at: string;
-  /** Includes meeting_url — registrant-only. */
   webinar: Webinar;
 }
 
