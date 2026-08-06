@@ -1,161 +1,7 @@
 import { Video, Users, PlayCircle, TrendingUp } from "lucide-react";
-import avatar1 from "@/assets/images/instructors/instructor1.webp";
-import avatar2 from "@/assets/images/instructors/instructor2.webp";
-import avatar3 from "@/assets/images/instructors/instructor3.webp";
-import avatar4 from "@/assets/images/instructors/instructor4.webp";
-import avatar5 from "@/assets/images/instructors/instructor5.webp";
-import avatar6 from "@/assets/images/instructors/instructor6.webp";
-import { Webinar, WebinarTopic, WebinarStatus } from "./types";
+import type { WebinarStatus } from "./types";
 
-export const WEBINARS: Webinar[] = [
-  {
-    id: "w1",
-    title: "Building Scalable APIs with Node.js",
-    thumbnail: avatar1,
-    host: "Sarah Kim",
-    hostAvatar: avatar1,
-    topic: "Engineering",
-    date: "Jun 18, 2026",
-    time: "3:00 PM",
-    duration: "90 min",
-    registered: 320,
-    attended: 280,
-    status: "Recorded",
-  },
-  {
-    id: "w2",
-    title: "Intro to Machine Learning for Business",
-    thumbnail: avatar2,
-    host: "Dr. Alan Torres",
-    hostAvatar: avatar2,
-    topic: "Data Science",
-    date: "Jul 2, 2026",
-    time: "2:00 PM",
-    duration: "60 min",
-    registered: 415,
-    attended: 0,
-    status: "Upcoming",
-  },
-  {
-    id: "w3",
-    title: "UX Research Methods in Practice",
-    thumbnail: avatar3,
-    host: "Mark Patel",
-    hostAvatar: avatar6,
-    topic: "Design",
-    date: "Jun 22, 2026",
-    time: "11:00 AM",
-    duration: "75 min",
-    registered: 210,
-    attended: 198,
-    status: "Live",
-  },
-  {
-    id: "w4",
-    title: "Financial Literacy for Tech Teams",
-    thumbnail: avatar4,
-    host: "Lena Müller",
-    hostAvatar: avatar4,
-    topic: "Business",
-    date: "May 30, 2026",
-    time: "4:00 PM",
-    duration: "60 min",
-    registered: 180,
-    attended: 155,
-    status: "Recorded",
-  },
-  {
-    id: "w5",
-    title: "DevOps Best Practices 2026",
-    thumbnail: avatar1,
-    host: "Nina Kovac",
-    hostAvatar: avatar5,
-    topic: "Engineering",
-    date: "Jul 10, 2026",
-    time: "1:00 PM",
-    duration: "90 min",
-    registered: 290,
-    attended: 0,
-    status: "Upcoming",
-  },
-  {
-    id: "w6",
-    title: "Growth Marketing Fundamentals",
-    thumbnail: avatar2,
-    host: "Carlos Mendez",
-    hostAvatar: avatar3,
-    topic: "Marketing",
-    date: "Jun 5, 2026",
-    time: "10:00 AM",
-    duration: "45 min",
-    registered: 140,
-    attended: 0,
-    status: "Cancelled",
-  },
-  {
-    id: "w7",
-    title: "Clinical Trials Data & Compliance",
-    thumbnail: avatar3,
-    host: "Dr. Priya Singh",
-    hostAvatar: avatar5,
-    topic: "Healthcare",
-    date: "Jul 18, 2026",
-    time: "9:00 AM",
-    duration: "60 min",
-    registered: 95,
-    attended: 0,
-    status: "Upcoming",
-  },
-  {
-    id: "w8",
-    title: "Product Roadmap Planning Workshop",
-    thumbnail: avatar4,
-    host: "Wei Liang",
-    hostAvatar: avatar2,
-    topic: "Business",
-    date: "Jun 12, 2026",
-    time: "3:30 PM",
-    duration: "120 min",
-    registered: 260,
-    attended: 234,
-    status: "Recorded",
-  },
-];
-
-export const STATS = [
-  {
-    label: "Total Webinars",
-    value: "12",
-    change: "+3 this month",
-    icon: Video,
-  },
-  {
-    label: "Total Registered",
-    value: "1.9k",
-    change: "+420 this week",
-    icon: Users,
-  },
-  {
-    label: "Avg. Attendance",
-    value: "78%",
-    change: "+5% vs last month",
-    icon: PlayCircle,
-  },
-  { label: "Upcoming", value: "3", change: "Next: Jul 2", icon: TrendingUp },
-];
-
-export const TOPIC_BREAKDOWN: {
-  label: WebinarTopic;
-  count: number;
-  color: string;
-}[] = [
-  { label: "Engineering", count: 2, color: "bg-(--primary-600)" },
-  { label: "Business", count: 2, color: "bg-(--primary-600)" },
-  { label: "Data Science", count: 1, color: "bg-(--primary-600)" },
-  { label: "Design", count: 1, color: "bg-(--primary-600)" },
-  { label: "Marketing", count: 1, color: "bg-(--primary-600)" },
-  { label: "Healthcare", count: 1, color: "bg-(--primary-600)" },
-];
+export const STAT_ICONS = [Video, Users, PlayCircle, TrendingUp];
 
 export const TIPS = [
   {
@@ -172,19 +18,16 @@ export const TIPS = [
   },
 ];
 
-export const TOPICS: ("All" | WebinarTopic)[] = [
+export const STATUS_OPTIONS: ("All" | WebinarStatus)[] = [
   "All",
-  "Engineering",
-  "Design",
-  "Business",
-  "Data Science",
-  "Marketing",
-  "Healthcare",
+  "draft",
+  "published",
+  "archived",
 ];
-export const STATUSES: ("All" | WebinarStatus)[] = [
-  "All",
-  "Live",
-  "Upcoming",
-  "Recorded",
-  "Cancelled",
-];
+
+export const STATUS_LABEL: Record<"All" | WebinarStatus, string> = {
+  All: "All Statuses",
+  draft: "Draft",
+  published: "Published",
+  archived: "Archived",
+};

@@ -14,6 +14,8 @@ import {
   MailOpen,
   Plus,
   X,
+  Check,
+  CheckCheck,
 } from "lucide-react";
 
 import {
@@ -160,8 +162,18 @@ function ConversationItem({
   );
 }
 
-function ChatBubble({ msg }: { msg: ThreadMessage }) {
+function ChatBubble({
+  msg,
+  otherLastReadAt,
+}: {
+  msg: ThreadMessage;
+  otherLastReadAt: string | null;
+}) {
   const isMe = msg.is_own;
+  const isRead =
+    isMe &&
+    !!otherLastReadAt &&
+    new Date(msg.created_at) <= new Date(otherLastReadAt);
   return (
     <div className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
       <div
@@ -185,6 +197,13 @@ function ChatBubble({ msg }: { msg: ThreadMessage }) {
           )}
           {isMe && msg.send_status === "failed" && (
             <AlertCircle className="w-3 h-3 text-red-500" />
+          )}
+          {isMe && (!msg.send_status || msg.send_status === "sent") && (
+            isRead ? (
+              <CheckCheck className="w-3.5 h-3.5 text-(--primary-600)" />
+            ) : (
+              <Check className="w-3.5 h-3.5 text-(--gray-400)" />
+            )
           )}
         </div>
       </div>
@@ -600,7 +619,10 @@ export default function PartnershipMessagesPage() {
                   <div key={msg.client_id ?? msg.id}>
                     {showSep && <DateSep label={label} />}
                     <div className="group">
-                      <ChatBubble msg={msg} />
+                      <ChatBubble
+                        msg={msg}
+                        otherLastReadAt={selectedOther?.last_read_at ?? null}
+                      />
                       {msg.send_status === "failed" && msg.client_id && (
                         <div className="flex justify-end mt-0.5">
                           <button
