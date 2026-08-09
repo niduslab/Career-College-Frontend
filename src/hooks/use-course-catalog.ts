@@ -8,6 +8,7 @@ import {
   enrollInCourse,
   unenrollFromCourse,
   type CatalogFilterParams,
+  type MyCoursesParams,
 } from "@/lib/course-api";
 
 /** Browse the public course catalog — filters/sort/page drive the query key. */
@@ -28,11 +29,20 @@ export function useCatalogCourseDetail(slug: string | undefined) {
   });
 }
 
-/** The caller's own active enrollments — used to mark catalog cards as enrolled. */
-export function useMyCourses() {
+/** Number of enrollments a caller can hold before pagination hides some.
+ *  Callers that need every enrollment (enrolled flags, course pickers) pass
+ *  this rather than relying on the server's default page of 10. */
+export const ALL_ENROLLMENTS_PAGE_SIZE = 100;
+
+/** The caller's own active enrollments.
+ *
+ *  Server-paginated. Pass `page_size: ALL_ENROLLMENTS_PAGE_SIZE` when the
+ *  whole set is needed, or `page`/`status` to drive a paged list. */
+export function useMyCourses(params: MyCoursesParams = {}) {
   return useQuery({
-    queryKey: ["my-courses"],
-    queryFn: getMyCourses,
+    queryKey: ["my-courses", params],
+    queryFn: () => getMyCourses(params),
+    placeholderData: (previousData) => previousData,
   });
 }
 

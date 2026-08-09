@@ -6,71 +6,39 @@ import {
   BadgeCheck,
   Download,
   Link2,
-  Share2,
-  QrCode,
+  Award,
 } from "lucide-react";
 import gsap from "gsap";
 import { Pagination } from "@/components/common/pagination";
+import {
+  CardGridSkeleton,
+  EmptyState,
+  ErrorState,
+} from "@/components/common/query-states";
+import { useMyCertificates } from "@/hooks/use-certificates";
+import { certificateUrl, type LearnerCertificate } from "@/lib/certificates-api";
 
 const PAGE_SIZE = 6;
 
-interface Certificate {
-  id: string;
-  title: string;
-  awardedTo: string;
-  issued: string;
-  credentialId: string;
+function formatIssued(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+  });
 }
 
-const CERTIFICATES: Certificate[] = [
-  {
-    id: "1",
-    title: "Deep Learning Foundations",
-    awardedTo: "Marop Hossain",
-    issued: "May 2026",
-    credentialId: "CC-DL-2026-0847",
-  },
-  {
-    id: "2",
-    title: "SQL for Data Analytics",
-    awardedTo: "Marop Hossain",
-    issued: "Apr 2026",
-    credentialId: "CC-SQL-2026-1120",
-  },
-  {
-    id: "3",
-    title: "Statistics for ML",
-    awardedTo: "Marop Hossain",
-    issued: "Feb 2026",
-    credentialId: "CC-STAT-2026-0331",
-  },
-  {
-    id: "4",
-    title: "Python Programming",
-    awardedTo: "Marop Hossain",
-    issued: "Jan 2026",
-    credentialId: "CC-PY-2026-0099",
-  },
-  {
-    id: "5",
-    title: "Intro to Data Science",
-    awardedTo: "Marop Hossain",
-    issued: "Nov 2025",
-    credentialId: "CC-DS-2025-2245",
-  },
-  {
-    id: "6",
-    title: "Git & Version Control",
-    awardedTo: "Marop Hossain",
-    issued: "Oct 2025",
-    credentialId: "CC-GIT-2025-1876",
-  },
-];
+/** Short, human-readable form of the certificate UUID. The full value is
+ *  still what the verify URL carries. */
+function shortCredentialId(uid: string): string {
+  return uid.split("-")[0].toUpperCase();
+}
 
-function CertificateCard({ cert }: { cert: Certificate }) {
+function CertificateCard({ cert }: { cert: LearnerCertificate }) {
+  const verifyHref = certificateUrl(cert.verify_url);
+  const downloadHref = certificateUrl(cert.download_url);
+
   return (
     <div className="bg-white rounded-2xl border border-(--gray-200) overflow-hidden hover:shadow-md transition-shadow duration-200">
-      {/* Card face */}
       <div
         className="relative p-5 h-44 overflow-hidden"
         style={{
@@ -78,7 +46,6 @@ function CertificateCard({ cert }: { cert: Certificate }) {
             "linear-gradient(135deg, var(--primary-700), var(--primary-400))",
         }}
       >
-        {/* diagonal stripe pattern */}
         <div
           className="absolute inset-0 opacity-10"
           style={{
@@ -87,7 +54,6 @@ function CertificateCard({ cert }: { cert: Certificate }) {
           }}
         />
 
-        {/* Top row */}
         <div className="relative flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <GraduationCap className="w-5 h-5 text-white" />
@@ -95,66 +61,72 @@ function CertificateCard({ cert }: { cert: Certificate }) {
               Career College
             </span>
           </div>
-          <span className="flex items-center gap-1 text-[12px] font-semibold text-white bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full">
+          <a
+            href={verifyHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-[12px] font-semibold text-white bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full hover:bg-white/30 transition-colors"
+          >
             <BadgeCheck className="w-3 h-4" />
-            Verified
-          </span>
+            Verify
+          </a>
         </div>
 
-        {/* Body */}
         <div className="relative">
           <p className="text-[10px] font-semibold uppercase tracking-widest mb-1 text-white/70">
             Certificate of Completion
           </p>
-          <h3 className="text-[16px] md:text-[20px] lg:text-[20px] font-semibold text-white leading-tight mb-4">
-            {cert.title}
+          {/* The frozen snapshot, not the live course title — this is the
+              record of what was awarded. */}
+          <h3 className="text-[16px] md:text-[20px] lg:text-[20px] font-semibold text-white leading-tight mb-4 line-clamp-2">
+            {cert.course_title}
           </h3>
-          <div className="flex items-end justify-between">
-            <div>
-              <p className="text-[10px] font-medium text-white/70">
-                Awarded to
-              </p>
-              <p className="text-[12px] md:text-[14px] lg:text-[14px] font-semibold text-white">
-                {cert.awardedTo}
-              </p>
-            </div>
-            {/* QR placeholder */}
-            <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shrink-0">
-              <QrCode className="w-6 h-6 text-(--gray-600)" />
-            </div>
+          <div>
+            <p className="text-[10px] font-medium text-white/70">Awarded to</p>
+            <p className="text-[12px] md:text-[14px] lg:text-[14px] font-semibold text-white">
+              {cert.learner_name}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Meta row */}
       <div className="flex items-center justify-between px-4 sm:px-5 pt-3 pb-1">
         <div>
           <p className="text-[12px] text-(--gray-500)">Issued</p>
           <p className="text-[12px] md:text-[14px] lg:text-[14px] font-medium text-(--text-title)">
-            {cert.issued}
+            {formatIssued(cert.issued_at)}
           </p>
         </div>
         <div className="text-right">
           <p className="text-[12px] text-(--gray-500)">Credential ID</p>
-          <p className="text-[12px] md:text-[14px] lg:text-[14px] font-medium text-(--text-title)">
-            {cert.credentialId}
+          <p
+            className="text-[12px] md:text-[14px] lg:text-[14px] font-medium text-(--text-title) font-mono"
+            title={cert.certificate_uid}
+          >
+            {shortCredentialId(cert.certificate_uid)}
           </p>
         </div>
       </div>
 
-      {/* Actions */}
       <div className="flex items-center gap-2 px-4 sm:px-5 py-3">
-        <button className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg bg-(--primary-700) hover:bg-(--primary-900) text-white text-[12px] md:text-[14px] lg:text-[14px] font-medium transition-colors cursor-pointer">
+        <a
+          href={downloadHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg bg-(--primary-700) hover:bg-(--primary-900) text-white text-[12px] md:text-[14px] lg:text-[14px] font-medium transition-colors cursor-pointer"
+        >
           <Download className="w-4 h-4" />
           PDF
-        </button>
-        <button className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-(--gray-200) text-(--gray-500) hover:bg-(--gray-50) text-[12px] md:text-[14px] lg:text-[14px] font-medium transition-colors cursor-pointer">
+        </a>
+        <a
+          href={verifyHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-(--gray-200) text-(--gray-500) hover:bg-(--gray-50) text-[12px] md:text-[14px] lg:text-[14px] font-medium transition-colors cursor-pointer"
+        >
           <Link2 className="w-4 h-4" />
-          LinkedIn
-        </button>
-        <button className="w-9 h-9 flex items-center justify-center rounded-lg border border-(--gray-200) text-(--gray-500) hover:bg-(--gray-50) transition-colors cursor-pointer shrink-0">
-          <Share2 className="w-4 h-4" />
-        </button>
+          Public link
+        </a>
       </div>
     </div>
   );
@@ -165,12 +137,14 @@ export default function CertificatesPage() {
   const gridRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const totalPages = Math.ceil(CERTIFICATES.length / PAGE_SIZE);
-  const safePage = Math.min(currentPage, totalPages || 1);
-  const paginated = CERTIFICATES.slice(
-    (safePage - 1) * PAGE_SIZE,
-    safePage * PAGE_SIZE,
-  );
+  const { data, isLoading, isError, refetch } = useMyCertificates({
+    page: currentPage,
+    page_size: PAGE_SIZE,
+  });
+
+  const certificates = data?.results ?? [];
+  const total = data?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   useEffect(() => {
     gsap.fromTo(
@@ -178,48 +152,61 @@ export default function CertificatesPage() {
       { opacity: 0, y: 16 },
       { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" },
     );
-    gsap.fromTo(
-      gridRef.current ? Array.from(gridRef.current.children) : [],
-      { opacity: 0, y: 24 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.4,
-        stagger: 0.07,
-        ease: "power3.out",
-        delay: 0.15,
-      },
-    );
   }, []);
+
+  useEffect(() => {
+    if (!gridRef.current) return;
+    gsap.fromTo(
+      Array.from(gridRef.current.children),
+      { opacity: 0, y: 24 },
+      { opacity: 1, y: 0, duration: 0.4, stagger: 0.07, ease: "power3.out" },
+    );
+  }, [certificates.length, currentPage]);
 
   return (
     <div>
-      {/* Header */}
       <div ref={headerRef} className="opacity-0 mb-6 sm:mb-8">
         <h1 className="text-[20px] md:text-[24px] lg:text-[24px] font-semibold text-(--text-title)">
           Certificates
         </h1>
         <p className="text-[14px] text-(--gray-500) mt-1">
-          <span className="font-medium ml-1  ">{CERTIFICATES.length}</span>{" "}
-          verified credentials · Share them with employers &amp; on LinkedIn.
+          <span className="font-medium">{isLoading ? "—" : total}</span> verified
+          credential{total === 1 ? "" : "s"} · Share the public link with
+          employers.
         </p>
       </div>
 
-      {/* Grid */}
-      <div
-        ref={gridRef}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
-      >
-        {paginated.map((cert) => (
-          <CertificateCard key={cert.id} cert={cert} />
-        ))}
-      </div>
+      {isLoading ? (
+        <CardGridSkeleton count={6} />
+      ) : isError ? (
+        <ErrorState
+          title="Couldn't load your certificates"
+          onRetry={() => refetch()}
+        />
+      ) : certificates.length === 0 ? (
+        <EmptyState
+          icon={<Award className="w-6 h-6" />}
+          title="No certificates yet"
+          description="Finish a course to earn your first verified credential."
+        />
+      ) : (
+        <>
+          <div
+            ref={gridRef}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
+          >
+            {certificates.map((cert) => (
+              <CertificateCard key={cert.certificate_uid} cert={cert} />
+            ))}
+          </div>
 
-      <Pagination
-        currentPage={safePage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </>
+      )}
     </div>
   );
 }

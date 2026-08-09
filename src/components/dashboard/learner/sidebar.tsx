@@ -92,7 +92,9 @@ const navSections = [
       },
       {
         icon: MessageCircle,
-        label: "Discussions",
+        // Renamed from "Discussions": the board is scoped per course, and the
+        // page picks one enrolled course at a time.
+        label: "Course Q&A",
         href: "/dashboard/learner/discussions",
       },
       {

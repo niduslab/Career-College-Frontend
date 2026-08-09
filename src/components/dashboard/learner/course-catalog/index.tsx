@@ -17,10 +17,12 @@ import {
   useCourseCatalog,
   useCourseCategories,
   useMyCourses,
+  ALL_ENROLLMENTS_PAGE_SIZE,
   useEnrollInCourse,
   useUnenrollFromCourse,
 } from "@/hooks/use-course-catalog";
 import { useCreateCheckoutSession } from "@/hooks/use-payments";
+import { useToggleWishlist } from "@/hooks/use-wishlist";
 import type {
   CatalogCourse,
   CatalogSort,
@@ -72,7 +74,6 @@ function CourseCard({
   isEnrolled: boolean;
   onEnrollChange: (slug: string, enrolled: boolean) => void;
 }) {
-  const [wished, setWished] = useState(false);
   const instructor = course.instructors[0];
   const price = Number(course.price);
   const isFree = price <= 0;
@@ -82,6 +83,24 @@ function CourseCard({
   const enrollMutation = useEnrollInCourse();
   const unenrollMutation = useUnenrollFromCourse();
   const checkoutMutation = useCreateCheckoutSession();
+  const wishlistMutation = useToggleWishlist();
+
+  // `is_wishlisted` comes from the server, patched optimistically by the
+  // mutation — so the heart stays instant without holding its own state.
+  const handleToggleWishlist = () => {
+    wishlistMutation.mutate(
+      { slug: course.slug, isWishlisted: course.is_wishlisted },
+      {
+        onError: (err) => {
+          notify.error(
+            err instanceof ApiError
+              ? err.message
+              : "Couldn't update your wishlist.",
+          );
+        },
+      },
+    );
+  };
 
   const startCheckout = () => {
     checkoutMutation.mutate(
@@ -150,11 +169,15 @@ function CourseCard({
         )}
         {/* Wishlist */}
         <button
-          onClick={() => setWished((v) => !v)}
-          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors cursor-pointer shadow-sm"
+          onClick={handleToggleWishlist}
+          disabled={wishlistMutation.isPending}
+          title={
+            course.is_wishlisted ? "Remove from wishlist" : "Save for later"
+          }
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors cursor-pointer shadow-sm disabled:cursor-not-allowed"
         >
           <Heart
-            className={`w-4 h-4 transition-colors ${wished ? "fill-rose-500 text-rose-500" : "text-(--gray-500)"}`}
+            className={`w-4 h-4 transition-colors ${course.is_wishlisted ? "fill-rose-500 text-rose-500" : "text-(--gray-500)"}`}
           />
         </button>
       </div>
@@ -278,7 +301,11 @@ export default function CourseCatalogPage() {
     [categoriesData],
   );
 
-  const { data: myCoursesData } = useMyCourses();
+  // Needs every enrollment, not the first page — otherwise catalog cards
+  // past the 10th enrollment render as "not enrolled".
+  const { data: myCoursesData } = useMyCourses({
+    page_size: ALL_ENROLLMENTS_PAGE_SIZE,
+  });
   const [enrollOverrides, setEnrollOverrides] = useState<
     Record<string, boolean>
   >({});
