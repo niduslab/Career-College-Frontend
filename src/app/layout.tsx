@@ -1,15 +1,27 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { ToastProvider } from "@/components/common/toast-provider";
 import { QueryProvider } from "@/components/common/query-provider";
 
-const outfit = Outfit({
+/** Self-hosted so the build has no network dependency on Google Fonts.
+ *  Outfit is a variable font — one file covers the whole 300-700 range. */
+const outfit = localFont({
   variable: "--font-outfit",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
   display: "swap",
   preload: true,
+  src: [
+    {
+      path: "./fonts/Outfit-latin.woff2",
+      weight: "300 700",
+      style: "normal",
+    },
+    {
+      path: "./fonts/Outfit-latin-ext.woff2",
+      weight: "300 700",
+      style: "normal",
+    },
+  ],
 });
 
 export const metadata: Metadata = {

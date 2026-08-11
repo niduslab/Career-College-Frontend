@@ -11,7 +11,7 @@ import {
   useRegisterForWebinar,
 } from "@/hooks/use-webinars";
 import { useCreateCheckoutSession } from "@/hooks/use-payments";
-import type { CatalogWebinar } from "@/lib/webinar-api";
+import type { WebinarSummary } from "@/lib/webinars-api";
 import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
@@ -26,7 +26,7 @@ function WebinarCard({
   onRegisterChange,
   onOpenDetail,
 }: {
-  webinar: CatalogWebinar;
+  webinar: WebinarSummary;
   isRegistered: boolean;
   meetingUrl: string | undefined;
   onRegisterChange: (slug: string) => void;

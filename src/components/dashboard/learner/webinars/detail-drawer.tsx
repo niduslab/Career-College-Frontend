@@ -13,7 +13,7 @@ import {
   ExternalLink,
   Loader2,
 } from "lucide-react";
-import { useCatalogWebinarDetail, useRegisterForWebinar } from "@/hooks/use-webinars";
+import { useWebinarDetail, useRegisterForWebinar } from "@/hooks/use-webinars";
 import { useCreateCheckoutSession } from "@/hooks/use-payments";
 import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
 import { ApiError } from "@/lib/api";
@@ -35,7 +35,7 @@ export default function WebinarDetailDrawer({
   onRegisterChange,
 }: DetailDrawerProps) {
   const open = !!slug;
-  const { data: webinar, isLoading } = useCatalogWebinarDetail(slug ?? undefined);
+  const { data: webinar, isLoading } = useWebinarDetail(slug ?? undefined);
   const registerMutation = useRegisterForWebinar();
   const checkoutMutation = useCreateCheckoutSession();
 
