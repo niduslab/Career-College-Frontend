@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye } from "lucide-react";
 import ApprovalsFilterBar from "./filter-bar";
 import RejectModal from "./reject-modal";
 import ApprovalActionsMenu from "./approval-actions-menu";
+import CourseDetailModal from "./course-detail-modal";
 import { Pagination } from "@/components/common/pagination";
 import {
   usePendingReviewCourses,
@@ -51,6 +52,7 @@ export default function ApprovalsTable() {
   const [page, setPage] = useState(1);
   const [exporting, setExporting] = useState(false);
   const [rejectTarget, setRejectTarget] = useState<AdminCourse | null>(null);
+  const [detailId, setDetailId] = useState<number | null>(null);
 
   const debouncedSearch = useDebounced(search, 350);
 
@@ -189,13 +191,14 @@ export default function ApprovalsTable() {
                 <th className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-right pb-2">
                   Action
                 </th>
+                <th className="w-9 pb-2 pl-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-(--gray-50)">
               {isLoading ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="py-10 text-center text-[13px] text-(--gray-400)"
                   >
                     <Loader2 className="w-5 h-5 animate-spin inline-block mr-2" />
@@ -205,7 +208,7 @@ export default function ApprovalsTable() {
               ) : isError ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="py-10 text-center text-[13px] text-red-500"
                   >
                     Failed to load pending courses. Please try again.
@@ -214,7 +217,7 @@ export default function ApprovalsTable() {
               ) : filteredRows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="py-8 text-center text-[13px] text-(--gray-400)"
                   >
                     No courses awaiting review.
@@ -230,14 +233,18 @@ export default function ApprovalsTable() {
                       className="hover:bg-(--gray-50) transition-colors"
                     >
                       <td className="py-3 pr-8">
-                        <div className="flex items-center gap-3 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => setDetailId(c.id)}
+                          className="flex items-center gap-3 min-w-0 text-left cursor-pointer hover:opacity-80"
+                        >
                           <div className="w-9 h-9 rounded-lg shrink-0 bg-(--primary-50) text-(--primary-600) flex items-center justify-center text-[11px] font-semibold">
                             {initialsOf(c.title)}
                           </div>
                           <p className="text-[13px] font-semibold text-(--text-title) truncate">
                             {c.title}
                           </p>
-                        </div>
+                        </button>
                       </td>
                       <td className="py-3 pr-8 text-[13px] text-(--gray-600) truncate">
                         {ownerLabel(c)}
@@ -259,6 +266,16 @@ export default function ApprovalsTable() {
                           onApprove={() => handleApprove(c)}
                           onReject={() => setRejectTarget(c)}
                         />
+                      </td>
+                      <td className="py-3 pl-3">
+                        <button
+                          type="button"
+                          onClick={() => setDetailId(c.id)}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-(--gray-400) hover:bg-(--gray-100) hover:text-(--gray-600) transition-colors cursor-pointer"
+                          aria-label="View details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
                       </td>
                     </tr>
                   );
@@ -293,6 +310,10 @@ export default function ApprovalsTable() {
           onConfirm={handleRejectConfirm}
           onClose={() => setRejectTarget(null)}
         />
+      )}
+
+      {detailId !== null && (
+        <CourseDetailModal id={detailId} onClose={() => setDetailId(null)} />
       )}
     </div>
   );

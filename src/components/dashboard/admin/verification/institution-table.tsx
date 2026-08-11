@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye } from "lucide-react";
 import StatusBadge from "./status-badge";
 import ReasonModal from "./reason-modal";
 import VerificationActionsMenu from "./verification-actions-menu";
+import VerificationDetailModal from "./verification-detail-modal";
 import {
   useInstitutionVerifications,
   useReviewInstitutionVerification,
@@ -20,6 +21,7 @@ export default function InstitutionVerificationTable() {
     row: InstitutionVerificationRow;
     kind: "reject" | "request_action";
   } | null>(null);
+  const [detailId, setDetailId] = useState<number | null>(null);
 
   const rows = data?.results ?? [];
 
@@ -102,13 +104,14 @@ export default function InstitutionVerificationTable() {
               <th className="text-[11px] font-semibold truncate tracking-widest text-(--gray-400) uppercase text-right pb-2">
                 Action
               </th>
+              <th className="w-9 pb-2 pl-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-(--gray-50)">
             {isLoading ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="py-10 text-center text-[13px] text-(--gray-400)"
                 >
                   <Loader2 className="w-5 h-5 animate-spin inline-block mr-2" />
@@ -118,7 +121,7 @@ export default function InstitutionVerificationTable() {
             ) : isError ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="py-10 text-center text-[13px] text-red-500"
                 >
                   Failed to load verifications.
@@ -127,7 +130,7 @@ export default function InstitutionVerificationTable() {
             ) : rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="py-8 text-center text-[13px] text-(--gray-400)"
                 >
                   No institution verifications submitted yet.
@@ -143,9 +146,15 @@ export default function InstitutionVerificationTable() {
                     className="hover:bg-(--gray-50) transition-colors"
                   >
                     <td className="py-3 pr-8">
-                      <p className="text-[13px] font-semibold text-(--text-title) truncate">
-                        {row.institution_name}
-                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setDetailId(row.id)}
+                        className="text-left cursor-pointer hover:opacity-80"
+                      >
+                        <p className="text-[13px] font-semibold text-(--text-title) truncate">
+                          {row.institution_name}
+                        </p>
+                      </button>
                     </td>
                     <td className="py-3 pr-8 text-[13px] text-(--gray-600)">
                       {row.registration_number}
@@ -171,6 +180,16 @@ export default function InstitutionVerificationTable() {
                         }
                       />
                     </td>
+                    <td className="py-3 pl-3">
+                      <button
+                        type="button"
+                        onClick={() => setDetailId(row.id)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-(--gray-400) hover:bg-(--gray-100) hover:text-(--gray-600) transition-colors cursor-pointer"
+                        aria-label="View details"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </td>
                   </tr>
                 );
               })
@@ -193,6 +212,14 @@ export default function InstitutionVerificationTable() {
           submitting={review.isPending}
           onConfirm={handleModalConfirm}
           onClose={() => setModal(null)}
+        />
+      )}
+
+      {detailId !== null && (
+        <VerificationDetailModal
+          kind="institution"
+          id={detailId}
+          onClose={() => setDetailId(null)}
         />
       )}
     </div>
