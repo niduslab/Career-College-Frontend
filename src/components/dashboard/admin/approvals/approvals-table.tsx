@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Eye } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import ApprovalsFilterBar from "./filter-bar";
 import RejectModal from "./reject-modal";
 import ApprovalActionsMenu from "./approval-actions-menu";
@@ -191,14 +191,13 @@ export default function ApprovalsTable() {
                 <th className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-right pb-2">
                   Action
                 </th>
-                <th className="w-9 pb-2 pl-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-(--gray-50)">
               {isLoading ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={6}
                     className="py-10 text-center text-[13px] text-(--gray-400)"
                   >
                     <Loader2 className="w-5 h-5 animate-spin inline-block mr-2" />
@@ -208,7 +207,7 @@ export default function ApprovalsTable() {
               ) : isError ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={6}
                     className="py-10 text-center text-[13px] text-red-500"
                   >
                     Failed to load pending courses. Please try again.
@@ -217,7 +216,7 @@ export default function ApprovalsTable() {
               ) : filteredRows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={6}
                     className="py-8 text-center text-[13px] text-(--gray-400)"
                   >
                     No courses awaiting review.
@@ -263,19 +262,10 @@ export default function ApprovalsTable() {
                       <td className="py-3 text-right">
                         <ApprovalActionsMenu
                           busy={busy}
+                          onView={() => setDetailId(c.id)}
                           onApprove={() => handleApprove(c)}
                           onReject={() => setRejectTarget(c)}
                         />
-                      </td>
-                      <td className="py-3 pl-3">
-                        <button
-                          type="button"
-                          onClick={() => setDetailId(c.id)}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-(--gray-400) hover:bg-(--gray-100) hover:text-(--gray-600) transition-colors cursor-pointer"
-                          aria-label="View details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
                       </td>
                     </tr>
                   );

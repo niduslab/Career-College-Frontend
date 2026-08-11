@@ -2,23 +2,25 @@
 
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MoreVertical, PlayCircle, Check, X, AlertCircle, Loader2 } from "lucide-react";
+import { MoreVertical, Eye, PlayCircle, Check, X, AlertCircle, Loader2 } from "lucide-react";
 import type { VerificationStatus } from "@/lib/admin-verification-api";
 
 interface VerificationActionsMenuProps {
   status: VerificationStatus;
   busy: boolean;
+  onView: () => void;
   onPickUp: () => void;
   onApprove: () => void;
   onReject: () => void;
   onRequestAction: () => void;
 }
 
-const MENU_HEIGHT = 154;
+const MENU_HEIGHT = 192;
 
 export default function VerificationActionsMenu({
   status,
   busy,
+  onView,
   onPickUp,
   onApprove,
   onReject,
@@ -59,10 +61,6 @@ export default function VerificationActionsMenu({
   const canPickUp = status === "submitted";
   const canDecide = status === "under_review";
 
-  if (!canPickUp && !canDecide) {
-    return <span className="text-[12px] text-(--gray-400)">—</span>;
-  }
-
   return (
     <div ref={wrapperRef} className="relative inline-block">
       <button
@@ -81,6 +79,13 @@ export default function VerificationActionsMenu({
             style={{ position: "fixed", top: coords.top, right: coords.right, zIndex: 9999 }}
             className="bg-white border border-(--gray-200) rounded-xl shadow-lg py-1 min-w-44 text-left"
           >
+            <button
+              onClick={() => runAction(onView)}
+              className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-(--gray-600) hover:bg-(--gray-50) transition-colors cursor-pointer"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              View details
+            </button>
             {canPickUp && (
               <button
                 onClick={() => runAction(onPickUp)}
