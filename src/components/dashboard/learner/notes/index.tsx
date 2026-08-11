@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   NotebookPen,
   Plus,
@@ -8,47 +8,39 @@ import {
   Trash2,
   Pin,
   PinOff,
-  Tag,
   Clock,
   BookOpen,
   X,
   Check,
-  ChevronDown,
 } from "lucide-react";
 import gsap from "gsap";
+import { Pagination } from "@/components/common/pagination";
+import {
+  CardGridSkeleton,
+  EmptyState,
+  ErrorState,
+} from "@/components/common/query-states";
+import {
+  useMyCourses,
+  ALL_ENROLLMENTS_PAGE_SIZE,
+} from "@/hooks/use-course-catalog";
+import {
+  useCreateNote,
+  useDeleteNote,
+  useNotes,
+  useUpdateNote,
+} from "@/hooks/use-notes";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
+import type {
+  LearnerNote,
+  NoteColor,
+  NoteCreateInput,
+} from "@/lib/notes-api";
 
-// Types
-type NoteColor = "default" | "yellow" | "green" | "blue" | "pink";
-type NoteCategory =
-  | "All"
-  | "Lecture"
-  | "Summary"
-  | "To-Do"
-  | "Question"
-  | "Idea";
+const PAGE_SIZE = 9;
 
-interface Note {
-  id: number;
-  title: string;
-  content: string;
-  category: NoteCategory;
-  color: NoteColor;
-  pinned: boolean;
-  tags: string[];
-  course: string;
-  updatedAt: string;
-}
-
-// Constants
-const CATEGORIES: NoteCategory[] = [
-  "All",
-  "Lecture",
-  "Summary",
-  "To-Do",
-  "Question",
-  "Idea",
-];
-
+/** The backend palette is a fixed enum, so the UI cannot invent swatches. */
 const COLOR_CONFIG: Record<
   NoteColor,
   { bg: string; border: string; dot: string }
@@ -58,11 +50,7 @@ const COLOR_CONFIG: Record<
     border: "border-(--gray-200)",
     dot: "bg-(--gray-400)",
   },
-  yellow: {
-    bg: "bg-amber-50",
-    border: "border-amber-200",
-    dot: "bg-amber-400",
-  },
+  yellow: { bg: "bg-amber-50", border: "border-amber-200", dot: "bg-amber-400" },
   green: {
     bg: "bg-emerald-50",
     border: "border-emerald-200",
@@ -70,6 +58,11 @@ const COLOR_CONFIG: Record<
   },
   blue: { bg: "bg-blue-50", border: "border-blue-200", dot: "bg-blue-500" },
   pink: { bg: "bg-rose-50", border: "border-rose-200", dot: "bg-rose-400" },
+  purple: {
+    bg: "bg-violet-50",
+    border: "border-violet-200",
+    dot: "bg-violet-500",
+  },
 };
 
 const COLOR_LABELS: Record<NoteColor, string> = {
@@ -78,110 +71,62 @@ const COLOR_LABELS: Record<NoteColor, string> = {
   green: "Green",
   blue: "Blue",
   pink: "Pink",
+  purple: "Purple",
 };
 
-const INITIAL_NOTES: Note[] = [
-  {
-    id: 1,
-    title: "Transformer Architecture Overview",
-    content:
-      "Self-attention mechanism allows the model to weigh the importance of each token relative to all others. Key components:\n- Multi-head attention\n- Positional encoding\n- Feed-forward network\n- Layer normalisation\n\nFormula: Attention(Q, K, V) = softmax(QK^T / √d_k) · V",
-    category: "Lecture",
-    color: "blue",
-    pinned: true,
-    tags: ["LLMs", "Attention"],
-    course: "Generative AI & LLMs",
-    updatedAt: "2h ago",
-  },
-  {
-    id: 2,
-    title: "SQL Window Functions",
-    content:
-      "Window functions perform calculations across a set of rows related to the current row.\n\nROW_NUMBER() — unique sequential integer\nRANK() — same rank for ties, gaps after\nDENSE_RANK() — same rank for ties, no gaps\nLAG/LEAD — access previous/next rows\n\nAlways use OVER() clause with PARTITION BY and ORDER BY.",
-    category: "Summary",
-    color: "green",
-    pinned: false,
-    tags: ["SQL", "Analytics"],
-    course: "SQL for Data Analytics",
-    updatedAt: "1d ago",
-  },
-  {
-    id: 3,
-    title: "Week 3 Study Goals",
-    content:
-      "- [ ] Complete Module 4 of LLMs course\n- [ ] Practice 5 SQL window function problems\n- [ ] Watch Figma design critique recording\n- [ ] Submit RAG project draft\n- [ ] Review flashcards for transformer quiz",
-    category: "To-Do",
-    color: "yellow",
-    pinned: true,
-    tags: ["Goals"],
-    course: "General",
-    updatedAt: "30m ago",
-  },
-  {
-    id: 4,
-    title: "Question: Fine-tuning vs RAG",
-    content:
-      "When should I fine-tune a model vs. using RAG?\n\nFine-tuning: when style/tone matters, domain-specific language, or task-specific behaviour.\n\nRAG: when knowledge is frequently updated, source attribution matters, or training data is limited.\n\nAsk Dr. Lena Park in next session.",
-    category: "Question",
-    color: "pink",
-    pinned: false,
-    tags: ["LLMs", "RAG"],
-    course: "Generative AI & LLMs",
-    updatedAt: "3d ago",
-  },
-  {
-    id: 5,
-    title: "Polars vs Pandas Performance Notes",
-    content:
-      "Polars is significantly faster for large datasets:\n- Written in Rust, zero-copy\n- Lazy evaluation with query optimiser\n- True multi-threading\n\nPandas still wins for:\n- Ecosystem compatibility\n- Small datasets\n- Existing code bases\n\nBenchmark: Polars ~5–10× faster on 1M+ rows.",
-    category: "Lecture",
-    color: "default",
-    pinned: false,
-    tags: ["Python", "Performance"],
-    course: "Python Data Wrangling",
-    updatedAt: "5d ago",
-  },
-  {
-    id: 6,
-    title: "Project Idea: Course Recommendation Engine",
-    content:
-      "Build a personalised course recommendation system using:\n1. Collaborative filtering on completion data\n2. Content-based filtering on tags/descriptions\n3. Hybrid model combining both\n\nStack: Python, scikit-learn, FastAPI, React\nTimeline: 3 weeks",
-    category: "Idea",
-    color: "blue",
-    pinned: false,
-    tags: ["Project", "ML"],
-    course: "General",
-    updatedAt: "1w ago",
-  },
-];
+function relativeTime(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const minutes = Math.round(diffMs / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return `${Math.round(days / 7)}w ago`;
+}
 
-//  Note Editor Modal
+function formatPlaybackStamp(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+}
+
+interface EditorCourseOption {
+  slug: string;
+  title: string;
+}
+
 function NoteEditor({
   note,
+  courses,
+  saving,
   onClose,
   onSave,
 }: {
-  note: Partial<Note> | null;
+  note: LearnerNote | null;
+  courses: EditorCourseOption[];
+  saving: boolean;
   onClose: () => void;
-  onSave: (n: Omit<Note, "id" | "updatedAt">) => void;
+  onSave: (input: NoteCreateInput) => void;
 }) {
-  const isNew = !note?.id;
+  const isNew = note === null;
   const [title, setTitle] = useState(note?.title ?? "");
-  const [content, setContent] = useState(note?.content ?? "");
-  const [category, setCategory] = useState<NoteCategory>(
-    note?.category ?? "Lecture",
-  );
+  const [body, setBody] = useState(note?.body ?? "");
   const [color, setColor] = useState<NoteColor>(note?.color ?? "default");
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>(note?.tags ?? []);
-  const [course, setCourse] = useState(note?.course ?? "");
-  const [catOpen, setCatOpen] = useState(false);
+  const [courseSlug, setCourseSlug] = useState(note?.course?.slug ?? "");
 
-  const canSave = title.trim().length > 0 && content.trim().length > 0;
+  // The backend rejects an empty body at both the serializer and a DB check
+  // constraint; the title is optional.
+  const canSave = body.trim().length > 0;
 
   const addTag = () => {
-    const t = tagInput.trim();
-    if (t && !tags.includes(t)) setTags((prev) => [...prev, t]);
+    const value = tagInput.trim().toLowerCase();
+    if (value && !tags.includes(value) && tags.length < 10) {
+      setTags((prev) => [...prev, value]);
+    }
     setTagInput("");
   };
 
@@ -190,7 +135,6 @@ function NoteEditor({
       <div
         className={`w-full max-w-2xl rounded-2xl shadow-xl flex flex-col max-h-[90vh] border ${COLOR_CONFIG[color].bg} ${COLOR_CONFIG[color].border}`}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-(--gray-200) shrink-0">
           <h2 className="text-[16px] font-semibold text-(--text-title)">
             {isNew ? "New Note" : "Edit Note"}
@@ -204,45 +148,15 @@ function NoteEditor({
         </div>
 
         <div className="px-5 py-4 space-y-4 overflow-y-auto flex-1">
-          {/* Title */}
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Note title…"
+            placeholder="Note title (optional)…"
+            maxLength={200}
             className="w-full text-[16px] md:text-[20px] lg:text-[20px] font-semibold text-(--text-title) bg-transparent border-none outline-none placeholder:text-(--gray-300)"
           />
 
-          {/* Meta row */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Category */}
-            <div className="relative">
-              <button
-                onClick={() => setCatOpen((v) => !v)}
-                className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-(--gray-200) bg-white text-[14px] text-(--gray-500) hover:border-(--primary-300) transition-colors cursor-pointer"
-              >
-                <Tag className="w-4 h-4" />
-                {category}
-                <ChevronDown className="w-4 h-4" />
-              </button>
-              {catOpen && (
-                <div className="absolute left-0 top-9 z-20 bg-white border border-(--gray-200) rounded-xl shadow-lg py-1 w-36">
-                  {CATEGORIES.filter((c) => c !== "All").map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => {
-                        setCategory(c);
-                        setCatOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 text-[14px] hover:bg-(--gray-50) cursor-pointer ${category === c ? "font-semibold text-(--primary-600)" : "text-(--text-title)"}`}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Color picker */}
             <div className="flex items-center gap-1.5">
               {(Object.keys(COLOR_CONFIG) as NoteColor[]).map((c) => (
                 <button
@@ -254,25 +168,30 @@ function NoteEditor({
               ))}
             </div>
 
-            {/* Course */}
-            <input
-              value={course}
-              onChange={(e) => setCourse(e.target.value)}
-              placeholder="Course…"
-              className="h-9 px-3 rounded-lg border border-(--gray-200) bg-white text-[13px] text-(--gray-600) outline-none focus:border-(--primary-300) transition-colors w-40 placeholder:text-(--gray-300)"
-            />
+            {/* A note can only be filed under a course the learner can reach,
+                so this is a picker over their enrollments, not free text. */}
+            <select
+              value={courseSlug}
+              onChange={(e) => setCourseSlug(e.target.value)}
+              className="h-9 px-3 rounded-lg border border-(--gray-200) bg-white text-[13px] text-(--gray-600) outline-none focus:border-(--primary-300) transition-colors max-w-52"
+            >
+              <option value="">General (no course)</option>
+              {courses.map((course) => (
+                <option key={course.slug} value={course.slug}>
+                  {course.title}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Content */}
           <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
             placeholder="Write your note here…"
             rows={10}
             className="w-full bg-transparent text-[14px] text-(--text-title) leading-relaxed outline-none resize-none placeholder:text-(--gray-300)"
           />
 
-          {/* Tags */}
           <div>
             <div className="flex flex-wrap gap-1.5 mb-2">
               {tags.map((t) => (
@@ -302,7 +221,7 @@ function NoteEditor({
                     addTag();
                   }
                 }}
-                placeholder="Add tag… (Enter)"
+                placeholder="Add tag… (Enter, max 10)"
                 className="flex-1 h-10 px-3 rounded-lg border border-(--gray-200) bg-white text-[14px] text-(--gray-600) outline-none focus:border-(--primary-300) transition-colors placeholder:text-(--gray-300)"
               />
               <button
@@ -323,25 +242,20 @@ function NoteEditor({
             Cancel
           </button>
           <button
-            onClick={() => {
-              if (canSave) {
-                onSave({
-                  title,
-                  content,
-                  category,
-                  color,
-                  pinned: note?.pinned ?? false,
-                  tags,
-                  course,
-                });
-                onClose();
-              }
-            }}
-            disabled={!canSave}
+            onClick={() =>
+              onSave({
+                title,
+                body,
+                color,
+                tags,
+                course_slug: courseSlug || undefined,
+              })
+            }
+            disabled={!canSave || saving}
             className="h-10 px-5 rounded-md bg-(--primary-600) hover:bg-(--primary-700) text-white text-[14px] font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <Check className="w-4 h-4" />
-            {isNew ? "Create Note" : "Save Changes"}
+            {saving ? "Saving…" : isNew ? "Create Note" : "Save Changes"}
           </button>
         </div>
       </div>
@@ -349,55 +263,57 @@ function NoteEditor({
   );
 }
 
-// Note card component
 function NoteCard({
   note,
   onEdit,
   onDelete,
   onTogglePin,
 }: {
-  note: Note;
-  onEdit: (n: Note) => void;
+  note: LearnerNote;
+  onEdit: (n: LearnerNote) => void;
   onDelete: (id: number) => void;
-  onTogglePin: (id: number) => void;
+  onTogglePin: (n: LearnerNote) => void;
 }) {
-  const cfg = COLOR_CONFIG[note.color];
+  const cfg = COLOR_CONFIG[note.color] ?? COLOR_CONFIG.default;
+
   return (
     <div
       onClick={() => onEdit(note)}
       className={`note-card opacity-0 relative rounded-2xl border p-4 cursor-pointer hover:shadow-md transition-all duration-200 flex flex-col gap-3 ${cfg.bg} ${cfg.border}`}
     >
-      {/* Pin indicator */}
-      {note.pinned && (
+      {note.is_pinned && (
         <span className="absolute top-3 right-3 w-5 h-5 flex items-center justify-center text-(--primary-600)">
           <Pin className="w-4 h-4 fill-(--primary-600)" />
         </span>
       )}
 
-      {/* Category */}
-      <div className="flex items-center gap-2">
-        <span className="text-[12px] font-semibold px-2.5 py-0.5 rounded-full bg-white/80 text-(--gray-500) border border-(--gray-200)">
-          {note.category}
-        </span>
-      </div>
-
-      {/* Title + content */}
       <div>
         <h3 className="text-[14px] md:text-[16px] lg:text-[16px] font-semibold text-(--text-title) leading-snug mb-1.5 pr-5">
-          {note.title}
+          {note.title || "Untitled note"}
         </h3>
         <p className="text-[12px] md:text-[14px] lg:text-[14px] text-(--gray-500) leading-relaxed line-clamp-3 whitespace-pre-line">
-          {note.content}
+          {note.body}
         </p>
       </div>
 
-      {/* Tags */}
+      {note.lecture && (
+        <span className="flex w-fit items-center gap-1 rounded-full border border-(--gray-200) bg-white/70 px-2 py-0.5 text-[12px] text-(--gray-500)">
+          <Clock className="w-3 h-3 shrink-0" />
+          <span className="truncate max-w-40">{note.lecture.title}</span>
+          {note.timestamp_seconds !== null && (
+            <span className="font-medium">
+              · {formatPlaybackStamp(note.timestamp_seconds)}
+            </span>
+          )}
+        </span>
+      )}
+
       {note.tags.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {note.tags.slice(0, 3).map((t) => (
             <span
               key={t}
-              className="text-[12px]   font-medium px-2 py-0.5 rounded-full bg-white/70 text-(--gray-500) border border-(--gray-200)"
+              className="text-[12px] font-medium px-2 py-0.5 rounded-full bg-white/70 text-(--gray-500) border border-(--gray-200)"
             >
               #{t}
             </span>
@@ -409,25 +325,24 @@ function NoteCard({
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1 text-[14px] text-(--gray-400)">
             <Clock className="w-4 h-4" />
-            {note.updatedAt}
+            {relativeTime(note.updated_at)}
           </span>
-          {note.course !== "General" && (
+          {note.course && (
             <span className="flex items-center gap-1 text-[14px] text-(--gray-400) truncate max-w-24">
               <BookOpen className="w-4 h-4 shrink-0" />
-              <span className="truncate">{note.course}</span>
+              <span className="truncate">{note.course.title}</span>
             </span>
           )}
         </div>
-        {/* Actions */}
         <div
           className="flex items-center gap-1"
           onClick={(e) => e.stopPropagation()}
         >
           <button
-            onClick={() => onTogglePin(note.id)}
+            onClick={() => onTogglePin(note)}
             className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-(--gray-100) text-(--gray-400) hover:text-(--primary-600) transition-colors cursor-pointer"
           >
-            {note.pinned ? (
+            {note.is_pinned ? (
               <PinOff className="w-4 h-4" />
             ) : (
               <Pin className="w-4 h-4" />
@@ -445,66 +360,101 @@ function NoteCard({
   );
 }
 
-// Main page
 export default function NotesPage() {
-  const [notes, setNotes] = useState<Note[]>(INITIAL_NOTES);
-  const [activeCategory, setActiveCategory] = useState<NoteCategory>("All");
+  // The backend has no note "category" — it has free-form tags, so the old
+  // category tab bar is a tag filter now.
+  const [activeTag, setActiveTag] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [editorNote, setEditorNote] = useState<Partial<Note> | null>(null);
+  const [editorNote, setEditorNote] = useState<LearnerNote | null>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const PAGE_SIZE = 9;
 
   const headerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
-  const idRef = useRef(200);
 
-  const filtered = notes.filter((n) => {
-    const matchCat = activeCategory === "All" || n.category === activeCategory;
-    const q = search.toLowerCase();
-    const matchSearch =
-      n.title.toLowerCase().includes(q) ||
-      n.content.toLowerCase().includes(q) ||
-      n.tags.some((t) => t.toLowerCase().includes(q));
-    return matchCat && matchSearch;
+  const { data, isLoading, isError, refetch } = useNotes({
+    page: currentPage,
+    page_size: PAGE_SIZE,
+    search: search.trim() || undefined,
+    tag: activeTag ? [activeTag] : undefined,
   });
 
-  const pinned = filtered.filter((n) => n.pinned);
-  const unpinned = filtered.filter((n) => !n.pinned);
-  const sorted = [...pinned, ...unpinned];
-
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  const safePage = Math.min(currentPage, totalPages);
-  const paginated = sorted.slice(
-    (safePage - 1) * PAGE_SIZE,
-    safePage * PAGE_SIZE,
+  // The editor's course picker must offer every enrollment.
+  const { data: myCourses } = useMyCourses({
+    page_size: ALL_ENROLLMENTS_PAGE_SIZE,
+  });
+  const courseOptions = useMemo<EditorCourseOption[]>(
+    () =>
+      (myCourses?.results ?? []).map((enrollment) => ({
+        slug: enrollment.course.slug,
+        title: enrollment.course.title,
+      })),
+    [myCourses],
   );
 
-  const handleSave = (data: Omit<Note, "id" | "updatedAt">) => {
-    if (editorNote?.id) {
-      setNotes((prev) =>
-        prev.map((n) =>
-          n.id === editorNote.id ? { ...n, ...data, updatedAt: "Just now" } : n,
-        ),
+  const createMutation = useCreateNote();
+  const updateMutation = useUpdateNote();
+  const deleteMutation = useDeleteNote();
+
+  const notes = useMemo(() => data?.results ?? [], [data]);
+  const total = data?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  // Tag chips are built from the notes currently loaded. Filtering itself is
+  // server-side, so a tag that exists only on a later page won't be offered
+  // until that page is reached.
+  const availableTags = useMemo(() => {
+    const seen = new Set<string>();
+    notes.forEach((note) => note.tags.forEach((tag) => seen.add(tag)));
+    if (activeTag) seen.add(activeTag);
+    return Array.from(seen).sort();
+  }, [notes, activeTag]);
+
+  const handleSave = (input: NoteCreateInput) => {
+    const onError = (err: unknown) =>
+      notify.error(
+        err instanceof ApiError ? err.message : "Couldn't save the note.",
       );
-    } else {
-      const newNote: Note = {
-        ...data,
-        id: ++idRef.current,
-        updatedAt: "Just now",
-      };
-      setNotes((prev) => [newNote, ...prev]);
+
+    if (editorNote) {
+      updateMutation.mutate(
+        { id: editorNote.id, input },
+        {
+          onSuccess: () => {
+            notify.success("Note updated.");
+            setShowEditor(false);
+          },
+          onError,
+        },
+      );
+      return;
     }
+
+    createMutation.mutate(input, {
+      onSuccess: () => {
+        notify.success("Note created.");
+        setShowEditor(false);
+      },
+      onError,
+    });
   };
 
-  const handleDelete = (id: number) =>
-    setNotes((prev) => prev.filter((n) => n.id !== id));
-  const handleTogglePin = (id: number) =>
-    setNotes((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, pinned: !n.pinned } : n)),
-    );
+  const handleDelete = (id: number) => {
+    deleteMutation.mutate(id, {
+      onError: (err) =>
+        notify.error(
+          err instanceof ApiError ? err.message : "Couldn't delete the note.",
+        ),
+    });
+  };
 
-  /* Animations */
+  const handleTogglePin = (note: LearnerNote) => {
+    updateMutation.mutate({
+      id: note.id,
+      input: { is_pinned: !note.is_pinned },
+    });
+  };
+
   useEffect(() => {
     gsap.fromTo(
       headerRef.current,
@@ -521,11 +471,10 @@ export default function NotesPage() {
       { opacity: 0, y: 20 },
       { opacity: 1, y: 0, duration: 0.35, stagger: 0.06, ease: "power3.out" },
     );
-  }, [activeCategory, search, currentPage]);
+  }, [activeTag, search, currentPage, notes.length]);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div
         ref={headerRef}
         className="opacity-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
@@ -540,7 +489,7 @@ export default function NotesPage() {
         </div>
         <button
           onClick={() => {
-            setEditorNote({});
+            setEditorNote(null);
             setShowEditor(true);
           }}
           className="flex items-center justify-center gap-2 h-11 px-5 w-full sm:w-auto rounded-lg bg-(--primary-600) hover:bg-(--primary-700) text-white text-[14px] font-semibold transition-colors cursor-pointer shrink-0"
@@ -550,82 +499,31 @@ export default function NotesPage() {
         </button>
       </div>
 
-      {/* Stats */}
-      {/* <div className="grid grid-cols-3 gap-4">
-        {[
-          {
-            label: "Total Notes",
-            value: notes.length,
-            iconBg: "bg-(--primary-100)",
-            color: "text-(--primary-600)",
-            Icon: NotebookPen,
-            badge: "saved",
-          },
-          {
-            label: "Pinned",
-            value: notes.filter((n) => n.pinned).length,
-            iconBg: "bg-amber-100",
-            color: "text-amber-600",
-            Icon: Pin,
-            badge: "pinned",
-          },
-          {
-            label: "Courses",
-            value: new Set(
-              notes.map((n) => n.course).filter((c) => c !== "General"),
-            ).size,
-            iconBg: "bg-emerald-100",
-            color: "text-emerald-600",
-            Icon: BookOpen,
-            badge: "covered",
-          },
-        ].map((s) => (
-          <div
-            key={s.label}
-            className="bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[12px] text-(--gray-500) font-normal mb-2">
-                  {s.label}
-                </p>
-                <p className="text-[20px] lg:text-[24px] font-semibold text-(--text-title) leading-none">
-                  {s.value}
-                </p>
-              </div>
-              <div
-                className={`w-10 h-10 rounded-[6px_4px_6px_6px] ${s.iconBg} flex items-center justify-center shrink-0`}
-              >
-                <s.Icon className={`w-5 h-5 ${s.color}`} />
-              </div>
-            </div>
-            <div className="border border-dashed border-(--gray-200)" />
-            <p className="text-[12px] font-medium text-(--gray-400)">
-              {s.badge}
-            </p>
-          </div>
-        ))}
-      </div> */}
-
-      {/* Filter row */}
       <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
-        {/* Category tabs */}
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-          {CATEGORIES.map((cat) => (
+          <button
+            onClick={() => {
+              setActiveTag(null);
+              setCurrentPage(1);
+            }}
+            className={`px-3.5 py-1.5 h-11 rounded-md text-[14px] border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${activeTag === null ? "bg-(--primary-600) text-white border-(--primary-600) font-medium" : "bg-white text-(--gray-600) font-normal border-(--gray-200) hover:border-(--primary-300)"}`}
+          >
+            All
+          </button>
+          {availableTags.map((tag) => (
             <button
-              key={cat}
+              key={tag}
               onClick={() => {
-                setActiveCategory(cat);
+                setActiveTag(tag);
                 setCurrentPage(1);
               }}
-              className={`px-3.5 py-1.5 h-11 rounded-md text-[14px] border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${activeCategory === cat ? "bg-(--primary-600) text-white border-(--primary-600) font-medium" : "bg-white text-(--gray-600) font-normal border-(--gray-200) hover:border-(--primary-300)"}`}
+              className={`px-3.5 py-1.5 h-11 rounded-md text-[14px] border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${activeTag === tag ? "bg-(--primary-600) text-white border-(--primary-600) font-medium" : "bg-white text-(--gray-600) font-normal border-(--gray-200) hover:border-(--primary-300)"}`}
             >
-              {cat}
+              #{tag}
             </button>
           ))}
         </div>
 
-        {/* Search */}
         <div className="relative shrink-0 w-full xl:w-56">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--gray-400)" />
           <input
@@ -640,72 +538,72 @@ export default function NotesPage() {
         </div>
       </div>
 
-      {/* Results count */}
       <p className="text-[14px] text-(--gray-500)">
         Showing{" "}
         <span className="font-semibold text-(--text-title)">
-          {sorted.length}
+          {isLoading ? "—" : total}
         </span>{" "}
-        note{sorted.length !== 1 ? "s" : ""}
-        {activeCategory !== "All" && (
+        note{total !== 1 ? "s" : ""}
+        {activeTag && (
           <>
             {" "}
-            in{" "}
+            tagged{" "}
             <span className="font-semibold text-(--primary-600)">
-              {activeCategory}
+              #{activeTag}
             </span>
           </>
         )}
       </p>
 
-      {/* Grid */}
-      <div
-        ref={gridRef}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
-      >
-        {paginated.map((note) => (
-          <NoteCard
-            key={note.id}
-            note={note}
-            onEdit={(n) => {
-              setEditorNote(n);
-              setShowEditor(true);
-            }}
-            onDelete={handleDelete}
-            onTogglePin={handleTogglePin}
-          />
-        ))}
-        {sorted.length === 0 && (
-          <div className="col-span-full py-16 text-center text-(--gray-400)">
-            <NotebookPen className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p className="text-[16px] font-medium text-(--text-title)">
-              No notes found
-            </p>
-            <p className="text-[14px] mt-1">
-              Try a different search or create a new note
-            </p>
+      {isLoading ? (
+        <CardGridSkeleton count={6} />
+      ) : isError ? (
+        <ErrorState title="Couldn't load your notes" onRetry={() => refetch()} />
+      ) : notes.length === 0 ? (
+        <EmptyState
+          icon={<NotebookPen className="w-6 h-6" />}
+          title={
+            search || activeTag ? "No notes found" : "You haven't written any notes"
+          }
+          description={
+            search || activeTag
+              ? "Try a different search term or tag."
+              : "Notes you take while studying will collect here."
+          }
+        />
+      ) : (
+        <>
+          <div
+            ref={gridRef}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
+          >
+            {notes.map((note) => (
+              <NoteCard
+                key={note.id}
+                note={note}
+                onEdit={(n) => {
+                  setEditorNote(n);
+                  setShowEditor(true);
+                }}
+                onDelete={handleDelete}
+                onTogglePin={handleTogglePin}
+              />
+            ))}
           </div>
-        )}
-      </div>
 
-      {/* Pagination — import only if needed, handled inline */}
-      {totalPages > 1 && (
-        <div className="flex justify-end gap-1">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button
-              key={p}
-              onClick={() => setCurrentPage(p)}
-              className={`w-9 h-9 rounded-lg text-[14px] font-medium border transition-colors cursor-pointer ${safePage === p ? "bg-(--primary-600) text-white border-(--primary-600)" : "bg-white text-(--gray-600) border-(--gray-200) hover:border-(--primary-300)"}`}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </>
       )}
 
       {showEditor && (
         <NoteEditor
           note={editorNote}
+          courses={courseOptions}
+          saving={createMutation.isPending || updateMutation.isPending}
           onClose={() => setShowEditor(false)}
           onSave={handleSave}
         />

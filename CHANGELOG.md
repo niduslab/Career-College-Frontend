@@ -2,6 +2,27 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased] - 2026-08-09
+
+### Added
+
+- **Learner dashboard, wishlist, notes, Q&A, live sessions and payment history — wired to
+  real backend endpoints.** Replaces mock/hardcoded data across ~20 learner-dashboard
+  routes (stats, streak, activity feed, upcoming, continue-learning, certificates
+  list, wishlist, notes, course Q&A, live sessions, payment history) with live API
+  calls, and drops UI elements with no backing field (XP, ratings, badges, invoice
+  numbers, attendee counts, viewer-upvoted state) instead of showing fake numbers.
+  Full file-by-file record: `CHANGELOG_LEARNER_DASHBOARD.md`.
+
+### Fixed
+
+- **My Courses pagination cap**: `/my-courses/` was called with no `page_size` and
+  filtered/paginated client-side, silently hiding enrollment 11+ in every tab and
+  under-counting the tabs. Filtering and counts now come from the server (`?status=`,
+  `status_counts`); the three other callers that need every enrollment now pass
+  `ALL_ENROLLMENTS_PAGE_SIZE`. (`src/hooks/use-course-catalog.ts`,
+  `src/lib/course-api.ts`, `src/components/dashboard/learner/my-courses-page.tsx`)
+
 ## [Unreleased] - 2026-07-19
 
 ### Changed

@@ -1,18 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  getWebinarCatalog,
-  getCatalogWebinarDetail,
-  registerForWebinar,
-  getMyWebinars,
-} from "@/lib/webinar-api";
 
-/** Browse the public webinar catalog. */
-export function useWebinarCatalog(params: {
-  category?: string;
-  upcoming?: boolean;
-  page?: number;
-  page_size?: number;
-}) {
+import {
+  getMyWebinars,
+  getWebinarCatalog,
+  getWebinarDetail,
+  registerForWebinar,
+  type WebinarCatalogParams,
+} from "@/lib/webinars-api";
+
+/** Public webinar catalog. */
+export function useWebinarCatalog(params: WebinarCatalogParams = {}) {
   return useQuery({
     queryKey: ["webinar-catalog", params],
     queryFn: () => getWebinarCatalog(params),
@@ -20,31 +17,32 @@ export function useWebinarCatalog(params: {
   });
 }
 
-/** Single published webinar's public catalog detail. */
-export function useCatalogWebinarDetail(slug: string | undefined) {
+/** The caller's own registrations — the only source of `meeting_url`. */
+export function useMyWebinars() {
   return useQuery({
-    queryKey: ["catalog-webinar", slug],
-    queryFn: () => getCatalogWebinarDetail(slug as string),
+    queryKey: ["my-webinars"],
+    queryFn: getMyWebinars,
+  });
+}
+
+export function useWebinarDetail(slug: string | undefined) {
+  return useQuery({
+    queryKey: ["webinar", slug],
+    queryFn: () => getWebinarDetail(slug as string),
     enabled: !!slug,
   });
 }
 
-/** The caller's own active webinar registrations — used to mark catalog cards as registered. */
-export function useMyWebinars() {
-  return useQuery({
-    queryKey: ["my-webinars"],
-    queryFn: () => getMyWebinars(1, 100),
-  });
-}
-
-/** Register for a free webinar. Paid webinars 422 — caller falls back to checkout. */
+/** Register for a free webinar. Not optimistic — registration can legitimately
+ *  fail on capacity or price, so the button shows a pending state instead. */
 export function useRegisterForWebinar() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (webinarSlug: string) => registerForWebinar(webinarSlug),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["webinar-catalog"] });
+    mutationFn: (slug: string) => registerForWebinar(slug),
+    onSuccess: (_data, slug) => {
       queryClient.invalidateQueries({ queryKey: ["my-webinars"] });
+      queryClient.invalidateQueries({ queryKey: ["webinar-catalog"] });
+      queryClient.invalidateQueries({ queryKey: ["webinar", slug] });
     },
   });
 }

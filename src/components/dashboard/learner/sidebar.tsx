@@ -86,31 +86,30 @@ const navSections = [
   {
     label: "Connect",
     items: [
-      // {
-      //   icon: Video,
-      //   label: "Live Sessions",
-      //   href: "/dashboard/learner/live-sessions",
-      // },
+       
       {
         icon: MessageSquareMore,
         label: "Messages",
         href: "/dashboard/learner/messages",
       },
-      // {
-      //   icon: MessageCircle,
-      //   label: "Discussions",
-      //   href: "/dashboard/learner/discussions",
-      // },
-      // {
-      //   icon: Users,
-      //   label: "Study Groups",
-      //   href: "/dashboard/learner/study-groups",
-      // },
-      // {
-      //   icon: Calendar,
-      //   label: "Consultancy",
-      //   href: "/dashboard/learner/consultancy",
-      // },
+      {
+        icon: MessageCircle,
+        // Renamed from "Discussions": the board is scoped per course, and the
+        // page picks one enrolled course at a time.
+        label: "Course Q&A",
+        href: "/dashboard/learner/discussions",
+      },
+      {
+        icon: Users,
+        label: "Study Groups",
+        href: "/dashboard/learner/study-groups",
+      },
+      {
+        icon: Calendar,
+        label: "Consultancy",
+        href: "/dashboard/learner/consultancy",
+      },
+     
     ],
   },
   {

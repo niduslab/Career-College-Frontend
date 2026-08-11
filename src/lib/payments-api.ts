@@ -44,11 +44,33 @@ export interface Order {
   schedule_id: number | null;
   paid_at: string | null;
   created_at: string;
+  /** Exactly one of the course or webinar pairs is populated, matching
+   *  `item_type`. The order carries no thumbnail, instructor, or gateway
+   *  metadata — only the purchase target's title and slug. */
+  course_title: string | null;
+  course_slug: string | null;
+  webinar_title: string | null;
+  webinar_slug: string | null;
+}
+
+export interface OrderListParams {
+  status?: OrderStatus;
+  page?: number;
+  page_size?: number;
 }
 
 /** List the caller's own payment orders. */
-export async function getMyOrders(): Promise<PaginatedResponse<Order>> {
-  const res = await apiGet<PaginatedResponse<Order>>("/payments/orders/");
+export async function getMyOrders(
+  params: OrderListParams = {},
+): Promise<PaginatedResponse<Order>> {
+  const qs = new URLSearchParams();
+  if (params.status) qs.set("status", params.status);
+  if (params.page) qs.set("page", String(params.page));
+  if (params.page_size) qs.set("page_size", String(params.page_size));
+  const s = qs.toString();
+  const res = await apiGet<PaginatedResponse<Order>>(
+    `/payments/orders/${s ? `?${s}` : ""}`,
+  );
   return res.data ?? { count: 0, next: null, previous: null, results: [] };
 }
 
