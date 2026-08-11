@@ -150,6 +150,10 @@ export interface CatalogCourse {
   instructors: CourseBrief[];
   category: { id: number; name: string; slug: string } | null;
   published_at: string | null;
+  /** True when the requesting learner has this course on their wishlist.
+   *  Always false for anonymous callers and for the nested card inside
+   *  `Enrollment`, where the backend has no wishlist context. */
+  is_wishlisted: boolean;
 }
 
 /** Extra fields present only on the single-course catalog detail endpoint. */
@@ -267,12 +271,57 @@ export async function unenrollFromCourse(
   return withMessage(res);
 }
 
-/** List the caller's own active enrollments, most recently accessed first. */
-export async function getMyCourses(): Promise<PaginatedResponse<Enrollment>> {
-  const res = await apiGet<PaginatedResponse<Enrollment>>(
-    "/courses/my-courses/",
+export type EnrollmentStatusFilter = "all" | "in_progress" | "completed";
+
+/** Tab counts for the My Courses list. Server-computed over the whole
+ *  enrollment set — a page of results cannot be counted client-side. */
+export interface EnrollmentStatusCounts {
+  all: number;
+  in_progress: number;
+  completed: number;
+}
+
+export interface MyCoursesResponse extends PaginatedResponse<Enrollment> {
+  status_counts: EnrollmentStatusCounts;
+}
+
+export interface MyCoursesParams {
+  status?: EnrollmentStatusFilter;
+  page?: number;
+  page_size?: number;
+}
+
+const EMPTY_STATUS_COUNTS: EnrollmentStatusCounts = {
+  all: 0,
+  in_progress: 0,
+  completed: 0,
+};
+
+/** List the caller's own active enrollments, most recently accessed first.
+ *
+ *  Paginated server-side (default page size 10). Callers that need the full
+ *  set — e.g. marking catalog cards as enrolled — must pass an explicit
+ *  `page_size`, or they will silently see only the first page. */
+export async function getMyCourses(
+  params: MyCoursesParams = {},
+): Promise<MyCoursesResponse> {
+  const qs = new URLSearchParams();
+  if (params.status && params.status !== "all") qs.set("status", params.status);
+  if (params.page) qs.set("page", String(params.page));
+  if (params.page_size) qs.set("page_size", String(params.page_size));
+  const s = qs.toString();
+  const res = await apiGet<MyCoursesResponse>(
+    `/courses/my-courses/${s ? `?${s}` : ""}`,
   );
-  return res.data ?? { count: 0, next: null, previous: null, results: [] };
+  return (
+    res.data ?? {
+      count: 0,
+      next: null,
+      previous: null,
+      results: [],
+      status_counts: EMPTY_STATUS_COUNTS,
+    }
+  );
 }
 
 /** Slim enrollment summary embedded in the my-course detail payload. */
