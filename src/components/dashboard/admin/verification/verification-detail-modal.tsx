@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { X, Loader2, FileText } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { X, Loader2, FileText, ImageOff } from "lucide-react";
 import Image from "next/image";
 import StatusBadge from "./status-badge";
 import {
@@ -41,12 +41,16 @@ const EXT_BADGE_COLORS: Record<string, string> = {
 };
 
 function DocumentTile({ label, url }: { label: string; url: string | null }) {
+  const [failed, setFailed] = useState(false);
   const resolved = mediaUrl(url);
+
   if (!resolved) {
     return (
       <div>
         <p className="text-[12px] font-medium text-(--gray-500) mb-1.5">{label}</p>
-        <p className="text-[13px] text-(--gray-400)">Not provided</p>
+        <div className="w-full aspect-square max-w-32 rounded-lg border border-dashed border-(--gray-200) bg-(--gray-50) flex items-center justify-center">
+          <p className="text-[12px] text-(--gray-400)">Not provided</p>
+        </div>
       </div>
     );
   }
@@ -55,28 +59,36 @@ function DocumentTile({ label, url }: { label: string; url: string | null }) {
   const isImage = isImageName(name);
 
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-[12px] font-medium text-(--gray-500) mb-1.5">{label}</p>
-      <a href={resolved} target="_blank" rel="noopener noreferrer" className="block w-fit">
+      <a href={resolved} target="_blank" rel="noopener noreferrer" className="block">
         {isImage ? (
-          <div className="w-32 h-32 rounded-lg border border-(--gray-200) bg-(--gray-50) overflow-hidden">
-            <Image
-              src={resolved}
-              alt={`${label} preview`}
-              width={128}
-              height={128}
-              unoptimized
-              className="w-full h-full object-cover"
-            />
-          </div>
+          failed ? (
+            <div className="w-full aspect-square max-w-32 rounded-lg border border-(--gray-200) bg-(--gray-50) flex flex-col items-center justify-center gap-1 text-(--gray-400)">
+              <ImageOff className="w-5 h-5" />
+              <span className="text-[11px]">Failed to load</span>
+            </div>
+          ) : (
+            <div className="w-full aspect-square max-w-32 rounded-lg border border-(--gray-200) bg-(--gray-50) overflow-hidden">
+              <Image
+                src={resolved}
+                alt={`${label} preview`}
+                width={128}
+                height={128}
+                unoptimized
+                onError={() => setFailed(true)}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )
         ) : (
-          <div className="flex items-center gap-3 p-2.5 rounded-lg border border-(--gray-200) bg-white w-fit">
+          <div className="flex items-center gap-2.5 p-2.5 rounded-lg border border-(--gray-200) bg-white min-w-0">
             <div
               className={`w-9 h-9 rounded-md ${EXT_BADGE_COLORS[ext] ?? "bg-(--gray-400)"} text-white flex items-center justify-center text-[13px] font-bold uppercase shrink-0`}
             >
               {ext.slice(0, 1) || <FileText className="w-4 h-4" />}
             </div>
-            <p className="text-[13px] font-medium text-(--text-title) truncate max-w-55">
+            <p className="text-[13px] font-medium text-(--text-title) truncate min-w-0">
               {name}
             </p>
           </div>

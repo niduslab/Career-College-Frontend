@@ -2,18 +2,20 @@
 
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MoreVertical, Check, X, Loader2 } from "lucide-react";
+import { MoreVertical, Eye, Check, X, Loader2 } from "lucide-react";
 
 interface ApprovalActionsMenuProps {
   busy: boolean;
+  onView: () => void;
   onApprove: () => void;
   onReject: () => void;
 }
 
-const MENU_HEIGHT = 78; // 2 rows x ~38px
+const MENU_HEIGHT = 116;
 
 export default function ApprovalActionsMenu({
   busy,
+  onView,
   onApprove,
   onReject,
 }: ApprovalActionsMenuProps) {
@@ -25,7 +27,9 @@ export default function ApprovalActionsMenu({
   const closeOnOutsideClick = (e: MouseEvent) => {
     const target = e.target as Node;
     const insideWrapper = wrapperRef.current?.contains(target) ?? false;
-    const insidePortal = !!(target as HTMLElement).closest?.("[data-action-portal]");
+    const insidePortal = !!(target as HTMLElement).closest?.(
+      "[data-action-portal]",
+    );
     if (!insideWrapper && !insidePortal) {
       setOpen(false);
       document.removeEventListener("mousedown", closeOnOutsideClick);
@@ -37,7 +41,9 @@ export default function ApprovalActionsMenu({
       const rect = btnRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
       const top =
-        spaceBelow < MENU_HEIGHT + 12 ? rect.top - MENU_HEIGHT - 6 : rect.bottom + 4;
+        spaceBelow < MENU_HEIGHT + 12
+          ? rect.top - MENU_HEIGHT - 6
+          : rect.bottom + 4;
       setCoords({ top, right: window.innerWidth - rect.right });
       document.addEventListener("mousedown", closeOnOutsideClick);
     }
@@ -58,15 +64,31 @@ export default function ApprovalActionsMenu({
         className="w-7 h-7 rounded-lg flex items-center justify-center text-(--gray-400) hover:bg-(--gray-100) hover:text-(--gray-600) transition-colors cursor-pointer disabled:opacity-50"
         aria-label="Approval actions"
       >
-        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreVertical className="w-4 h-4" />}
+        {busy ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <MoreVertical className="w-4 h-4" />
+        )}
       </button>
       {open &&
         createPortal(
           <div
             data-action-portal
-            style={{ position: "fixed", top: coords.top, right: coords.right, zIndex: 9999 }}
+            style={{
+              position: "fixed",
+              top: coords.top,
+              right: coords.right,
+              zIndex: 9999,
+            }}
             className="bg-white border border-(--gray-200) rounded-xl shadow-lg py-1 min-w-36 text-left"
           >
+            <button
+              onClick={() => runAction(onView)}
+              className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-(--gray-600) hover:bg-(--gray-50) transition-colors cursor-pointer"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              View details
+            </button>
             <button
               onClick={() => runAction(onApprove)}
               className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
