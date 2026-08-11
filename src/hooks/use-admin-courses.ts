@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   listPendingReviewCourses,
+  getCourseReviewDetail,
+  getCourseAdminCurriculum,
   reviewCourse,
   archiveCourse,
   restoreCourse,
@@ -13,6 +15,24 @@ export function usePendingReviewCourses(params: ListPendingReviewParams) {
     queryKey: ["admin-pending-review", params],
     queryFn: () => listPendingReviewCourses(params),
     placeholderData: (previousData) => previousData,
+  });
+}
+
+/** Full admin-review detail for one course (curriculum stats + schedules). */
+export function useCourseReviewDetail(id: number | null) {
+  return useQuery({
+    queryKey: ["admin-course-review-detail", id],
+    queryFn: () => getCourseReviewDetail(id as number),
+    enabled: id !== null,
+  });
+}
+
+/** Full curriculum tree (lectures/quizzes/assignments/coding exercises) for admin preview. */
+export function useCourseAdminCurriculum(id: number | null) {
+  return useQuery({
+    queryKey: ["admin-course-curriculum", id],
+    queryFn: () => getCourseAdminCurriculum(id as number),
+    enabled: id !== null,
   });
 }
 

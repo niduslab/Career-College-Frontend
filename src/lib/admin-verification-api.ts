@@ -30,6 +30,35 @@ export interface InstitutionVerificationRow {
   submitted_at: string | null;
 }
 
+export interface IdentityVerificationDetail extends IdentityVerificationRow {
+  document_number: string;
+  expiry_date: string | null;
+  document_front: string | null;
+  document_back: string | null;
+  selfie: string | null;
+  resume: string | null;
+  rejection_reason: string;
+  action_required_reason: string;
+  admin_notes: string;
+  reviewed_by_email: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InstitutionVerificationDetail extends InstitutionVerificationRow {
+  official_email: string;
+  accreditation_document: string | null;
+  authorization_letter: string | null;
+  rejection_reason: string;
+  action_required_reason: string;
+  admin_notes: string;
+  reviewed_by_email: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export type VerificationAction =
   | "pick_up"
   | "approve"
@@ -63,6 +92,16 @@ export async function listIdentityVerifications(
   return res.data ?? { count: 0, next: null, previous: null, results: [] };
 }
 
+export async function getIdentityVerificationDetail(
+  id: number,
+): Promise<IdentityVerificationDetail> {
+  const res = (await apiGet(
+    `/verification/admin/${id}/`,
+  )) as ApiEnvelope<IdentityVerificationDetail>;
+  if (!res.data) throw new Error("Verification not found.");
+  return res.data;
+}
+
 export async function reviewIdentityVerification(
   id: number,
   args: ReviewArgs,
@@ -83,6 +122,16 @@ export async function listInstitutionVerifications(
     `/verification/admin/institution/list/${buildQuery({ status })}`,
   )) as ApiEnvelope<PaginatedResult<InstitutionVerificationRow>>;
   return res.data ?? { count: 0, next: null, previous: null, results: [] };
+}
+
+export async function getInstitutionVerificationDetail(
+  id: number,
+): Promise<InstitutionVerificationDetail> {
+  const res = (await apiGet(
+    `/verification/admin/institution/${id}/`,
+  )) as ApiEnvelope<InstitutionVerificationDetail>;
+  if (!res.data) throw new Error("Verification not found.");
+  return res.data;
 }
 
 export async function reviewInstitutionVerification(
