@@ -72,6 +72,8 @@ export interface WebinarRegistration {
 
 export interface WebinarCatalogParams {
   search?: string;
+  /** Restrict to webinars scheduled in the future. */
+  upcoming?: boolean;
   page?: number;
   page_size?: number;
 }
@@ -82,6 +84,7 @@ export async function getWebinarCatalog(
 ): Promise<PaginatedResponse<WebinarSummary>> {
   const qs = new URLSearchParams();
   if (params.search) qs.set("search", params.search);
+  if (params.upcoming) qs.set("upcoming", "true");
   if (params.page) qs.set("page", String(params.page));
   if (params.page_size) qs.set("page_size", String(params.page_size));
   const s = qs.toString();
@@ -106,13 +109,20 @@ export async function getMyWebinars(): Promise<
   return res.data ?? { count: 0, next: null, previous: null, results: [] };
 }
 
-/** Register for a free webinar. Paid webinars go through payment checkout. */
+/** Register for a free webinar. Paid webinars go through payment checkout.
+ *
+ *  Returns the registration plus the backend's success message. `message` is
+ *  narrowed to a string because the envelope also allows a field-keyed object
+ *  on error responses. */
 export async function registerForWebinar(
   slug: string,
-): Promise<WebinarRegistration> {
+): Promise<WebinarRegistration & { message?: string }> {
   const res = await apiPost<WebinarRegistration>(
     `/webinars/${slug}/register/`,
     {},
   );
-  return res.data as WebinarRegistration;
+  return {
+    ...(res.data as WebinarRegistration),
+    message: typeof res.message === "string" ? res.message : undefined,
+  };
 }
