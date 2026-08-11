@@ -17,6 +17,7 @@ import {
   MessageSquareMore,
   PenLine,
   Mail,
+  Video,
 } from "lucide-react";
 import { useConversationUnreadBadge } from "@/hooks/use-conversations";
 
@@ -44,6 +45,11 @@ const navSections = [
         icon: Radio,
         label: "Live Sessions",
         href: "/dashboard/instructor/live-sessions",
+      },
+      {
+        icon: Video,
+        label: "My Webinars",
+        href: "/dashboard/instructor/webinars",
       },
     ],
   },

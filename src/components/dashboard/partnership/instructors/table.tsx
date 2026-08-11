@@ -17,7 +17,7 @@ import { notify } from "@/lib/toast";
 import dynamic from "next/dynamic";
 const AddInstructorDrawer = dynamic(() => import("./add-drawer"), { ssr: false });
 
-const COLS = "grid-cols-[2fr_1fr_1fr_70px_90px_40px]";
+const COLS = "grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_70px_90px_40px]";
 
 const STATUS_OPTIONS: ("All" | AffiliationStatus)[] = ["All", "active", "removed"];
 const STATUS_LABEL: Record<"All" | AffiliationStatus, string> = {
