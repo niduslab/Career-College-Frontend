@@ -16,11 +16,17 @@ import { Pagination } from "@/components/common/pagination";
 import { useMyCourses } from "@/hooks/use-course-catalog";
 import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
 import type { Enrollment, EnrollmentStatusFilter } from "@/lib/course-api";
+import type { Enrollment, EnrollmentStatusFilter } from "@/lib/course-api";
 
 const PAGE_SIZE = 6;
 
 type Tab = "All" | "In Progress" | "Completed";
 
+const TABS: { label: Tab; status: EnrollmentStatusFilter }[] = [
+  { label: "All", status: "all" },
+  { label: "In Progress", status: "in_progress" },
+  { label: "Completed", status: "completed" },
+];
 const TABS: { label: Tab; status: EnrollmentStatusFilter }[] = [
   { label: "All", status: "all" },
   { label: "In Progress", status: "in_progress" },
@@ -76,6 +82,24 @@ export default function MyCoursesPage() {
   const total = data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  const activeStatus =
+    TABS.find((t) => t.label === activeTab)?.status ?? "all";
+
+  // Filtering and pagination are server-side. They used to run client-side
+  // over an unpaginated fetch, which silently capped the page at the server's
+  // default 10 enrollments — a finished course, having the oldest
+  // `last_accessed_at`, was the first thing to fall off the end.
+  const { data, isLoading, isError } = useMyCourses({
+    status: activeStatus,
+    page: currentPage,
+    page_size: PAGE_SIZE,
+  });
+
+  const enrollments = useMemo(() => data?.results ?? [], [data]);
+  const statusCounts = data?.status_counts;
+  const total = data?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
   const resetPage = () => setCurrentPage(1);
 
   const tabs: { label: Tab; count: number }[] = useMemo(
@@ -83,10 +107,22 @@ export default function MyCoursesPage() {
       { label: "All", count: statusCounts?.all ?? 0 },
       { label: "In Progress", count: statusCounts?.in_progress ?? 0 },
       { label: "Completed", count: statusCounts?.completed ?? 0 },
+      { label: "All", count: statusCounts?.all ?? 0 },
+      { label: "In Progress", count: statusCounts?.in_progress ?? 0 },
+      { label: "Completed", count: statusCounts?.completed ?? 0 },
     ],
+    [statusCounts],
     [statusCounts],
   );
 
+  // The endpoint has no search param, so this narrows the current page only.
+  const paginated = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return enrollments;
+    return enrollments.filter((e) =>
+      e.course.title.toLowerCase().includes(query),
+    );
+  }, [enrollments, search]);
   // The endpoint has no search param, so this narrows the current page only.
   const paginated = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -109,6 +145,7 @@ export default function MyCoursesPage() {
     }, gridRef);
     return () => ctx.revert();
   }, [activeTab, search, view, currentPage, enrollments.length]);
+  }, [activeTab, search, view, currentPage, enrollments.length]);
 
   return (
     <div className="space-y-6">
@@ -119,6 +156,7 @@ export default function MyCoursesPage() {
             My Courses
           </h1>
           <p className="text-[14px] text-(--gray-500) mt-0.5">
+            Pick up where you left off across {statusCounts?.all ?? 0} enrolled
             Pick up where you left off across {statusCounts?.all ?? 0} enrolled
             courses.
           </p>
@@ -250,6 +288,7 @@ export default function MyCoursesPage() {
 
       <Pagination
         currentPage={currentPage}
+        currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
       />
@@ -303,6 +342,7 @@ function GridCard({ enrollment }: { enrollment: Enrollment }) {
 
   return (
     <div
+      onClick={() => router.push(cardHref(enrollment))}
       onClick={() => router.push(cardHref(enrollment))}
       className="course-card bg-white rounded-2xl border border-(--gray-200) overflow-hidden hover:shadow-md transition-shadow cursor-pointer group"
     >
@@ -360,6 +400,7 @@ function GridCard({ enrollment }: { enrollment: Enrollment }) {
         <div className="flex items-center justify-between pt-1">
           <span className="flex items-center gap-1 text-[12px] text-(--gray-500)">
             <Clock className="w-4 h-4" />
+            {statusLabel(enrollment)}
             {statusLabel(enrollment)}
           </span>
           <span className="text-[12px] text-(--gray-500)">
@@ -429,6 +470,7 @@ function ListCard({
           </span>
           <span className="flex items-center gap-1 text-[12px] font-normal text-(--gray-500)">
             <Clock className="w-4 h-4" />
+            {statusLabel(enrollment)}
             {statusLabel(enrollment)}
           </span>
         </div>
