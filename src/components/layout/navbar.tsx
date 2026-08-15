@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Menu,
   Search,
@@ -13,6 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { gsap } from "@/lib/gsap";
 import { useAuth } from "@/lib/use-auth";
 import { dashboardPathFor } from "@/lib/auth-api";
+import logo from "@/assets/images/logo/career-college-logo.webp";
 
 const NAV_LINKS = [
   { label: "Categories", href: "#" },
@@ -182,8 +184,14 @@ export function Navbar() {
       <div className="mx-auto flex h-18 w-full max-w-310 items-center lg:gap-10 gap-6  px-4 md:px-6 lg:px-8">
         <Link
           href="/"
-          className="sg-h5 shrink-0 font-semibold tracking-tight text-(--primary-700) transition-colors"
+          className="flex shrink-0 items-center gap-1.5 sg-h5 font-semibold tracking-tight text-(--primary-700) transition-colors"
         >
+          <Image
+            src={logo}
+            alt=""
+            className="h-10 w-10 shrink-0 object-contain"
+            priority
+          />
           Career College
         </Link>
 
