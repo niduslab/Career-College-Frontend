@@ -93,7 +93,8 @@ export default function LearnerStatsCards() {
         ease: "power2.out",
         delay: i * 0.08,
         onUpdate: () => {
-          if (el) el.textContent = Math.round(obj.val).toLocaleString() + suffix;
+          if (el)
+            el.textContent = Math.round(obj.val).toLocaleString() + suffix;
         },
       });
     });
@@ -133,9 +134,9 @@ export default function LearnerStatsCards() {
                   </span>
                 </p>
               </div>
-              <div className="w-10 h-10 rounded-[6px_4px_6px_6px] bg-[var(--primary-50)] flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-[6px_4px_6px_6px] bg-(--primary-50) flex items-center justify-center shrink-0">
                 <Icon
-                  className="w-6 h-6 text-[var(--primary-600)]"
+                  className="w-6 h-6 text-(--primary-600)"
                   fill={stat.iconFill ? "currentColor" : "none"}
                 />
               </div>

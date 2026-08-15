@@ -20,6 +20,13 @@ export interface DashboardCourseRef {
  * dates in `day_streak_timezone`; both are approximations the UI should
  * qualify rather than present as exact.
  */
+/** One day of the presence-only week-activity strip — no duration field,
+ *  the backend never tracks how long, only whether. */
+export interface WeekActivityDay {
+  date: string;
+  is_active: boolean;
+}
+
 export interface LearnerSummary {
   courses_enrolled: number;
   courses_in_progress: number;
@@ -32,6 +39,7 @@ export interface LearnerSummary {
   day_streak: number;
   day_streak_is_approximate: boolean;
   day_streak_timezone: string;
+  week_activity: WeekActivityDay[];
 }
 
 export async function getLearnerSummary(): Promise<LearnerSummary> {

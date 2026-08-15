@@ -34,7 +34,17 @@ import {
 const INPUT_CLS =
   "w-full h-11 px-3 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow";
 
+/** Renders a trailing " *" (required-field marker) in red, whatever the rest
+ *  of the label text is. */
 function FieldLabel({ children }: { children: React.ReactNode }) {
+  if (typeof children === "string" && children.endsWith("*")) {
+    return (
+      <label className="text-[13px] font-medium text-(--text-title) mb-1.5 block">
+        {children.slice(0, -1).trimEnd()}
+        <span className="text-rose-500"> *</span>
+      </label>
+    );
+  }
   return (
     <label className="text-[13px] font-medium text-(--text-title) mb-1.5 block">
       {children}

@@ -99,6 +99,7 @@ export default function MyCoursesPage() {
   useEffect(() => {
     if (!gridRef.current) return;
     const cards = Array.from(gridRef.current.querySelectorAll(".course-card"));
+    if (cards.length === 0) return;
     gsap.killTweensOf(cards);
     const ctx = gsap.context(() => {
       gsap.fromTo(
@@ -225,11 +226,19 @@ export default function MyCoursesPage() {
                   className="h-75 rounded-2xl border border-(--gray-200) bg-(--gray-50) animate-pulse"
                 />
               ))
-            : paginated.map((enrollment) =>
+            : paginated.map((enrollment, i) =>
                 view === "grid" ? (
-                  <GridCard key={enrollment.id} enrollment={enrollment} />
+                  <GridCard
+                    key={enrollment.id}
+                    enrollment={enrollment}
+                    isPriority={i < 4}
+                  />
                 ) : (
-                  <ListCard key={enrollment.id} enrollment={enrollment} />
+                  <ListCard
+                    key={enrollment.id}
+                    enrollment={enrollment}
+                    isPriority={i < 4}
+                  />
                 ),
               )}
           {!isLoading && paginated.length === 0 && (
@@ -274,10 +283,17 @@ function statusLabel(enrollment: Enrollment): string {
   return enrollment.is_active ? "Completed" : "Completed · access ended";
 }
 
-function GridCard({ enrollment }: { enrollment: Enrollment }) {
+function GridCard({
+  enrollment,
+  isPriority,
+}: {
+  enrollment: Enrollment;
+  isPriority?: boolean;
+}) {
   const router = useRouter();
   const { course } = enrollment;
-  const thumbnail = mediaUrl(course.thumbnail);
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  const thumbnail = thumbnailFailed ? null : mediaUrl(course.thumbnail);
   const instructor = course.instructors[0];
   const levelLabel =
     course.level.charAt(0).toUpperCase() + course.level.slice(1);
@@ -295,6 +311,8 @@ function GridCard({ enrollment }: { enrollment: Enrollment }) {
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover group-hover:scale-105 transition-transform duration-500"
+            onError={() => setThumbnailFailed(true)}
+            priority={isPriority}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-(--gray-300) text-[12px]">
@@ -350,19 +368,24 @@ function GridCard({ enrollment }: { enrollment: Enrollment }) {
   );
 }
 
-function ListCard({ enrollment }: { enrollment: Enrollment }) {
+function ListCard({
+  enrollment,
+  isPriority,
+}: {
+  enrollment: Enrollment;
+  isPriority?: boolean;
+}) {
   const router = useRouter();
   const { course } = enrollment;
-  const thumbnail = mediaUrl(course.thumbnail);
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
+  const thumbnail = thumbnailFailed ? null : mediaUrl(course.thumbnail);
   const instructor = course.instructors[0];
   const levelLabel =
     course.level.charAt(0).toUpperCase() + course.level.slice(1);
 
   return (
     <div
-      onClick={() =>
-        router.push(`/dashboard/learner/course-player/${course.slug}`)
-      }
+      onClick={() => router.push(cardHref(enrollment))}
       className="course-card bg-white rounded-2xl border border-(--gray-200) p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer group"
     >
       <div className="relative w-16 h-16 rounded-xl shrink-0 overflow-hidden bg-(--gray-50)">
@@ -373,6 +396,8 @@ function ListCard({ enrollment }: { enrollment: Enrollment }) {
             fill
             sizes="64px"
             className="object-cover group-hover:scale-105 transition-transform duration-500"
+            onError={() => setThumbnailFailed(true)}
+            priority={isPriority}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-(--gray-300) text-[10px]">

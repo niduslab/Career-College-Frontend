@@ -20,7 +20,6 @@ import {
   MessageCircle,
   MessageSquareMore,
   Users,
-  Calendar,
   CreditCard,
   NotebookPen,
   Sparkles,
@@ -86,30 +85,21 @@ const navSections = [
   {
     label: "Connect",
     items: [
-       
       {
         icon: MessageSquareMore,
         label: "Messages",
         href: "/dashboard/learner/messages",
       },
-      {
-        icon: MessageCircle,
-        // Renamed from "Discussions": the board is scoped per course, and the
-        // page picks one enrolled course at a time.
-        label: "Course Q&A",
-        href: "/dashboard/learner/discussions",
-      },
-      {
-        icon: Users,
-        label: "Study Groups",
-        href: "/dashboard/learner/study-groups",
-      },
-      {
-        icon: Calendar,
-        label: "Consultancy",
-        href: "/dashboard/learner/consultancy",
-      },
-     
+      // {
+      //   icon: MessageCircle,
+      //   label: "Course Q&A",
+      //   href: "/dashboard/learner/discussions",
+      // },
+      // {
+      //   icon: Users,
+      //   label: "Study Groups",
+      //   href: "/dashboard/learner/study-groups",
+      // },
     ],
   },
   {
