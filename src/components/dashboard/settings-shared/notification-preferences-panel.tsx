@@ -49,12 +49,13 @@ const CATEGORY_ORDER: NotificationCategory[] = [
   "messaging",
 ];
 
-/**
- * Email-notification preferences, shared across every dashboard role
- * (learner/instructor/partnership/admin) since the backend's five categories
- * are role-agnostic — GET/PATCH /notifications/preferences/.
- */
-export function NotificationPreferencesPanel() {
+export function NotificationPreferencesPanel({
+  categories = CATEGORY_ORDER,
+}: {
+  /** Restrict which categories this role can see/toggle. Defaults to every
+   *  category — instructor/partnership/admin panels are unaffected. */
+  categories?: NotificationCategory[];
+}) {
   const [prefs, setPrefs] = useState<NotificationPreference[]>([]);
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
@@ -81,9 +82,7 @@ export function NotificationPreferencesPanel() {
   const toggle = (category: NotificationCategory) => {
     setPrefs((prev) =>
       prev.map((p) =>
-        p.category === category
-          ? { ...p, email_enabled: !p.email_enabled }
-          : p,
+        p.category === category ? { ...p, email_enabled: !p.email_enabled } : p,
       ),
     );
     setPending((prev) => ({ ...prev, [category]: true }));
@@ -128,14 +127,11 @@ export function NotificationPreferencesPanel() {
         description="Choose which categories of events email you. In-app notifications (the bell icon) are always on."
       >
         <div className="space-y-4">
-          {CATEGORY_ORDER.filter((c) => byCategory.has(c)).map((category) => {
+          {categories.filter((c) => byCategory.has(c)).map((category) => {
             const pref = byCategory.get(category)!;
             const meta = CATEGORY_META[category];
             return (
-              <div
-                key={category}
-                className="flex items-center justify-between"
-              >
+              <div key={category} className="flex items-center justify-between">
                 <div>
                   <p className="text-[14px] font-semibold text-(--text-title)">
                     {meta.label}
