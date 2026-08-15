@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
+import logo from "@/assets/images/logo/career-college-logo.webp";
 import {
   X,
-  BookOpenText,
   LayoutDashboard,
   Radio,
   Users,
@@ -139,8 +140,12 @@ export default function InstructorSidebar() {
             className="flex items-center gap-1 lg:gap-0"
             onClick={close}
           >
-            <div className="w-9 h-9   flex items-center justify-center">
-              <BookOpenText className="w-6 h-6 text-(--primary-600)" />
+            <div className="w-9 h-9 flex items-center justify-center">
+              <Image
+                src={logo}
+                alt=""
+                className="h-8 w-8 object-contain"
+              />
             </div>
             <span className="font-medium text-(--primary-600) text-[16px] lg:text-[20px]">
               CareerCollege
