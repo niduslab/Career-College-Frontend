@@ -1,5 +1,7 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, MapPin, Phone } from "lucide-react";
+import logo from "@/assets/images/logo/career-college-logo.webp";
 
 const COMPANY_LINKS = [
   { label: "About Us", href: "/about-us" },
@@ -29,12 +31,17 @@ export function Footer() {
       <div className="mx-auto w-full max-w-310 px-4 pb-6 pt-12 md:px-6 md:pb-8 md:pt-14 lg:px-8 lg:pb-10 lg:pt-16">
         <div className="grid gap-10 lg:grid-cols-[1.65fr_2.85fr] lg:gap-16">
           <div>
-            <h2 className="lg:text-[32px] sg-h5 font-semibold text-(--text-white)">
-              Nidus Nidus Career College
+            <h2 className="flex items-center gap-2 lg:text-[32px] sg-h5 font-semibold text-(--text-white)">
+              <Image
+                src={logo}
+                alt=""
+                className="h-10 w-10 shrink-0 object-contain"
+              />
+              Career College
             </h2>
             <p className="mt-4 max-w-70 sg-p-small text-white font-normal">
-              Career College empowers you with expertled courses, real-world
-              projects, and guidance to advance your career.
+              Nidus Career College empowers you with expertled courses,
+              real-world projects, and guidance to advance your career.
             </p>
 
             <h3 className="lg:mt-10 mt-7 lg:text-[20px] sg-p-default font-semibold text-(--text-white)">
