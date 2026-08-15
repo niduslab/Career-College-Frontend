@@ -76,7 +76,7 @@ function CourseCard({
   onEnrollChange: (slug: string, enrolled: boolean) => void;
   isPriority?: boolean;
 }) {
-  const [wished, setWished] = useState(false);
+  const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const instructor = course.instructors[0];
   const price = Number(course.price);
   const isFree = price <= 0;

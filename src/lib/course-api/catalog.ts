@@ -85,6 +85,9 @@ export interface CatalogCourse {
   instructors: CourseBrief[];
   category: { id: number; name: string; slug: string } | null;
   published_at: string | null;
+  /** False for anonymous callers and inside nested cards (e.g. Enrollment) —
+   *  see `get_wishlisted_course_ids` in the backend for the context mechanism. */
+  is_wishlisted: boolean;
 }
 
 /** Extra fields present only on the single-course catalog detail endpoint. */

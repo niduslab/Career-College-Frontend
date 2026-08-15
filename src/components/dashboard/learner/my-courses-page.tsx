@@ -16,17 +16,11 @@ import { Pagination } from "@/components/common/pagination";
 import { useMyCourses } from "@/hooks/use-course-catalog";
 import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
 import type { Enrollment, EnrollmentStatusFilter } from "@/lib/course-api";
-import type { Enrollment, EnrollmentStatusFilter } from "@/lib/course-api";
 
 const PAGE_SIZE = 6;
 
 type Tab = "All" | "In Progress" | "Completed";
 
-const TABS: { label: Tab; status: EnrollmentStatusFilter }[] = [
-  { label: "All", status: "all" },
-  { label: "In Progress", status: "in_progress" },
-  { label: "Completed", status: "completed" },
-];
 const TABS: { label: Tab; status: EnrollmentStatusFilter }[] = [
   { label: "All", status: "all" },
   { label: "In Progress", status: "in_progress" },
@@ -82,24 +76,6 @@ export default function MyCoursesPage() {
   const total = data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const activeStatus =
-    TABS.find((t) => t.label === activeTab)?.status ?? "all";
-
-  // Filtering and pagination are server-side. They used to run client-side
-  // over an unpaginated fetch, which silently capped the page at the server's
-  // default 10 enrollments — a finished course, having the oldest
-  // `last_accessed_at`, was the first thing to fall off the end.
-  const { data, isLoading, isError } = useMyCourses({
-    status: activeStatus,
-    page: currentPage,
-    page_size: PAGE_SIZE,
-  });
-
-  const enrollments = useMemo(() => data?.results ?? [], [data]);
-  const statusCounts = data?.status_counts;
-  const total = data?.count ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-
   const resetPage = () => setCurrentPage(1);
 
   const tabs: { label: Tab; count: number }[] = useMemo(
@@ -107,22 +83,10 @@ export default function MyCoursesPage() {
       { label: "All", count: statusCounts?.all ?? 0 },
       { label: "In Progress", count: statusCounts?.in_progress ?? 0 },
       { label: "Completed", count: statusCounts?.completed ?? 0 },
-      { label: "All", count: statusCounts?.all ?? 0 },
-      { label: "In Progress", count: statusCounts?.in_progress ?? 0 },
-      { label: "Completed", count: statusCounts?.completed ?? 0 },
     ],
-    [statusCounts],
     [statusCounts],
   );
 
-  // The endpoint has no search param, so this narrows the current page only.
-  const paginated = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return enrollments;
-    return enrollments.filter((e) =>
-      e.course.title.toLowerCase().includes(query),
-    );
-  }, [enrollments, search]);
   // The endpoint has no search param, so this narrows the current page only.
   const paginated = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -135,6 +99,7 @@ export default function MyCoursesPage() {
   useEffect(() => {
     if (!gridRef.current) return;
     const cards = Array.from(gridRef.current.querySelectorAll(".course-card"));
+    if (cards.length === 0) return;
     gsap.killTweensOf(cards);
     const ctx = gsap.context(() => {
       gsap.fromTo(
@@ -144,7 +109,6 @@ export default function MyCoursesPage() {
       );
     }, gridRef);
     return () => ctx.revert();
-  }, [activeTab, search, view, currentPage, enrollments.length]);
   }, [activeTab, search, view, currentPage, enrollments.length]);
 
   return (
@@ -156,7 +120,6 @@ export default function MyCoursesPage() {
             My Courses
           </h1>
           <p className="text-[14px] text-(--gray-500) mt-0.5">
-            Pick up where you left off across {statusCounts?.all ?? 0} enrolled
             Pick up where you left off across {statusCounts?.all ?? 0} enrolled
             courses.
           </p>
@@ -268,13 +231,13 @@ export default function MyCoursesPage() {
                   <GridCard
                     key={enrollment.id}
                     enrollment={enrollment}
-                    isPriority={i === 0}
+                    isPriority={i < 4}
                   />
                 ) : (
                   <ListCard
                     key={enrollment.id}
                     enrollment={enrollment}
-                    isPriority={i === 0}
+                    isPriority={i < 4}
                   />
                 ),
               )}
@@ -287,7 +250,6 @@ export default function MyCoursesPage() {
       )}
 
       <Pagination
-        currentPage={currentPage}
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
@@ -307,15 +269,6 @@ function ProgressBar({ percent }: { percent: number }) {
   );
 }
 
-<<<<<<< HEAD
-function GridCard({
-  enrollment,
-  isPriority,
-}: {
-  enrollment: Enrollment;
-  isPriority?: boolean;
-}) {
-=======
 /** A completed course the learner later unenrolled from still appears here —
  *  the certificate is theirs to keep — but the player would reject them, so
  *  the card points at the certificate instead. */
@@ -330,8 +283,13 @@ function statusLabel(enrollment: Enrollment): string {
   return enrollment.is_active ? "Completed" : "Completed · access ended";
 }
 
-function GridCard({ enrollment }: { enrollment: Enrollment }) {
->>>>>>> 26783de57d5304630505edab82b59d0207508e36
+function GridCard({
+  enrollment,
+  isPriority,
+}: {
+  enrollment: Enrollment;
+  isPriority?: boolean;
+}) {
   const router = useRouter();
   const { course } = enrollment;
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
@@ -342,7 +300,6 @@ function GridCard({ enrollment }: { enrollment: Enrollment }) {
 
   return (
     <div
-      onClick={() => router.push(cardHref(enrollment))}
       onClick={() => router.push(cardHref(enrollment))}
       className="course-card bg-white rounded-2xl border border-(--gray-200) overflow-hidden hover:shadow-md transition-shadow cursor-pointer group"
     >
@@ -401,7 +358,6 @@ function GridCard({ enrollment }: { enrollment: Enrollment }) {
           <span className="flex items-center gap-1 text-[12px] text-(--gray-500)">
             <Clock className="w-4 h-4" />
             {statusLabel(enrollment)}
-            {statusLabel(enrollment)}
           </span>
           <span className="text-[12px] text-(--gray-500)">
             {formatRelativeTime(enrollment.last_accessed_at)}
@@ -429,9 +385,7 @@ function ListCard({
 
   return (
     <div
-      onClick={() =>
-        router.push(`/dashboard/learner/course-player/${course.slug}`)
-      }
+      onClick={() => router.push(cardHref(enrollment))}
       className="course-card bg-white rounded-2xl border border-(--gray-200) p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer group"
     >
       <div className="relative w-16 h-16 rounded-xl shrink-0 overflow-hidden bg-(--gray-50)">
@@ -470,7 +424,6 @@ function ListCard({
           </span>
           <span className="flex items-center gap-1 text-[12px] font-normal text-(--gray-500)">
             <Clock className="w-4 h-4" />
-            {statusLabel(enrollment)}
             {statusLabel(enrollment)}
           </span>
         </div>

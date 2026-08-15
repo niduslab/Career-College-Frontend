@@ -30,7 +30,7 @@ export function Footer() {
         <div className="grid gap-10 lg:grid-cols-[1.65fr_2.85fr] lg:gap-16">
           <div>
             <h2 className="lg:text-[32px] sg-h5 font-semibold text-(--text-white)">
-              Career College
+              Nidus Career College
             </h2>
             <p className="mt-4 max-w-70 sg-p-small text-white font-normal">
               Career College empowers you with expertled courses, real-world

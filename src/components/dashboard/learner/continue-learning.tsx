@@ -14,7 +14,10 @@ import {
 } from "lucide-react";
 import gsap from "gsap";
 
-import { useContinueLearning, useLearnerUpcoming } from "@/hooks/use-learner-dashboard";
+import {
+  useContinueLearning,
+  useLearnerUpcoming,
+} from "@/hooks/use-learner-dashboard";
 import type { UpcomingItem, UpcomingType } from "@/lib/learner-dashboard-api";
 
 /** The API returns exactly four upcoming kinds — icon and verb derive from
@@ -76,7 +79,8 @@ function formatLectureLength(seconds: number | null): string | null {
 
 function upcomingHref(item: UpcomingItem): string {
   if (item.type === "webinar_starts") return "/dashboard/learner/live-sessions";
-  if (item.course) return `/dashboard/learner/course-player/${item.course.slug}`;
+  if (item.course)
+    return `/dashboard/learner/course-player/${item.course.slug}`;
   return "/dashboard/learner/my-courses";
 }
 
@@ -118,6 +122,7 @@ export default function ContinueLearning() {
   useEffect(() => {
     if (!upcomingRef.current) return;
     const rows = upcomingRef.current.querySelectorAll(".upcoming-row");
+    if (rows.length === 0) return;
     gsap.fromTo(
       rows,
       { opacity: 0, x: 24 },
@@ -133,39 +138,27 @@ export default function ContinueLearning() {
     <div className="flex flex-col lg:flex-row gap-4">
       <div
         ref={heroRef}
-        className="opacity-0 relative flex-3 rounded-2xl overflow-hidden p-6 lg:p-8 flex flex-col justify-between min-h-55"
-        style={{
-          background:
-            "linear-gradient(135deg, #5B1FD6 0%, #7B2FE8 45%, #8B35F5 100%)",
-        }}
+        className="opacity-0 relative flex-3 bg-white rounded-2xl border border-(--gray-200) p-6 lg:p-8 flex flex-col justify-between min-h-55"
       >
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.05) 0px, rgba(255, 255, 255, 0.05) 16px, transparent 16px, transparent 32px)",
-          }}
-        />
-
-        <div className="relative z-10">
+        <div>
           <div className="flex items-center gap-2 mb-4">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[12px] font-semibold text-white tracking-widest uppercase">
+            {/* <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> */}
+            <span className="text-[12px] font-semibold text-(--primary-600) tracking-widest uppercase">
               Continue Learning
             </span>
           </div>
-          <h2 className="text-[20px] lg:text-[30px] font-bold text-white leading-snug max-w-110">
+          <h2 className="text-[20px] lg:text-[30px] font-bold text-(--text-title) leading-snug max-w-110">
             {resumeLoading
               ? "Loading your course…"
               : (resume?.course.title ?? "Start your first course")}
           </h2>
         </div>
 
-        <div className="relative z-10 mt-6">
+        <div className="mt-6">
           {resume ? (
             <>
               <div className="flex items-center justify-between mb-1.5 gap-3">
-                <span className="text-[12px] lg:text-[14px] text-white truncate">
+                <span className="text-[12px] lg:text-[14px] text-(--gray-500) truncate">
                   {resume.next_lecture
                     ? `Up next: ${resume.next_lecture.title}`
                     : resume.is_course_complete
@@ -174,14 +167,14 @@ export default function ContinueLearning() {
                         ? `Next section unlocks ${formatWhen(resume.locked_until)}`
                         : "Nothing left to watch here"}
                 </span>
-                <span className="text-[12px] lg:text-[14px] font-semibold text-white shrink-0">
+                <span className="text-[12px] lg:text-[14px] font-semibold text-(--primary-600) shrink-0">
                   {progress}% complete
                 </span>
               </div>
-              <div className="h-2.5 rounded-full bg-white/20">
+              <div className="h-2.5 rounded-full bg-(--primary-50)">
                 <div
                   ref={progressBarRef}
-                  className="h-2.5 rounded-full bg-white"
+                  className="h-2.5 rounded-full bg-(--primary-600)"
                   style={{ width: "0%" }}
                 />
               </div>
@@ -190,7 +183,7 @@ export default function ContinueLearning() {
                 {resume.next_lecture ? (
                   <Link
                     href={`/dashboard/learner/course-player/${resume.course.slug}`}
-                    className="flex items-center gap-2 cursor-pointer bg-white text-(--primary-700) font-semibold text-[14px] px-4 py-2.5 rounded-lg hover:bg-white/90 transition-colors whitespace-nowrap shrink-0"
+                    className="flex items-center gap-2 cursor-pointer bg-(--primary-600) text-white font-semibold text-[14px] px-4 py-2.5 rounded-lg hover:bg-(--primary-700) transition-colors whitespace-nowrap shrink-0"
                   >
                     <Play className="w-4 h-4 fill-current shrink-0" />
                     Resume Learning
@@ -198,26 +191,26 @@ export default function ContinueLearning() {
                 ) : (
                   <Link
                     href={`/dashboard/learner/course-player/${resume.course.slug}`}
-                    className="flex items-center gap-2 cursor-pointer bg-white text-(--primary-700) font-semibold text-[14px] px-4 py-2.5 rounded-lg hover:bg-white/90 transition-colors whitespace-nowrap shrink-0"
+                    className="flex items-center gap-2 cursor-pointer bg-(--primary-600) text-white font-semibold text-[14px] px-4 py-2.5 rounded-lg hover:bg-(--primary-700) transition-colors whitespace-nowrap shrink-0"
                   >
                     <BookOpen className="w-4 h-4 shrink-0" />
                     Open Course
                   </Link>
                 )}
                 {resume.next_lecture?.section && (
-                  <span className="flex items-center gap-1.5 text-[12px] lg:text-[14px] text-white whitespace-nowrap">
+                  <span className="flex items-center gap-1.5 text-[12px] lg:text-[14px] text-(--gray-500) whitespace-nowrap">
                     <BookOpen className="w-4 h-4 shrink-0" />
                     {resume.next_lecture.section.title}
                   </span>
                 )}
                 {nextLectureLength && (
-                  <span className="flex items-center gap-1.5 text-[12px] lg:text-[14px] text-white whitespace-nowrap">
+                  <span className="flex items-center gap-1.5 text-[12px] lg:text-[14px] text-(--gray-500) whitespace-nowrap">
                     <Clock className="w-4 h-4 shrink-0" />
                     {nextLectureLength}
                   </span>
                 )}
                 {!resume.next_lecture && resume.locked_until && (
-                  <span className="flex items-center gap-1.5 text-[12px] lg:text-[14px] text-white whitespace-nowrap">
+                  <span className="flex items-center gap-1.5 text-[12px] lg:text-[14px] text-(--gray-500) whitespace-nowrap">
                     <Lock className="w-4 h-4 shrink-0" />
                     Content on a release schedule
                   </span>
@@ -227,12 +220,12 @@ export default function ContinueLearning() {
           ) : (
             !resumeLoading && (
               <div className="flex flex-wrap items-center gap-3">
-                <p className="text-[14px] text-white/90">
+                <p className="text-[14px] text-(--gray-500)">
                   You&apos;re not enrolled in anything yet.
                 </p>
                 <Link
                   href="/dashboard/learner/course-catalog"
-                  className="flex items-center gap-2 cursor-pointer bg-white text-(--primary-700) font-semibold text-[14px] px-4 py-2.5 rounded-lg hover:bg-white/90 transition-colors whitespace-nowrap shrink-0"
+                  className="flex items-center gap-2 cursor-pointer bg-(--primary-600) text-white font-semibold text-[14px] px-4 py-2.5 rounded-lg hover:bg-(--primary-700) transition-colors whitespace-nowrap shrink-0"
                 >
                   <BookOpen className="w-4 h-4 shrink-0" />
                   Browse the catalog

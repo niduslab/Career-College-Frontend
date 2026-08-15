@@ -40,12 +40,51 @@ export async function unenrollFromCourse(
   return withMessage(res);
 }
 
-/** List the caller's own active enrollments, most recently accessed first. */
-export async function getMyCourses(): Promise<PaginatedResponse<Enrollment>> {
-  const res = await apiGet<PaginatedResponse<Enrollment>>(
-    "/courses/my-courses/",
+export type EnrollmentStatusFilter = "all" | "in_progress" | "completed";
+
+export interface EnrollmentStatusCounts {
+  all: number;
+  in_progress: number;
+  completed: number;
+}
+
+export interface MyCoursesParams {
+  status?: EnrollmentStatusFilter;
+  page?: number;
+  page_size?: number;
+}
+
+export interface MyCoursesResponse extends PaginatedResponse<Enrollment> {
+  status_counts: EnrollmentStatusCounts;
+}
+
+function buildMyCoursesQuery(params: MyCoursesParams): string {
+  const qs = new URLSearchParams();
+  if (params.status) qs.set("status", params.status);
+  if (params.page) qs.set("page", String(params.page));
+  if (params.page_size) qs.set("page_size", String(params.page_size));
+  const s = qs.toString();
+  return s ? `?${s}` : "";
+}
+
+/** List the caller's own enrollments. `status` defaults to `all` server-side.
+ *  `status_counts` describes the whole enrollment set, not just this page —
+ *  it must stay server-computed (see CLAUDE.md's My Courses pagination note). */
+export async function getMyCourses(
+  params: MyCoursesParams = {},
+): Promise<MyCoursesResponse> {
+  const res = await apiGet<MyCoursesResponse>(
+    `/courses/my-courses/${buildMyCoursesQuery(params)}`,
   );
-  return res.data ?? { count: 0, next: null, previous: null, results: [] };
+  return (
+    res.data ?? {
+      count: 0,
+      next: null,
+      previous: null,
+      results: [],
+      status_counts: { all: 0, in_progress: 0, completed: 0 },
+    }
+  );
 }
 
 /** Slim enrollment summary embedded in the my-course detail payload. */
