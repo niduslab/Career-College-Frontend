@@ -12,9 +12,21 @@ import {
   Check,
 } from "lucide-react";
 
-function CalendarDropdown({ options, value, onChange }: DropdownProps) {
+/** Month has ≤12 options (no search needed); year can span a century, so it
+ *  gets a type-to-filter search box at the top of the list. DayPicker doesn't
+ *  pass a distinguishing `name`, but it does tag the years dropdown with its
+ *  default `years_dropdown` class (see react-day-picker's UI.js). */
+function CalendarDropdown({
+  options,
+  value,
+  onChange,
+  className,
+}: DropdownProps) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const isYear = !!className?.includes("years_dropdown");
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -26,7 +38,19 @@ function CalendarDropdown({ options, value, onChange }: DropdownProps) {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
+  useEffect(() => {
+    if (open && isYear) {
+      setQuery("");
+      searchRef.current?.focus();
+    }
+  }, [open, isYear]);
+
   const selectedLabel = options?.find((o) => o.value === value)?.label;
+
+  const filteredOptions =
+    isYear && query.trim()
+      ? options?.filter((opt) => String(opt.label).includes(query.trim()))
+      : options;
 
   const pick = (optionValue: string | number) => {
     onChange?.({
@@ -48,26 +72,46 @@ function CalendarDropdown({ options, value, onChange }: DropdownProps) {
         />
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-50 w-full min-w-28 max-h-56 overflow-y-auto bg-white border border-(--gray-200) rounded-xl shadow-lg py-1">
-          {options?.map((opt) => {
-            const active = opt.value === value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                disabled={opt.disabled}
-                onClick={() => pick(opt.value)}
-                className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 text-[13px] text-left transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
-                  active
-                    ? "bg-(--primary-50) text-(--primary-700) font-medium"
-                    : "text-(--gray-600) hover:bg-(--gray-50)"
-                }`}
-              >
-                <span className="truncate">{opt.label}</span>
-                {active && <Check className="w-3.5 h-3.5 shrink-0" />}
-              </button>
-            );
-          })}
+        <div className="absolute left-0 top-full mt-1 z-50 w-full min-w-28 max-h-64 overflow-hidden flex flex-col bg-white border border-(--gray-200) rounded-xl shadow-lg">
+          {isYear && (
+            <div className="p-1.5 border-b border-(--gray-100) shrink-0">
+              <input
+                ref={searchRef}
+                type="text"
+                inputMode="numeric"
+                value={query}
+                onChange={(e) => setQuery(e.target.value.replace(/\D/g, ""))}
+                placeholder="Search year…"
+                className="w-full h-7 px-2 text-[12px] border border-(--gray-200) rounded-md outline-none focus:border-(--primary-400)"
+              />
+            </div>
+          )}
+          <div className="overflow-y-auto py-1">
+            {filteredOptions?.length === 0 && (
+              <p className="px-3 py-2 text-[12px] text-(--gray-400)">
+                No matches.
+              </p>
+            )}
+            {filteredOptions?.map((opt) => {
+              const active = opt.value === value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  disabled={opt.disabled}
+                  onClick={() => pick(opt.value)}
+                  className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 text-[13px] text-left transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
+                    active
+                      ? "bg-(--primary-50) text-(--primary-700) font-medium"
+                      : "text-(--gray-600) hover:bg-(--gray-50)"
+                  }`}
+                >
+                  <span className="truncate">{opt.label}</span>
+                  {active && <Check className="w-3.5 h-3.5 shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
