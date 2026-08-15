@@ -10,6 +10,8 @@ import CurriculumPanel from "./CurriculumPanel";
 import QuizPanel from "./QuizPanel";
 import AssignmentPanel from "./AssignmentPanel";
 import CodingExercisePanel from "./CodingExercisePanel";
+import ReviewsPanel from "./ReviewsPanel";
+import DiscussionPanel from "./DiscussionPanel";
 import AiCopilot from "./AiCopilot";
 import { AI_INITIAL } from "./data";
 import type { AiMessage } from "./types";
@@ -486,7 +488,7 @@ export default function CoursePlayerPage({
           lecture?.lecture_type !== "article" && (
             <div
               ref={centerRef}
-              className="opacity-0 flex-1 bg-white p-4 sm:p-6 lg:p-8"
+              className="opacity-0 shrink-0 bg-white p-4 sm:p-6 lg:p-8"
             >
               <div className="max-w-3xl">
                 <h2 className="text-[18px] sm:text-[20px] font-bold text-(--text-title) mb-2">
@@ -495,6 +497,20 @@ export default function CoursePlayerPage({
               </div>
             </div>
           )}
+
+        {/* Course reviews — tied to the course, not the active curriculum item. */}
+        <div className="flex-1 bg-white px-4 sm:px-6 lg:px-8 pb-6">
+          <div className="max-w-3xl">
+            <ReviewsPanel
+              courseSlug={courseSlug}
+              isInstructorPreview={isInstructorPreview}
+            />
+            <DiscussionPanel
+              courseSlug={courseSlug}
+              isInstructorPreview={isInstructorPreview}
+            />
+          </div>
+        </div>
       </div>
 
       {/* ── Right overlay (mobile/tablet) ── */}
