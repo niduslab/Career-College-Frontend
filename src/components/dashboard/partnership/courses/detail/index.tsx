@@ -131,7 +131,7 @@ export default function CourseDetailPageContent() {
             <p className="text-[13px] text-(--gray-500)">
               {course.category?.name ?? "Uncategorized"} ·{" "}
               {LEVEL_LABEL[course.level]} ·{" "}
-              {Number(course.price) > 0 ? `$${course.price}` : "Free"}
+              {Number(course.price) > 0 ? `BDT ${course.price}` : "Free"}
             </p>
             {course.status === "rejected" && course.rejection_reason && (
               <p className="text-[13px] text-red-600">

@@ -192,7 +192,7 @@ export default function VideoPlayer({
     const v = videoRef.current;
     if (!v) return;
     if (v.paused) {
-      v.play();
+      v.play().catch(() => {});
       setPlaying(true);
       setShowOverlay(false);
     } else {

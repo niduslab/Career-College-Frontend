@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import StatusBadge from "./status-badge";
 import ReasonModal from "./reason-modal";
 import VerificationActionsMenu from "./verification-actions-menu";
+import VerificationDetailModal from "./verification-detail-modal";
 import {
   useIdentityVerifications,
   useReviewIdentityVerification,
@@ -20,6 +21,7 @@ export default function IdentityVerificationTable() {
     row: IdentityVerificationRow;
     kind: "reject" | "request_action";
   } | null>(null);
+  const [detailId, setDetailId] = useState<number | null>(null);
 
   const rows = data?.results ?? [];
 
@@ -143,12 +145,18 @@ export default function IdentityVerificationTable() {
                     className="hover:bg-(--gray-50) transition-colors"
                   >
                     <td className="py-3 pr-8">
-                      <p className="text-[13px] font-semibold text-(--text-title) truncate">
-                        {row.instructor_name}
-                      </p>
-                      <p className="text-[11px] text-(--gray-400) truncate">
-                        {row.instructor_email}
-                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setDetailId(row.id)}
+                        className="text-left cursor-pointer hover:opacity-80"
+                      >
+                        <p className="text-[13px] font-semibold text-(--text-title) truncate">
+                          {row.instructor_name}
+                        </p>
+                        <p className="text-[11px] text-(--gray-400) truncate">
+                          {row.instructor_email}
+                        </p>
+                      </button>
                     </td>
                     <td className="py-3 pr-8 text-[13px] text-(--gray-600) capitalize">
                       {row.document_type.replace(/_/g, " ")}
@@ -166,6 +174,7 @@ export default function IdentityVerificationTable() {
                       <VerificationActionsMenu
                         status={row.status}
                         busy={busy}
+                        onView={() => setDetailId(row.id)}
                         onPickUp={() => handlePickUp(row)}
                         onApprove={() => handleApprove(row)}
                         onReject={() => setModal({ row, kind: "reject" })}
@@ -196,6 +205,14 @@ export default function IdentityVerificationTable() {
           submitting={review.isPending}
           onConfirm={handleModalConfirm}
           onClose={() => setModal(null)}
+        />
+      )}
+
+      {detailId !== null && (
+        <VerificationDetailModal
+          kind="identity"
+          id={detailId}
+          onClose={() => setDetailId(null)}
         />
       )}
     </div>

@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   listIdentityVerifications,
+  getIdentityVerificationDetail,
   reviewIdentityVerification,
   listInstitutionVerifications,
+  getInstitutionVerificationDetail,
   reviewInstitutionVerification,
   type VerificationStatus,
   type ReviewArgs,
@@ -13,6 +15,14 @@ export function useIdentityVerifications(status?: VerificationStatus) {
     queryKey: ["admin-identity-verifications", status],
     queryFn: () => listIdentityVerifications(status),
     placeholderData: (previousData) => previousData,
+  });
+}
+
+export function useIdentityVerificationDetail(id: number | null) {
+  return useQuery({
+    queryKey: ["admin-identity-verification-detail", id],
+    queryFn: () => getIdentityVerificationDetail(id as number),
+    enabled: id !== null,
   });
 }
 
@@ -32,6 +42,14 @@ export function useInstitutionVerifications(status?: VerificationStatus) {
     queryKey: ["admin-institution-verifications", status],
     queryFn: () => listInstitutionVerifications(status),
     placeholderData: (previousData) => previousData,
+  });
+}
+
+export function useInstitutionVerificationDetail(id: number | null) {
+  return useQuery({
+    queryKey: ["admin-institution-verification-detail", id],
+    queryFn: () => getInstitutionVerificationDetail(id as number),
+    enabled: id !== null,
   });
 }
 

@@ -26,6 +26,31 @@ export function SectionCard({
   );
 }
 
+function isBlankHtml(html: string): boolean {
+  return !html.replace(/<[^>]*>/g, "").trim();
+}
+
+/** Renders HTML produced by `RichTextEditor` (course description, rejection reasons, etc). */
+export function RichHtml({
+  html,
+  emptyText = "—",
+  className = "",
+}: {
+  html: string | null | undefined;
+  emptyText?: string;
+  className?: string;
+}) {
+  if (!html || isBlankHtml(html)) {
+    return <p className="text-[13px] text-(--gray-400)">{emptyText}</p>;
+  }
+  return (
+    <div
+      className={`prose prose-sm max-w-none text-(--gray-600) ${className}`}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
 export function Field({
   label,
   children,

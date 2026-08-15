@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
+import { useAuth } from "@/lib/use-auth";
+import { useLearnerSummary } from "@/hooks/use-learner-dashboard";
 import LearnerStatsCards from "@/components/dashboard/learner/stats-cards";
 import ContinueLearning from "@/components/dashboard/learner/continue-learning";
 import AiRecommended from "@/components/dashboard/learner/ai-recommended";
@@ -10,6 +12,11 @@ import RecentActivity from "@/components/dashboard/learner/recent-activity";
 
 export default function LearnerDashboardPage() {
   const headerRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth({ withUser: true });
+  const { data: summary } = useLearnerSummary();
+
+  const firstName = user?.full_name?.split(" ")[0];
+  const streak = summary?.day_streak;
 
   useEffect(() => {
     if (headerRef.current) {
@@ -26,10 +33,12 @@ export default function LearnerDashboardPage() {
       {/* Header */}
       <div ref={headerRef} className="opacity-0">
         <h1 className="text-[20px] lg:text-[24px] font-semibold text-(--text-title)">
-          Welcome back, Al Amin.
+          Welcome back{firstName ? `, ${firstName}` : ""}.
         </h1>
         <p className=" text-[14px] text-(--text-paragraph) mt-0.5">
-          You&apos;re on a 27-day streak. Keep the momentum going!
+          {streak && streak > 0
+            ? `You're on a ${streak}-day streak. Keep the momentum going!`
+            : "Pick up where you left off and keep the momentum going."}
         </p>
       </div>
 

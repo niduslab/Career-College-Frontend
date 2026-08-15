@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import ApprovalsFilterBar from "./filter-bar";
 import RejectModal from "./reject-modal";
 import ApprovalActionsMenu from "./approval-actions-menu";
+import CourseDetailModal from "./course-detail-modal";
 import { Pagination } from "@/components/common/pagination";
 import {
   usePendingReviewCourses,
@@ -51,6 +52,7 @@ export default function ApprovalsTable() {
   const [page, setPage] = useState(1);
   const [exporting, setExporting] = useState(false);
   const [rejectTarget, setRejectTarget] = useState<AdminCourse | null>(null);
+  const [detailId, setDetailId] = useState<number | null>(null);
 
   const debouncedSearch = useDebounced(search, 350);
 
@@ -230,14 +232,18 @@ export default function ApprovalsTable() {
                       className="hover:bg-(--gray-50) transition-colors"
                     >
                       <td className="py-3 pr-8">
-                        <div className="flex items-center gap-3 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => setDetailId(c.id)}
+                          className="flex items-center gap-3 min-w-0 text-left cursor-pointer hover:opacity-80"
+                        >
                           <div className="w-9 h-9 rounded-lg shrink-0 bg-(--primary-50) text-(--primary-600) flex items-center justify-center text-[11px] font-semibold">
                             {initialsOf(c.title)}
                           </div>
                           <p className="text-[13px] font-semibold text-(--text-title) truncate">
                             {c.title}
                           </p>
-                        </div>
+                        </button>
                       </td>
                       <td className="py-3 pr-8 text-[13px] text-(--gray-600) truncate">
                         {ownerLabel(c)}
@@ -256,6 +262,7 @@ export default function ApprovalsTable() {
                       <td className="py-3 text-right">
                         <ApprovalActionsMenu
                           busy={busy}
+                          onView={() => setDetailId(c.id)}
                           onApprove={() => handleApprove(c)}
                           onReject={() => setRejectTarget(c)}
                         />
@@ -293,6 +300,10 @@ export default function ApprovalsTable() {
           onConfirm={handleRejectConfirm}
           onClose={() => setRejectTarget(null)}
         />
+      )}
+
+      {detailId !== null && (
+        <CourseDetailModal id={detailId} onClose={() => setDetailId(null)} />
       )}
     </div>
   );

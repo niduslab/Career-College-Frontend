@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import StatusBadge from "./status-badge";
 import ReasonModal from "./reason-modal";
 import VerificationActionsMenu from "./verification-actions-menu";
+import VerificationDetailModal from "./verification-detail-modal";
 import {
   useInstitutionVerifications,
   useReviewInstitutionVerification,
@@ -20,6 +21,7 @@ export default function InstitutionVerificationTable() {
     row: InstitutionVerificationRow;
     kind: "reject" | "request_action";
   } | null>(null);
+  const [detailId, setDetailId] = useState<number | null>(null);
 
   const rows = data?.results ?? [];
 
@@ -143,9 +145,15 @@ export default function InstitutionVerificationTable() {
                     className="hover:bg-(--gray-50) transition-colors"
                   >
                     <td className="py-3 pr-8">
-                      <p className="text-[13px] font-semibold text-(--text-title) truncate">
-                        {row.institution_name}
-                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setDetailId(row.id)}
+                        className="text-left cursor-pointer hover:opacity-80"
+                      >
+                        <p className="text-[13px] font-semibold text-(--text-title) truncate">
+                          {row.institution_name}
+                        </p>
+                      </button>
                     </td>
                     <td className="py-3 pr-8 text-[13px] text-(--gray-600)">
                       {row.registration_number}
@@ -163,6 +171,7 @@ export default function InstitutionVerificationTable() {
                       <VerificationActionsMenu
                         status={row.status}
                         busy={busy}
+                        onView={() => setDetailId(row.id)}
                         onPickUp={() => handlePickUp(row)}
                         onApprove={() => handleApprove(row)}
                         onReject={() => setModal({ row, kind: "reject" })}
@@ -193,6 +202,14 @@ export default function InstitutionVerificationTable() {
           submitting={review.isPending}
           onConfirm={handleModalConfirm}
           onClose={() => setModal(null)}
+        />
+      )}
+
+      {detailId !== null && (
+        <VerificationDetailModal
+          kind="institution"
+          id={detailId}
+          onClose={() => setDetailId(null)}
         />
       )}
     </div>

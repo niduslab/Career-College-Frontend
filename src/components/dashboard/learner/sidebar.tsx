@@ -16,6 +16,7 @@ import {
   Trophy,
   Search,
   Video,
+  Radio,
   MessageCircle,
   MessageSquareMore,
   Users,
@@ -65,10 +66,15 @@ const navSections = [
         label: "Achievements",
         href: "/dashboard/learner/achievements",
       },
+      // {
+      //   icon: Search,
+      //   label: "Course Catalog",
+      //   href: "/dashboard/learner/course-catalog",
+      // },
       {
-        icon: Search,
-        label: "Course Catalog",
-        href: "/dashboard/learner/course-catalog",
+        icon: Radio,
+        label: "Webinars",
+        href: "/dashboard/learner/webinars",
       },
       {
         icon: Heart,
@@ -80,11 +86,7 @@ const navSections = [
   {
     label: "Connect",
     items: [
-      {
-        icon: Video,
-        label: "Live Sessions",
-        href: "/dashboard/learner/live-sessions",
-      },
+       
       {
         icon: MessageSquareMore,
         label: "Messages",
@@ -92,7 +94,9 @@ const navSections = [
       },
       {
         icon: MessageCircle,
-        label: "Discussions",
+        // Renamed from "Discussions": the board is scoped per course, and the
+        // page picks one enrolled course at a time.
+        label: "Course Q&A",
         href: "/dashboard/learner/discussions",
       },
       {
@@ -105,6 +109,7 @@ const navSections = [
         label: "Consultancy",
         href: "/dashboard/learner/consultancy",
       },
+     
     ],
   },
   {
@@ -115,11 +120,11 @@ const navSections = [
         label: "AI Assistant",
         href: "/dashboard/learner/ai-assistant",
       },
-      {
-        icon: NotebookPen,
-        label: "Notes",
-        href: "/dashboard/learner/notes",
-      },
+      // {
+      //   icon: NotebookPen,
+      //   label: "Notes",
+      //   href: "/dashboard/learner/notes",
+      // },
       {
         icon: CreditCard,
         label: "Payment History",

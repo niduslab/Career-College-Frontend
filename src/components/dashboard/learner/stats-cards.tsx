@@ -1,81 +1,82 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Zap, Flame, CheckSquare, Award, Clock } from "lucide-react";
+import { Flame, CheckSquare, Award, Clock } from "lucide-react";
 import gsap from "gsap";
 
-const stats = [
-  {
-    icon: Zap,
-    iconBg: "bg-[var(--primary-50)]",
-    iconColor: "text-[var(--primary-600)]",
-    iconFill: true,
-    value: 8420,
-    suffix: "",
-    display: "8,420",
-    label: "XP Points",
-    badge: "+340 this week",
-    badgeColor: "text-[var(--primary-600)]",
-  },
-  {
-    icon: Flame,
-    iconBg: "bg-[var(--primary-50)]",
-    iconColor: "text-[var(--primary-600)]",
-    iconFill: true,
-    value: 27,
-    suffix: "",
-    display: "27",
-    label: "Day Streak",
-    badge: "Personal best!",
-    badgeColor: "text-[var(--primary-600)]",
-  },
-  {
-    icon: CheckSquare,
-    iconBg: "bg-[var(--primary-50)]",
-    iconColor: "text-[var(--primary-600)]",
-    iconFill: false,
-    value: 9,
-    suffix: "",
-    display: "9",
-    label: "Courses Done",
-    badge: "2 in progress",
-    badgeColor: "text-[var(--primary-600)]",
-  },
-  {
-    icon: Award,
-    iconBg: "bg-[var(--primary-50)]",
-    iconColor: "text-[var(--primary-600)]",
-    iconFill: false,
-    value: 6,
-    suffix: "",
-    display: "6",
-    label: "Certificates",
-    badge: "+1 last month",
-    badgeColor: "text-[var(--primary-600)]",
-  },
-  {
-    icon: Clock,
-    iconBg: "bg-[var(--primary-50)]",
-    iconColor: "text-[var(--primary-600)]",
-    iconFill: false,
-    value: 184,
-    suffix: "h",
-    display: "184h",
-    label: "Hours Learned",
-    badge: "12h this week",
-    badgeColor: "text-[var(--primary-600)]",
-  },
-];
+import { StatsSkeleton } from "@/components/common/query-states";
+import { useLearnerSummary } from "@/hooks/use-learner-dashboard";
+import type { LearnerSummary } from "@/lib/learner-dashboard-api";
+
+/**
+ * Four tiles, not five.
+ *
+ * The XP tile is gone: there is no XP ledger behind it, so any number shown
+ * would be invented. The per-tile "+340 this week" style deltas are gone for
+ * the same reason — the summary endpoint carries totals, not week-over-week
+ * change. Each tile's sub-line now says something the data actually supports.
+ */
+interface StatTile {
+  icon: typeof Flame;
+  iconFill: boolean;
+  value: number;
+  suffix: string;
+  label: string;
+  badge: string;
+}
+
+function buildTiles(summary: LearnerSummary): StatTile[] {
+  return [
+    {
+      icon: Flame,
+      iconFill: true,
+      value: summary.day_streak,
+      suffix: "",
+      label: "Day Streak",
+      // The streak is derived from activity dates, not an event log — the
+      // endpoint flags it approximate and the UI says so rather than hiding it.
+      badge: summary.day_streak_is_approximate
+        ? `approx. · ${summary.day_streak_timezone}`
+        : "consecutive days",
+    },
+    {
+      icon: CheckSquare,
+      iconFill: false,
+      value: summary.courses_completed,
+      suffix: "",
+      label: "Courses Done",
+      badge: `${summary.courses_in_progress} in progress`,
+    },
+    {
+      icon: Award,
+      iconFill: false,
+      value: summary.certificates_earned,
+      suffix: "",
+      label: "Certificates",
+      badge: "earned",
+    },
+    {
+      icon: Clock,
+      iconFill: false,
+      value: Math.round(summary.total_learning_hours),
+      suffix: "h",
+      label: "Hours Learned",
+      badge: `${summary.lectures_completed} lectures completed`,
+    },
+  ];
+}
 
 export default function LearnerStatsCards() {
   const cardsRef = useRef<HTMLDivElement>(null);
   const countersRef = useRef<(HTMLSpanElement | null)[]>([]);
 
+  const { data: summary, isLoading, isError } = useLearnerSummary();
+  const tiles = summary ? buildTiles(summary) : [];
+
   useEffect(() => {
-    if (!cardsRef.current) return;
+    if (!cardsRef.current || tiles.length === 0) return;
 
     const cards = cardsRef.current.querySelectorAll(".stat-card");
-
     gsap.fromTo(
       cards,
       { opacity: 0, y: 28 },
@@ -83,8 +84,8 @@ export default function LearnerStatsCards() {
     );
 
     countersRef.current.forEach((el, i) => {
-      if (!el) return;
-      const { value, suffix } = stats[i];
+      if (!el || !tiles[i]) return;
+      const { value, suffix } = tiles[i];
       const obj = { val: 0 };
       gsap.to(obj, {
         val: value,
@@ -92,26 +93,31 @@ export default function LearnerStatsCards() {
         ease: "power2.out",
         delay: i * 0.08,
         onUpdate: () => {
-          if (el)
-            el.textContent = Math.round(obj.val).toLocaleString() + suffix;
+          if (el) el.textContent = Math.round(obj.val).toLocaleString() + suffix;
         },
       });
     });
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [summary]);
+
+  if (isLoading) return <StatsSkeleton count={4} />;
+
+  // A failed KPI fetch shouldn't blank the dashboard — the rest of the page
+  // still works, so the row simply drops out.
+  if (isError || !summary) return null;
 
   return (
     <div
       ref={cardsRef}
-      className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4"
+      className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4"
     >
-      {stats.map((stat, i) => {
+      {tiles.map((stat, i) => {
         const Icon = stat.icon;
         return (
           <div
             key={stat.label}
             className="stat-card bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3 opacity-0"
           >
-            {/* Top row: label + value left, icon right */}
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[12px] text-(--gray-500) font-normal mb-2">
@@ -127,20 +133,16 @@ export default function LearnerStatsCards() {
                   </span>
                 </p>
               </div>
-              <div
-                className={`w-10 h-10 rounded-[6px_4px_6px_6px] ${stat.iconBg} flex items-center justify-center shrink-0`}
-              >
+              <div className="w-10 h-10 rounded-[6px_4px_6px_6px] bg-[var(--primary-50)] flex items-center justify-center shrink-0">
                 <Icon
-                  className={`w-6 h-6 ${stat.iconColor}`}
+                  className="w-6 h-6 text-[var(--primary-600)]"
                   fill={stat.iconFill ? "currentColor" : "none"}
                 />
               </div>
             </div>
 
-            {/* Dashed divider */}
             <div className="border border-dashed border-gray-200 my-1" />
 
-            {/* Badge */}
             <p className="text-[12px] font-medium text-(--success-500)">
               {stat.badge}
             </p>
