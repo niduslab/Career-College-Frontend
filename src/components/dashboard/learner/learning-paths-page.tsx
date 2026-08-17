@@ -1,368 +1,538 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  Sparkles,
   Target,
-  Calendar,
   BookOpen,
   Check,
   Lock,
   Play,
   KeyRound,
-  RotateCcw,
+  ChevronLeft,
+  Loader2,
+  LogOut,
 } from "lucide-react";
+import Link from "next/link";
 import gsap from "gsap";
-import { useRouter } from "next/navigation";
 
-const skills = [
-  "Python",
-  "Machine Learning",
-  "Deep Learning",
-  "MLOps",
-  "Statistics",
-  "Cloud",
-];
-
-type MilestoneStatus = "completed" | "in_progress" | "locked";
-
-const milestones: {
-  number: number;
-  title: string;
-  sub: string;
-  courses: number;
-  status: MilestoneStatus;
-}[] = [
-  {
-    number: 1,
-    title: "Programming Foundations",
-    sub: "Python, Git & tooling",
-    courses: 2,
-    status: "completed",
-  },
-  {
-    number: 2,
-    title: "Data & Statistics",
-    sub: "SQL, stats, analytics",
-    courses: 3,
-    status: "completed",
-  },
-  {
-    number: 3,
-    title: "Machine Learning Core",
-    sub: "Supervised, unsupervised, ensembles",
-    courses: 4,
-    status: "in_progress",
-  },
-  {
-    number: 4,
-    title: "Deep Learning",
-    sub: "Neural nets, CNNs, transformers",
-    courses: 3,
-    status: "locked",
-  },
-  {
-    number: 5,
-    title: "MLOps & Deployment",
-    sub: "Pipelines, serving, monitoring",
-    courses: 2,
-    status: "locked",
-  },
-  {
-    number: 6,
-    title: "Capstone Project",
-    sub: "End-to-end ML system build",
-    courses: 1,
-    status: "locked",
-  },
-];
+import {
+  useMyLearningPaths,
+  useLearningPathProgress,
+  useLearningPaths,
+  useEnrollInLearningPath,
+  useLeaveLearningPath,
+} from "@/hooks/use-learning-paths";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
+import type {
+  MyLearningPath,
+  LearningPathListItem,
+  LearningPathMilestoneProgress,
+  MilestoneStatus,
+} from "@/lib/course-api";
 
 const RADIUS = 40;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-const PCT = 58;
 
-export default function LearningPathsPage() {
-  const router = useRouter();
-  const heroRef = useRef<HTMLDivElement>(null);
+function ProgressRing({ percent }: { percent: number }) {
   const circleRef = useRef<SVGCircleElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
-  const linesRef = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
-    // Hero card slide down
-    if (heroRef.current) {
-      gsap.fromTo(
-        heroRef.current,
-        { opacity: 0, y: -20 },
-        { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" },
-      );
-    }
-
-    // Ring draw
-    if (circleRef.current) {
-      const fill = (PCT / 100) * CIRCUMFERENCE;
-      gsap.fromTo(
-        circleRef.current,
-        { strokeDashoffset: CIRCUMFERENCE },
-        {
-          strokeDashoffset: CIRCUMFERENCE - fill,
-          duration: 1.4,
-          ease: "power2.out",
-          delay: 0.4,
-        },
-      );
-    }
-
-    // Milestone rows stagger
-    if (listRef.current) {
-      const rows = listRef.current.querySelectorAll(".milestone-row");
-      gsap.fromTo(
-        rows,
-        { opacity: 0, x: -24 },
-        {
-          opacity: 1,
-          x: 0,
-          duration: 0.45,
-          stagger: 0.1,
-          ease: "power3.out",
-          delay: 0.3,
-        },
-      );
-    }
-
-    // Connector lines draw downward
-    const lines = linesRef.current.filter(Boolean);
+    if (!circleRef.current) return;
+    const fill = (percent / 100) * CIRCUMFERENCE;
     gsap.fromTo(
-      lines,
-      { scaleY: 0, transformOrigin: "top center" },
+      circleRef.current,
+      { strokeDashoffset: CIRCUMFERENCE },
       {
-        scaleY: 1,
-        duration: 0.35,
-        stagger: 0.1,
+        strokeDashoffset: CIRCUMFERENCE - fill,
+        duration: 1.2,
         ease: "power2.out",
-        delay: 0.5,
+        delay: 0.2,
       },
     );
-  }, []);
+  }, [percent]);
+
+  return (
+    <div className="relative shrink-0 flex items-center justify-center w-28 h-28">
+      <svg width="112" height="112" className="-rotate-90">
+        <circle
+          cx="56"
+          cy="56"
+          r={RADIUS}
+          fill="none"
+          stroke="#e5e7eb"
+          strokeWidth="8"
+        />
+        <circle
+          ref={circleRef}
+          cx="56"
+          cy="56"
+          r={RADIUS}
+          fill="none"
+          stroke="var(--primary-600)"
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={CIRCUMFERENCE}
+          strokeDashoffset={CIRCUMFERENCE}
+        />
+      </svg>
+      <div className="absolute flex flex-col items-center leading-tight">
+        <span className="text-[20px] lg:text-[24px] font-bold text-(--text-title)">
+          {percent}%
+        </span>
+        <span className="text-[11px] text-(--gray-500)">complete</span>
+      </div>
+    </div>
+  );
+}
+
+function statusNode(status: MilestoneStatus, index: number) {
+  if (status === "completed") {
+    return (
+      <div className="w-12 h-12 rounded-xl flex items-center justify-center z-10 shrink-0 bg-emerald-500">
+        <Check className="w-5 h-5 text-white" strokeWidth={2.5} />
+      </div>
+    );
+  }
+  if (status === "in_progress" || status === "available") {
+    return (
+      <div className="w-12 h-12 rounded-xl flex items-center justify-center z-10 shrink-0 bg-(--primary-600)">
+        <span className="text-[15px] font-bold text-white">{index + 1}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="w-12 h-12 rounded-xl flex items-center justify-center z-10 shrink-0 bg-(--gray-200)">
+      <Lock className="w-4 h-4 text-(--gray-400)" />
+    </div>
+  );
+}
+
+function statusBadge(status: MilestoneStatus) {
+  if (status === "completed")
+    return (
+      <span className="text-[12px] font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+        Completed
+      </span>
+    );
+  if (status === "in_progress")
+    return (
+      <span className="text-[12px] font-medium text-(--primary-600) bg-(--primary-100) border border-(--primary-200) px-2 py-0.5 rounded-full">
+        In progress
+      </span>
+    );
+  if (status === "available")
+    return (
+      <span className="text-[12px] font-medium text-(--primary-600) bg-(--primary-100) border border-(--primary-200) px-2 py-0.5 rounded-full">
+        Up next
+      </span>
+    );
+  return (
+    <span className="text-[12px] font-medium text-(--gray-400) bg-(--gray-100) border border-(--gray-200) px-2 py-0.5 rounded-full">
+      Locked
+    </span>
+  );
+}
+
+function MilestoneRow({
+  milestone,
+  index,
+  isLast,
+}: {
+  milestone: LearningPathMilestoneProgress;
+  index: number;
+  isLast: boolean;
+}) {
+  const canOpen =
+    milestone.status === "in_progress" || milestone.status === "completed";
+  const href = `/dashboard/learner/course-player/${milestone.course.slug}`;
+
+  return (
+    <li className="flex gap-4">
+      <div className="relative flex flex-col items-center shrink-0 w-12">
+        {statusNode(milestone.status, index)}
+        {!isLast && (
+          <div
+            className={`w-0.5 flex-1 min-h-6 mt-1 ${
+              milestone.status === "completed" ? "bg-emerald-400" : "bg-(--gray-200)"
+            }`}
+          />
+        )}
+      </div>
+
+      <div
+        className={`flex-1 min-w-0 mb-4 rounded-2xl border p-4 lg:p-5 flex items-center justify-between gap-4 transition-shadow ${
+          milestone.status === "in_progress"
+            ? "border-(--primary-300) bg-(--primary-50) shadow-sm"
+            : milestone.status === "locked"
+              ? "border-(--gray-200) bg-white opacity-60"
+              : "border-(--gray-200) bg-white"
+        }`}
+      >
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h3 className="text-[14px] lg:text-[16px] font-semibold text-(--text-title)">
+              {milestone.title}
+            </h3>
+            {statusBadge(milestone.status)}
+          </div>
+          <p className="text-[12px] text-(--gray-400) mt-1.5 flex items-center gap-1">
+            <BookOpen className="w-4 h-4" />
+            {milestone.course.title}
+          </p>
+        </div>
+
+        <div className="shrink-0">
+          {milestone.status === "locked" && (
+            <Lock className="w-4 h-4 text-(--gray-300)" />
+          )}
+          {canOpen && (
+            <Link
+              href={href}
+              className="flex items-center gap-2 text-[14px] font-medium text-white bg-(--primary-600) hover:bg-(--primary-700) px-5 py-2 rounded-lg transition-colors"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              {milestone.status === "completed" ? "Review" : "Continue"}
+            </Link>
+          )}
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function PathDetail({
+  slug,
+  onBack,
+  onEnrollmentChange,
+}: {
+  slug: string;
+  onBack: () => void;
+  onEnrollmentChange?: () => void;
+}) {
+  const { data: path, isLoading } = useLearningPathProgress(slug);
+  const enrollMutation = useEnrollInLearningPath();
+  const leaveMutation = useLeaveLearningPath();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 text-(--gray-400) text-[14px] py-12 justify-center">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        Loading path...
+      </div>
+    );
+  }
+
+  if (!path) {
+    return (
+      <p className="text-[14px] text-rose-500 py-12 text-center">
+        Couldn&apos;t load this learning path.
+      </p>
+    );
+  }
+
+  const isEnrolled = path.is_enrolled;
+
+  const handleEnroll = () => {
+    enrollMutation.mutate(slug, {
+      onSuccess: (message) => {
+        notify.success(message || "Joined learning path.");
+        onEnrollmentChange?.();
+      },
+      onError: (err) =>
+        notify.error(
+          err instanceof ApiError ? err.message : "Failed to join learning path.",
+        ),
+    });
+  };
+
+  const handleLeave = () => {
+    leaveMutation.mutate(slug, {
+      onSuccess: () => {
+        notify.success("Left learning path.");
+        onEnrollmentChange?.();
+        onBack();
+      },
+      onError: (err) =>
+        notify.error(
+          err instanceof ApiError ? err.message : "Failed to leave learning path.",
+        ),
+    });
+  };
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div>
-          <h1 className="text-[20px] lg:text-[24px] font-semibold text-(--text-title)">
-            Learning Path
-          </h1>
-          <p className="text-[14px] text-(--gray-500) mt-0.5">
-            Your guided roadmap to becoming an AI/ML Engineer.
-          </p>
-        </div>
-        <button
-          onClick={() => router.push("/dashboard/learner/ai-assistant")}
-          className="self-start flex items-center cursor-pointer gap-2 border border-(--primary-200) bg-(--primary-50) hover:bg-(--primary-100) text-(--primary-700)  text-[14px] font-semibold px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap">
-          <Sparkles className="w-4 h-4" />
-          Adjust with AI
-        </button>
-      </div>
-
-      {/* Hero career goal card */}
-      <div
-        ref={heroRef}
-        className="opacity-0 bg-white border border-(--gray-200) rounded-2xl p-5 lg:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6"
+      <button
+        onClick={onBack}
+        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-(--gray-500) hover:text-(--text-title) cursor-pointer"
       >
+        <ChevronLeft className="w-4 h-4" />
+        Back
+      </button>
+
+      <div className="bg-white border border-(--gray-200) rounded-2xl p-5 lg:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="flex-1 min-w-0">
-          {/* Badges */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="flex items-center gap-1 text-[12px] font-semibold text-(--primary-600) bg-(--primary-50) px-2.5 py-1 rounded-full">
-              <Target className="w-4 h-4" />
-              Career Goal
-            </span>
-            <span className="flex items-center gap-1 text-[12px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
-              <Sparkles className="w-4 h-4" />
-              AI-optimized
-            </span>
-          </div>
-
+          <span className="flex items-center gap-1 w-fit text-[12px] font-semibold text-(--primary-600) bg-(--primary-50) px-2.5 py-1 rounded-full mb-3">
+            <Target className="w-4 h-4" />
+            Career Goal
+          </span>
           <h2 className="text-[20px] lg:text-[28px] font-bold text-(--text-title)">
-            AI/ML Engineer
+            {path.career_goal || path.title}
           </h2>
+          {path.description && (
+            <p className="text-[14px] text-(--gray-500) mt-2">{path.description}</p>
+          )}
 
-          {/* Meta row */}
-          <div className="flex flex-wrap items-center gap-4 mt-2 text-[12px] text-(--gray-500)">
+          <div className="flex flex-wrap items-center gap-4 mt-3 text-[12px] text-(--gray-500)">
             <span className="flex items-center gap-1.5">
-              <KeyRound className="w-4 h-4 text-(--primary-400)" />6 milestones
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-(--primary-400)" />
-              Est. completion Nov 2026
-            </span>
-            <span className="flex items-center gap-1.5">
-              <BookOpen className="w-4 h-4 text-(--primary-400)" />
-              15 courses
+              <KeyRound className="w-4 h-4 text-(--primary-400)" />
+              {path.milestones.length} milestone
+              {path.milestones.length === 1 ? "" : "s"}
             </span>
           </div>
 
-          {/* Skill pills */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            {skills.map((s) => (
-              <span
-                key={s}
-                className="text-[12px] text-(--gray-500) font-normal border border-(--gray-200) px-3 py-1 rounded-full bg-(--gray-50)"
+          {path.skill_tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              {path.skill_tags.map((s) => (
+                <span
+                  key={s}
+                  className="text-[12px] text-(--gray-500) font-normal border border-(--gray-200) px-3 py-1 rounded-full bg-(--gray-50)"
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-5">
+            {isEnrolled ? (
+              <button
+                onClick={handleLeave}
+                disabled={leaveMutation.isPending}
+                className="flex items-center gap-2 text-[13px] font-medium text-(--gray-500) border border-(--gray-200) hover:bg-(--gray-50) px-4 py-2 rounded-lg transition-colors cursor-pointer disabled:opacity-60"
               >
-                {s}
-              </span>
-            ))}
+                <LogOut className="w-4 h-4" />
+                Leave path
+              </button>
+            ) : (
+              <button
+                onClick={handleEnroll}
+                disabled={enrollMutation.isPending}
+                className="flex items-center gap-2 text-[14px] font-semibold text-white bg-(--primary-600) hover:bg-(--primary-700) px-5 py-2.5 rounded-lg transition-colors cursor-pointer disabled:opacity-60"
+              >
+                {enrollMutation.isPending ? "Joining..." : "Join this path"}
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Progress ring */}
-        <div className="relative shrink-0 flex items-center justify-center w-28 h-28">
-          <svg width="112" height="112" className="-rotate-90">
-            <circle
-              cx="56"
-              cy="56"
-              r={RADIUS}
-              fill="none"
-              stroke="#e5e7eb"
-              strokeWidth="8"
-            />
-            <circle
-              ref={circleRef}
-              cx="56"
-              cy="56"
-              r={RADIUS}
-              fill="none"
-              stroke="var(--primary-600)"
-              strokeWidth="8"
-              strokeLinecap="round"
-              strokeDasharray={CIRCUMFERENCE}
-              strokeDashoffset={CIRCUMFERENCE}
-            />
-          </svg>
-          <div className="absolute flex flex-col items-center leading-tight">
-            <span className="text-[20px] lg:text-[24px] font-bold text-(--text-title)">
-              {PCT}%
-            </span>
-            <span className="text-[11px] text-(--gray-500)">complete</span>
-          </div>
-        </div>
+        <ProgressRing percent={path.progress_percent} />
       </div>
 
-      {/* Roadmap */}
       <div>
         <h2 className="text-[18px] lg:text-[20px] font-semibold text-(--text-title) flex items-center gap-2 mb-4">
           <KeyRound className="w-5 h-5 text-(--primary-600)" />
-          Your Roadmap
+          Roadmap
         </h2>
         <p className="text-[14px] text-(--gray-500) -mt-2 mb-5">
-          Complete each milestone to unlock the next
+          {isEnrolled
+            ? "Complete each milestone to unlock the next"
+            : "Join this path to start tracking your progress"}
         </p>
 
-        <ul ref={listRef} className="space-y-0">
-          {milestones.map((m, i) => {
-            const isLast = i === milestones.length - 1;
-            return (
-              <li key={m.number} className="milestone-row opacity-0 flex gap-4">
-                {/* Step indicator + connector */}
-                <div className="relative flex flex-col items-center shrink-0 w-12">
-                  {/* Node */}
-                  <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center z-10 shrink-0 ${
-                      m.status === "completed"
-                        ? "bg-emerald-500"
-                        : m.status === "in_progress"
-                          ? "bg-(--primary-600)"
-                          : "bg-(--gray-200)"
-                    }`}
-                  >
-                    {m.status === "completed" ? (
-                      <Check className="w-5 h-5 text-white" strokeWidth={2.5} />
-                    ) : m.status === "in_progress" ? (
-                      <span className="text-[15px] font-bold text-white">
-                        {m.number}
-                      </span>
-                    ) : (
-                      <Lock className="w-4 h-4 text-(--gray-400)" />
-                    )}
-                  </div>
-
-                  {/* Connector line */}
-                  {!isLast && (
-                    <div
-                      ref={(el) => {
-                        linesRef.current[i] = el;
-                      }}
-                      className={`w-0.5 flex-1 min-h-6 mt-1 ${
-                        m.status === "completed"
-                          ? "bg-emerald-400"
-                          : "bg-(--gray-200)"
-                      }`}
-                    />
-                  )}
-                </div>
-
-                {/* Card */}
-                <div
-                  className={`flex-1 min-w-0 mb-4 rounded-2xl border p-4 lg:p-5 flex items-center justify-between gap-4 transition-shadow ${
-                    m.status === "in_progress"
-                      ? "border-(--primary-300) bg-(--primary-50) shadow-sm"
-                      : m.status === "locked"
-                        ? "border-(--gray-200) bg-white opacity-60"
-                        : "border-(--gray-200) bg-white"
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <h3 className="text-[14px] lg:text-[16px] font-semibold text-(--text-title)">
-                        {m.title}
-                      </h3>
-                      {m.status === "completed" && (
-                        <span className="text-[12px] font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                          Completed
-                        </span>
-                      )}
-                      {m.status === "in_progress" && (
-                        <span className="text-[12px] font-medium text-(--primary-600) bg-(--primary-100) border border-(--primary-200) px-2 py-0.5 rounded-full">
-                          In progress
-                        </span>
-                      )}
-                      {m.status === "locked" && (
-                        <span className="text-[12px] font-medium text-(--gray-400) bg-(--gray-100) border border-(--gray-200) px-2 py-0.5 rounded-full">
-                          Locked
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[14px] text-(--gray-500)">{m.sub}</p>
-                    <p className="text-[12px] text-(--gray-400) mt-1.5 flex items-center gap-1">
-                      <BookOpen className="w-4 h-4" />
-                      {m.courses} courses
-                    </p>
-                  </div>
-
-                  {/* Action */}
-                  <div className="shrink-0">
-                    {m.status === "completed" && (
-                      <button className="flex items-center gap-1.5 text-[14px] font-medium text-(--gray-500) border border-(--gray-200) bg-white hover:bg-(--gray-50) px-4 py-2 rounded-lg transition-colors">
-                        <RotateCcw className="w-4 h-4" />
-                        Review
-                      </button>
-                    )}
-                    {m.status === "in_progress" && (
-                      <button className="flex items-center gap-2 text-[14px] font-medium text-white bg-(--primary-600) hover:bg-(--primary-700) px-5 py-2 rounded-lg transition-colors">
-                        <Play className="w-4 h-4 fill-current" />
-                        Continue
-                      </button>
-                    )}
-                    {m.status === "locked" && (
-                      <Lock className="w-4 h-4 text-(--gray-300)" />
-                    )}
-                  </div>
-                </div>
-              </li>
-            );
-          })}
+        <ul className="space-y-0">
+          {path.milestones.map((m, i) => (
+            <MilestoneRow
+              key={m.id}
+              milestone={m}
+              index={i}
+              isLast={i === path.milestones.length - 1}
+            />
+          ))}
         </ul>
       </div>
+    </div>
+  );
+}
+
+function PathCard({
+  enrollment,
+  onOpen,
+}: {
+  enrollment: MyLearningPath;
+  onOpen: () => void;
+}) {
+  const { path } = enrollment;
+  return (
+    <button
+      onClick={onOpen}
+      className="text-left bg-white border border-(--gray-200) rounded-2xl p-5 hover:shadow-md hover:border-(--primary-300) transition-all cursor-pointer w-full"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <span className="flex items-center gap-1 w-fit text-[11px] font-semibold text-(--primary-600) bg-(--primary-50) px-2 py-0.5 rounded-full mb-2">
+            <Target className="w-3.5 h-3.5" />
+            Career Goal
+          </span>
+          <h3 className="text-[16px] font-bold text-(--text-title) truncate">
+            {path.career_goal || path.title}
+          </h3>
+          <p className="text-[12px] text-(--gray-500) mt-1">
+            {path.milestones.length} milestone
+            {path.milestones.length === 1 ? "" : "s"}
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="text-[18px] font-bold text-(--primary-600)">
+            {path.progress_percent}%
+          </p>
+          <p className="text-[11px] text-(--gray-400)">complete</p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function BrowseCard({
+  path,
+  onOpen,
+}: {
+  path: LearningPathListItem;
+  onOpen: () => void;
+}) {
+  return (
+    <button
+      onClick={onOpen}
+      className="text-left bg-white border border-(--gray-200) rounded-2xl p-5 hover:shadow-md hover:border-(--primary-300) transition-all cursor-pointer w-full"
+    >
+      <span className="flex items-center gap-1 w-fit text-[11px] font-semibold text-(--primary-600) bg-(--primary-50) px-2 py-0.5 rounded-full mb-2">
+        <Target className="w-3.5 h-3.5" />
+        Career Goal
+      </span>
+      <h3 className="text-[16px] font-bold text-(--text-title) truncate">
+        {path.career_goal || path.title}
+      </h3>
+      {path.description && (
+        <p className="text-[13px] text-(--gray-500) mt-1.5 line-clamp-2">
+          {path.description}
+        </p>
+      )}
+      <p className="text-[12px] text-(--gray-400) mt-3 flex items-center gap-1">
+        <BookOpen className="w-3.5 h-3.5" />
+        {path.milestone_count} milestone
+        {path.milestone_count === 1 ? "" : "s"}
+      </p>
+    </button>
+  );
+}
+
+type Tab = "mine" | "browse";
+
+export default function LearningPathsPage() {
+  const [tab, setTab] = useState<Tab>("mine");
+  const [openSlug, setOpenSlug] = useState<string | null>(null);
+
+  const { data: enrollments, isLoading: myLoading } = useMyLearningPaths();
+  const { data: browsePage, isLoading: browseLoading } = useLearningPaths({
+    page_size: 20,
+  });
+
+  if (openSlug) {
+    return (
+      <div className="space-y-6">
+        <PathDetail
+          slug={openSlug}
+          onBack={() => setOpenSlug(null)}
+          onEnrollmentChange={() => setTab("mine")}
+        />
+      </div>
+    );
+  }
+
+  const browseResults = browsePage?.results ?? [];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-[20px] lg:text-[24px] font-semibold text-(--text-title)">
+          Learning Paths
+        </h1>
+        <p className="text-[14px] text-(--gray-500) mt-0.5">
+          Guided, curated roadmaps toward a career goal.
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2 border-b border-(--gray-200)">
+        <button
+          onClick={() => setTab("mine")}
+          className={`px-4 py-2.5 text-[14px] font-medium cursor-pointer border-b-2 transition-colors -mb-px ${
+            tab === "mine"
+              ? "border-(--primary-600) text-(--primary-600)"
+              : "border-transparent text-(--gray-500) hover:text-(--text-title)"
+          }`}
+        >
+          My Paths
+        </button>
+        <button
+          onClick={() => setTab("browse")}
+          className={`px-4 py-2.5 text-[14px] font-medium cursor-pointer border-b-2 transition-colors -mb-px ${
+            tab === "browse"
+              ? "border-(--primary-600) text-(--primary-600)"
+              : "border-transparent text-(--gray-500) hover:text-(--text-title)"
+          }`}
+        >
+          Browse All
+        </button>
+      </div>
+
+      {tab === "mine" ? (
+        myLoading ? (
+          <div className="flex items-center gap-2 text-(--gray-400) text-[14px] py-12 justify-center">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            Loading your paths...
+          </div>
+        ) : !enrollments || enrollments.length === 0 ? (
+          <div className="bg-white border border-(--gray-200) rounded-2xl p-8 text-center">
+            <p className="text-[14px] text-(--gray-500) mb-4">
+              You&apos;re not enrolled in any learning path yet.
+            </p>
+            <button
+              onClick={() => setTab("browse")}
+              className="inline-flex items-center gap-2 bg-(--primary-600) hover:bg-(--primary-700) text-white text-[14px] font-semibold px-4 py-2.5 rounded-lg transition-colors cursor-pointer"
+            >
+              <BookOpen className="w-4 h-4" />
+              Browse learning paths
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {enrollments.map((e) => (
+              <PathCard
+                key={e.id}
+                enrollment={e}
+                onOpen={() => setOpenSlug(e.path.slug)}
+              />
+            ))}
+          </div>
+        )
+      ) : browseLoading ? (
+        <div className="flex items-center gap-2 text-(--gray-400) text-[14px] py-12 justify-center">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          Loading learning paths...
+        </div>
+      ) : browseResults.length === 0 ? (
+        <div className="bg-white border border-(--gray-200) rounded-2xl p-8 text-center">
+          <p className="text-[14px] text-(--gray-500)">
+            No learning paths are published yet.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {browseResults.map((p) => (
+            <BrowseCard key={p.id} path={p} onOpen={() => setOpenSlug(p.slug)} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
