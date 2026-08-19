@@ -33,31 +33,17 @@ function shortCredentialId(uid: string): string {
   return uid.split("-")[0].toUpperCase();
 }
 
-function CertificateCard({ cert }: { cert: LearnerCertificate }) {
+export function CertificateCard({ cert }: { cert: LearnerCertificate }) {
   const verifyHref = certificateUrl(cert.verify_url);
   const downloadHref = certificateUrl(cert.download_url);
 
   return (
     <div className="bg-white rounded-2xl border border-(--gray-200) overflow-hidden hover:shadow-md transition-shadow duration-200">
-      <div
-        className="relative p-5 h-44 overflow-hidden"
-        style={{
-          background:
-            "linear-gradient(135deg, var(--primary-700), var(--primary-400))",
-        }}
-      >
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(45deg, rgba(255,255,255,0.4) 0px, rgba(255,255,255,0.4) 2px, transparent 2px, transparent 18px)",
-          }}
-        />
-
-        <div className="relative flex items-center justify-between mb-4">
+      <div className="relative p-5 border-b border-(--gray-100)">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <GraduationCap className="w-5 h-5 text-white" />
-            <span className="text-[12px] md:text-[14px] lg:text-[14px] font-semibold text-white tracking-widest uppercase">
+            <GraduationCap className="w-5 h-5 text-(--primary-600)" />
+            <span className="text-[12px] font-semibold text-(--primary-600) tracking-widest uppercase">
               Career College
             </span>
           </div>
@@ -65,28 +51,26 @@ function CertificateCard({ cert }: { cert: LearnerCertificate }) {
             href={verifyHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-[12px] font-semibold text-white bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full hover:bg-white/30 transition-colors"
+            className="flex items-center gap-1 text-[12px] font-semibold text-(--primary-600) bg-(--primary-50) px-2.5 py-1 rounded-full hover:bg-(--primary-100) transition-colors"
           >
             <BadgeCheck className="w-3 h-4" />
             Verify
           </a>
         </div>
 
-        <div className="relative">
-          <p className="text-[10px] font-semibold uppercase tracking-widest mb-1 text-white/70">
-            Certificate of Completion
+        <p className="text-[10px] font-semibold uppercase tracking-widest mb-1 text-(--gray-400)">
+          Certificate of Completion
+        </p>
+        {/* The frozen snapshot, not the live course title — this is the
+            record of what was awarded. */}
+        <h3 className="text-[16px] md:text-[18px] font-semibold text-(--text-title) leading-tight mb-4 line-clamp-2">
+          {cert.course_title}
+        </h3>
+        <div>
+          <p className="text-[10px] font-medium text-(--gray-400)">Awarded to</p>
+          <p className="text-[12px] md:text-[14px] lg:text-[14px] font-semibold text-(--text-title)">
+            {cert.learner_name}
           </p>
-          {/* The frozen snapshot, not the live course title — this is the
-              record of what was awarded. */}
-          <h3 className="text-[16px] md:text-[20px] lg:text-[20px] font-semibold text-white leading-tight mb-4 line-clamp-2">
-            {cert.course_title}
-          </h3>
-          <div>
-            <p className="text-[10px] font-medium text-white/70">Awarded to</p>
-            <p className="text-[12px] md:text-[14px] lg:text-[14px] font-semibold text-white">
-              {cert.learner_name}
-            </p>
-          </div>
         </div>
       </div>
 
@@ -122,7 +106,7 @@ function CertificateCard({ cert }: { cert: LearnerCertificate }) {
           href={verifyHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-(--gray-200) text-(--gray-500) hover:bg-(--gray-50) text-[12px] md:text-[14px] lg:text-[14px] font-medium transition-colors cursor-pointer"
+          className="flex-1 flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg border border-(--gray-200) text-(--gray-500) hover:bg-(--gray-50) text-[12px] md:text-[14px] lg:text-[14px] font-medium transition-colors cursor-pointer"
         >
           <Link2 className="w-4 h-4" />
           Public link

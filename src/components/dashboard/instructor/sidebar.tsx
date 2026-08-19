@@ -19,6 +19,7 @@ import {
   PenLine,
   Mail,
   Video,
+  KeyRound,
 } from "lucide-react";
 import { useConversationUnreadBadge } from "@/hooks/use-conversations";
 
@@ -51,6 +52,11 @@ const navSections = [
         icon: Video,
         label: "My Webinars",
         href: "/dashboard/instructor/webinars",
+      },
+      {
+        icon: KeyRound,
+        label: "Learning Paths",
+        href: "/dashboard/instructor/learning-paths",
       },
     ],
   },
