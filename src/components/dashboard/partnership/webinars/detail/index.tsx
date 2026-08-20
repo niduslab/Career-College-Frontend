@@ -8,6 +8,7 @@ import { getWebinar } from "@/lib/webinar-api";
 import type { Webinar } from "@/lib/webinar-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
 import WebinarStatusBadge from "../status-badge";
 import MetadataForm from "./metadata-form";
 import HostPanel from "./host-panel";
@@ -98,7 +99,7 @@ export default function WebinarDetailPageContent() {
         <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-(--gray-100) flex items-center justify-center">
           {webinar.thumbnail ? (
             <Image
-              src={webinar.thumbnail}
+              src={mediaUrl(webinar.thumbnail) as string}
               alt={webinar.title}
               width={64}
               height={64}

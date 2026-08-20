@@ -363,6 +363,8 @@ export default function SetupTab({
                 placeholder={
                   loadingCategories ? "Loading categories…" : "Select category"
                 }
+                searchable
+                searchPlaceholder="Search categories…"
               />
               {errors.categoryId && (
                 <p className="text-[12px] text-red-500 mt-1">

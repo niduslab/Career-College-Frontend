@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import gsap from "gsap";
-import { Search, ChevronDown, Video, Loader2, Plus } from "lucide-react";
+import { Search, Video, Loader2, Plus } from "lucide-react";
 import type { Webinar, WebinarStatus } from "./types";
 import WebinarStatusBadge from "./status-badge";
 import WebinarActionMenu from "./action-menu";
@@ -13,6 +13,8 @@ import { STATUS_OPTIONS, STATUS_LABEL } from "./data";
 import { archiveWebinar, reworkWebinar } from "@/lib/webinar-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
+import { FilterDropdown } from "@/components/common/filter-dropdown";
 
 const AddWebinarDrawer = dynamic(() => import("./add-drawer"), { ssr: false });
 
@@ -28,7 +30,6 @@ export default function WebinarsTable({ webinars, loading, onRefresh }: TablePro
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | WebinarStatus>("All");
-  const [statusOpen, setStatusOpen] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -127,26 +128,13 @@ export default function WebinarsTable({ webinars, loading, onRefresh }: TablePro
         </div>
 
         <div className="relative md:ml-auto">
-          <button
-            type="button"
-            onClick={() => setStatusOpen((v) => !v)}
-            className="flex items-center gap-1.5 w-full h-10 px-3 border border-(--gray-200) rounded-lg bg-white text-[13px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors"
-          >
-            <span className="flex-1 text-left truncate">{STATUS_LABEL[statusFilter]}</span>
-            <ChevronDown className={`w-4 h-4 text-(--gray-500) transition-transform shrink-0 ${statusOpen ? "rotate-180" : ""}`} />
-          </button>
-          {statusOpen && (
-            <div className="absolute right-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-20 py-1 min-w-40">
-              {STATUS_OPTIONS.map((st) => (
-                <button key={st} type="button"
-                  onClick={() => { setStatusFilter(st); setStatusOpen(false); }}
-                  className={`w-full text-left px-4 py-2 text-[12px] cursor-pointer transition-colors ${st === statusFilter ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
-                >
-                  {STATUS_LABEL[st]}
-                </button>
-              ))}
-            </div>
-          )}
+          <FilterDropdown
+            value={statusFilter}
+            onChange={setStatusFilter}
+            placeholder="Status"
+            align="right"
+            options={STATUS_OPTIONS.map((st) => ({ value: st, label: STATUS_LABEL[st] }))}
+          />
         </div>
       </div>
 
@@ -186,7 +174,7 @@ export default function WebinarsTable({ webinars, loading, onRefresh }: TablePro
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-(--gray-100) flex items-center justify-center">
                       {w.thumbnail ? (
-                        <Image src={w.thumbnail} alt={w.title} width={40} height={40} unoptimized className="w-full h-full object-cover" />
+                        <Image src={mediaUrl(w.thumbnail) as string} alt={w.title} width={40} height={40} unoptimized className="w-full h-full object-cover" />
                       ) : (
                         <Video className="w-5 h-5 text-(--gray-400)" />
                       )}

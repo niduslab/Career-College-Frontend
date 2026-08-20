@@ -6,7 +6,6 @@ import {
   User,
   Shield,
   Bell,
-  CreditCard,
   ShieldCheck,
   Building2,
   ChevronRight,
@@ -14,7 +13,6 @@ import {
 import { ProfileTab } from "./profile-tab";
 import { AccountTab } from "./account-tab";
 import { NotificationsTab } from "./notifications-tab";
-import { BillingTab } from "./billing-tab";
 import { VerificationTab } from "./verification-tab";
 import { DepartmentsTab } from "./departments-tab";
 
@@ -23,8 +21,7 @@ type Tab =
   | "account"
   | "verification"
   | "departments"
-  | "notifications"
-  | "billing";
+  | "notifications";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "profile", label: "Profile", icon: User },
@@ -32,7 +29,6 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "verification", label: "Verification", icon: ShieldCheck },
   { id: "departments", label: "Departments", icon: Building2 },
   { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "billing", label: "Billing", icon: CreditCard },
 ];
 
 function isTab(value: string | null): value is Tab {
@@ -52,7 +48,6 @@ export default function PartnershipSettingsPage() {
     verification: VerificationTab,
     departments: DepartmentsTab,
     notifications: NotificationsTab,
-    billing: BillingTab,
   }[activeTab];
 
   return (

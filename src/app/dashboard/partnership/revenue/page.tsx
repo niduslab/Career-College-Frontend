@@ -6,7 +6,7 @@ export default function RevenuePage() {
     <div className="space-y-6">
       <PageHeader
         title="Revenue"
-        subtitle="Track earnings, commissions, and partner payouts."
+        subtitle="Gross earnings from paid orders on your courses and webinars."
       />
       <RevenuePageContent />
     </div>
