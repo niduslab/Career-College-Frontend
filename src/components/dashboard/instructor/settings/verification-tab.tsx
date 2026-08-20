@@ -544,7 +544,13 @@ export function VerificationTab() {
                 <SelectDropdown
                   value={form.document_type}
                   onChange={(v) => {
-                    setForm((f) => ({ ...f, document_type: v }));
+                    setForm((f) => ({
+                      ...f,
+                      document_type: v,
+                      // Hidden for national_id — clear so a leftover value
+                      // from a previous document type never gets submitted.
+                      expiry_date: v === "national_id" ? "" : f.expiry_date,
+                    }));
                     setErrors((prev) => ({
                       ...prev,
                       document_type: undefined,
@@ -600,20 +606,24 @@ export function VerificationTab() {
                 placeholder="Search issuing country..."
               />
             </Field>
-            <Field label="Expiry date (optional)">
-              <DatePicker
-                value={isoToDate(form.expiry_date)}
-                onChange={(d) =>
-                  setForm((f) => ({ ...f, expiry_date: dateToIso(d) }))
-                }
-                placeholder="Select expiry date"
-                disabled={!editable}
-                disablePast={false}
-                captionDropdown
-                fromYear={new Date().getFullYear()}
-                toYear={new Date().getFullYear() + 30}
-              />
-            </Field>
+            {/* National ID cards don't carry an expiry date in Bangladesh —
+                only show the field for document types that actually expire. */}
+            {form.document_type !== "national_id" && (
+              <Field label="Expiry date (optional)">
+                <DatePicker
+                  value={isoToDate(form.expiry_date)}
+                  onChange={(d) =>
+                    setForm((f) => ({ ...f, expiry_date: dateToIso(d) }))
+                  }
+                  placeholder="Select expiry date"
+                  disabled={!editable}
+                  disablePast={false}
+                  captionDropdown
+                  fromYear={new Date().getFullYear()}
+                  toYear={new Date().getFullYear() + 30}
+                />
+              </Field>
+            )}
           </div>
 
           {editable && (

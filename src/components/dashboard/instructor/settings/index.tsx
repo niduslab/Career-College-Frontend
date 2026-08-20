@@ -6,24 +6,21 @@ import {
   User,
   Shield,
   Bell,
-  CreditCard,
   ShieldCheck,
   ChevronRight,
 } from "lucide-react";
 import { ProfileTab } from "./profile-tab";
 import { AccountTab } from "./account-tab";
 import { NotificationsTab } from "./notifications-tab";
-import { BillingTab } from "./billing-tab";
 import { VerificationTab } from "./verification-tab";
 
-type Tab = "profile" | "account" | "verification" | "notifications" | "billing";
+type Tab = "profile" | "account" | "verification" | "notifications";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "profile", label: "Profile", icon: User },
   { id: "account", label: "Account & Security", icon: Shield },
   { id: "verification", label: "Verification", icon: ShieldCheck },
   { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "billing", label: "Billing", icon: CreditCard },
 ];
 
 function isTab(value: string | null): value is Tab {
@@ -42,7 +39,6 @@ export default function SettingsPage() {
     account: AccountTab,
     verification: VerificationTab,
     notifications: NotificationsTab,
-    billing: BillingTab,
   }[activeTab];
 
   return (
