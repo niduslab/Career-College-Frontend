@@ -11,7 +11,7 @@ export default function CoursesPage() {
         subtitle="Manage and track all courses offered through your partnerships."
         action={
           <Link
-            href="/dashboard/instructor/course-builder"
+            href="/dashboard/partnership/course-builder"
             className="flex items-center gap-1.5 h-10 px-4 rounded-md bg-(--primary-700) text-white text-[14px] font-medium cursor-pointer hover:bg-(--primary-600) transition-colors whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />

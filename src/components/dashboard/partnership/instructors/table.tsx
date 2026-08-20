@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import {
   Search,
-  ChevronDown,
   GraduationCap,
   Loader2,
 } from "lucide-react";
@@ -14,6 +13,7 @@ import InstructorActionMenu from "./action-menu";
 import { setExpertActive } from "@/lib/partner-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import { FilterDropdown } from "@/components/common/filter-dropdown";
 import dynamic from "next/dynamic";
 const AddInstructorDrawer = dynamic(() => import("./add-drawer"), { ssr: false });
 
@@ -44,8 +44,6 @@ export default function InstructorsTable({
   const [statusFilter, setStatusFilter] = useState<"All" | AffiliationStatus>(
     "All",
   );
-  const [deptOpen, setDeptOpen] = useState(false);
-  const [statusOpen, setStatusOpen] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingExpert, setEditingExpert] = useState<Expert | null>(null);
@@ -84,11 +82,6 @@ export default function InstructorsTable({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [openMenuId]);
-
-  const closeAllFilters = () => {
-    setDeptOpen(false);
-    setStatusOpen(false);
-  };
 
   const filtered = experts.filter((inst) => {
     const matchSearch =
@@ -160,87 +153,25 @@ export default function InstructorsTable({
         </div>
 
         <div className="grid grid-cols-2 md:flex md:items-center gap-2 md:ml-auto">
-          {/* Department */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                setDeptOpen((v) => !v);
-                setStatusOpen(false);
-              }}
-              className="flex items-center gap-1.5 w-full h-10 px-3 border border-(--gray-200) rounded-lg bg-white text-[13px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors"
-            >
-              <span className="flex-1 text-left truncate">
-                {deptFilter === "All"
-                  ? "Department"
-                  : departments.find((d) => d.id === deptFilter)?.name ?? "Department"}
-              </span>
-              <ChevronDown
-                className={`w-4 h-4 text-(--gray-500) transition-transform shrink-0 ${deptOpen ? "rotate-180" : ""}`}
-              />
-            </button>
-            {deptOpen && (
-              <div className="absolute left-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-20 py-1 min-w-44 max-h-52 overflow-y-auto">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDeptFilter("All");
-                    closeAllFilters();
-                  }}
-                  className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${deptFilter === "All" ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
-                >
-                  All Departments
-                </button>
-                {departments.map((d) => (
-                  <button
-                    key={d.id}
-                    type="button"
-                    onClick={() => {
-                      setDeptFilter(d.id);
-                      closeAllFilters();
-                    }}
-                    className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${d.id === deptFilter ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
-                  >
-                    {d.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <FilterDropdown
+            value={deptFilter}
+            onChange={setDeptFilter}
+            placeholder="Department"
+            className="min-w-0"
+            options={[
+              { value: "All" as const, label: "All Departments" },
+              ...departments.map((d) => ({ value: d.id, label: d.name })),
+            ]}
+          />
 
-          {/* Status */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                setStatusOpen((v) => !v);
-                setDeptOpen(false);
-              }}
-              className="flex items-center gap-1.5 w-full h-10 px-3 border border-(--gray-200) rounded-lg bg-white text-[13px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors"
-            >
-              <span className="flex-1 text-left">{STATUS_LABEL[statusFilter]}</span>
-              <ChevronDown
-                className={`w-4 h-4 text-(--gray-500) transition-transform ${statusOpen ? "rotate-180" : ""}`}
-              />
-            </button>
-            {statusOpen && (
-              <div className="absolute right-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-20 py-1 min-w-32">
-                {STATUS_OPTIONS.map((st) => (
-                  <button
-                    key={st}
-                    type="button"
-                    onClick={() => {
-                      setStatusFilter(st);
-                      closeAllFilters();
-                    }}
-                    className={`w-full text-left px-4 py-2 text-[12px] cursor-pointer transition-colors ${st === statusFilter ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
-                  >
-                    {STATUS_LABEL[st]}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <FilterDropdown
+            value={statusFilter}
+            onChange={setStatusFilter}
+            placeholder="Status"
+            align="right"
+            className="min-w-0"
+            options={STATUS_OPTIONS.map((st) => ({ value: st, label: STATUS_LABEL[st] }))}
+          />
         </div>
       </div>
 

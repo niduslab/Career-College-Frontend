@@ -11,6 +11,7 @@ import { TIPS } from "./data";
 import { listCourses, getCourseCategories } from "@/lib/course-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
 import type { Course, CourseCategory, CourseStatus } from "./types";
 
 const STATUS_BAR: Record<CourseStatus, string> = {
@@ -140,7 +141,7 @@ export default function CoursesPageContent() {
                   <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 bg-(--gray-100) flex items-center justify-center">
                     {c.thumbnail ? (
                       <Image
-                        src={c.thumbnail}
+                        src={mediaUrl(c.thumbnail) as string}
                         alt={c.title}
                         width={32}
                         height={32}

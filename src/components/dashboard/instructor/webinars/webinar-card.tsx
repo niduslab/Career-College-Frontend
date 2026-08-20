@@ -19,6 +19,7 @@ import {
 } from "@/lib/webinar-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
 
 interface WebinarCardProps {
   webinar: Webinar;
@@ -59,7 +60,7 @@ export default function WebinarCard({ webinar, onChanged }: WebinarCardProps) {
         <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-(--gray-100) flex items-center justify-center">
           {webinar.thumbnail ? (
             <Image
-              src={webinar.thumbnail}
+              src={mediaUrl(webinar.thumbnail) as string}
               alt={webinar.title}
               width={48}
               height={48}

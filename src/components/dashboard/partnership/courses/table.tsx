@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import gsap from "gsap";
-import { Search, ChevronDown, BookOpen, Loader2 } from "lucide-react";
+import { Search, BookOpen, Loader2 } from "lucide-react";
 import type { Course, CourseCategory, CourseStatus } from "./types";
 import CourseStatusBadge from "./status-badge";
 import CourseActionMenu from "./action-menu";
@@ -17,6 +17,8 @@ import {
 import { archiveCourse, reworkCourse } from "@/lib/course-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
+import { FilterDropdown } from "@/components/common/filter-dropdown";
 
 const COLS = "grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_90px_80px_130px_40px]";
 
@@ -46,9 +48,6 @@ export default function CoursesTable({
     "All" | "beginner" | "intermediate" | "advanced"
   >("All");
   const [statusFilter, setStatusFilter] = useState<"All" | CourseStatus>("All");
-  const [categoryOpen, setCategoryOpen] = useState(false);
-  const [levelOpen, setLevelOpen] = useState(false);
-  const [statusOpen, setStatusOpen] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const rowsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -77,12 +76,6 @@ export default function CoursesTable({
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [openMenuId]);
-
-  const closeAllFilters = () => {
-    setCategoryOpen(false);
-    setLevelOpen(false);
-    setStatusOpen(false);
-  };
 
   const filtered = courses.filter((c) => {
     const matchSearch = c.title.toLowerCase().includes(search.toLowerCase());
@@ -141,88 +134,35 @@ export default function CoursesTable({
         </div>
 
         <div className="grid grid-cols-3 md:flex md:items-center gap-2 md:ml-auto">
-          {/* Category */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => { setCategoryOpen((v) => !v); setLevelOpen(false); setStatusOpen(false); }}
-              className="flex items-center gap-1.5 w-full h-10 px-3 border border-(--gray-200) rounded-lg bg-white text-[13px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors"
-            >
-              <span className="flex-1 text-left truncate">
-                {categoryFilter === "All"
-                  ? "Category"
-                  : categories.find((c) => c.id === categoryFilter)?.name ?? "Category"}
-              </span>
-              <ChevronDown className={`w-4 h-4 text-(--gray-500) transition-transform shrink-0 ${categoryOpen ? "rotate-180" : ""}`} />
-            </button>
-            {categoryOpen && (
-              <div className="absolute left-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-20 py-1 min-w-44 max-h-52 overflow-y-auto">
-                <button
-                  type="button"
-                  onClick={() => { setCategoryFilter("All"); closeAllFilters(); }}
-                  className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${categoryFilter === "All" ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
-                >
-                  All Categories
-                </button>
-                {categories.map((cat) => (
-                  <button key={cat.id} type="button"
-                    onClick={() => { setCategoryFilter(cat.id); closeAllFilters(); }}
-                    className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${cat.id === categoryFilter ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
-                  >
-                    {cat.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <FilterDropdown
+            value={categoryFilter}
+            onChange={setCategoryFilter}
+            placeholder="Category"
+            className="min-w-0"
+            searchable
+            searchPlaceholder="Search categories…"
+            options={[
+              { value: "All" as const, label: "All Categories" },
+              ...categories.map((c) => ({ value: c.id, label: c.name })),
+            ]}
+          />
 
-          {/* Level */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => { setLevelOpen((v) => !v); setCategoryOpen(false); setStatusOpen(false); }}
-              className="flex items-center gap-1.5 w-full h-10 px-3 border border-(--gray-200) rounded-lg bg-white text-[13px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors"
-            >
-              <span className="flex-1 text-left truncate">{LEVEL_LABEL[levelFilter]}</span>
-              <ChevronDown className={`w-4 h-4 text-(--gray-500) transition-transform shrink-0 ${levelOpen ? "rotate-180" : ""}`} />
-            </button>
-            {levelOpen && (
-              <div className="absolute left-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-20 py-1 min-w-40">
-                {LEVEL_OPTIONS.map((lv) => (
-                  <button key={lv} type="button"
-                    onClick={() => { setLevelFilter(lv); closeAllFilters(); }}
-                    className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors ${lv === levelFilter ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
-                  >
-                    {LEVEL_LABEL[lv]}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <FilterDropdown
+            value={levelFilter}
+            onChange={setLevelFilter}
+            placeholder="Level"
+            className="min-w-0"
+            options={LEVEL_OPTIONS.map((lv) => ({ value: lv, label: LEVEL_LABEL[lv] }))}
+          />
 
-          {/* Status */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => { setStatusOpen((v) => !v); setCategoryOpen(false); setLevelOpen(false); }}
-              className="flex items-center gap-1.5 w-full h-10 px-3 border border-(--gray-200) rounded-lg bg-white text-[13px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors"
-            >
-              <span className="flex-1 text-left truncate">{STATUS_LABEL[statusFilter]}</span>
-              <ChevronDown className={`w-4 h-4 text-(--gray-500) transition-transform ${statusOpen ? "rotate-180" : ""}`} />
-            </button>
-            {statusOpen && (
-              <div className="absolute right-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-20 py-1 min-w-40">
-                {STATUS_OPTIONS.map((st) => (
-                  <button key={st} type="button"
-                    onClick={() => { setStatusFilter(st); closeAllFilters(); }}
-                    className={`w-full text-left px-4 py-2 text-[12px] cursor-pointer transition-colors ${st === statusFilter ? "bg-(--primary-50) text-(--primary-600) font-semibold" : "text-(--gray-600) hover:bg-(--gray-50)"}`}
-                  >
-                    {STATUS_LABEL[st]}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <FilterDropdown
+            value={statusFilter}
+            onChange={setStatusFilter}
+            placeholder="Status"
+            align="right"
+            className="min-w-0"
+            options={STATUS_OPTIONS.map((st) => ({ value: st, label: STATUS_LABEL[st] }))}
+          />
         </div>
       </div>
 
@@ -230,7 +170,7 @@ export default function CoursesTable({
       <div className="overflow-x-auto -mx-5 px-5">
         <div className="min-w-220">
           {/* Header */}
-          <div className={`grid ${COLS} px-3 pb-2 border-b border-(--gray-100)`}>
+          <div className={`grid ${COLS} px-3 pb-3 border-b border-(--gray-100)`}>
             {["Course", "Category", "Instructors", "Level", "Price", "Status"].map((h) => (
               <p key={h} className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase">
                 {h}
@@ -253,12 +193,12 @@ export default function CoursesTable({
               <p className="text-[14px] text-(--gray-500)">No courses match your filters.</p>
             </div>
           ) : (
-            <div className="space-y-1 pt-1">
+            <div className="divide-y divide-(--gray-100) pt-1">
               {filtered.map((c, i) => (
                 <div
                   key={c.id}
                   ref={(el) => { rowsRef.current[i] = el; }}
-                  className={`opacity-0 grid ${COLS} items-center px-3 py-3 rounded-xl hover:bg-(--gray-50) transition-colors cursor-pointer`}
+                  className={`opacity-0 grid ${COLS} items-center px-3 py-4 hover:bg-(--gray-50) transition-colors cursor-pointer`}
                   onClick={() => router.push(`/dashboard/partnership/courses/${c.id}`)}
                 >
                   {/* Course title + thumbnail + level */}
@@ -266,7 +206,7 @@ export default function CoursesTable({
                     <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-(--gray-100) flex items-center justify-center">
                       {c.thumbnail ? (
                         <Image
-                          src={c.thumbnail}
+                          src={mediaUrl(c.thumbnail) as string}
                           alt={c.title}
                           width={40}
                           height={40}
@@ -279,9 +219,6 @@ export default function CoursesTable({
                     </div>
                     <div className="min-w-0">
                       <p className="text-[13px] font-semibold text-(--text-title) truncate leading-snug">{c.title}</p>
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${LEVEL_COLOR[c.level]}`}>
-                        {LEVEL_LABEL[c.level]}
-                      </span>
                     </div>
                   </div>
 
@@ -295,8 +232,10 @@ export default function CoursesTable({
                       : "—"}
                   </p>
 
-                  {/* Level (duplicated column intentionally removed; showing price next) */}
-                  <p className="text-[12px] text-(--gray-600)">{LEVEL_LABEL[c.level]}</p>
+                  {/* Level */}
+                  <span className={`text-[11px] font-semibold px-2 py-1 rounded w-fit ${LEVEL_COLOR[c.level]}`}>
+                    {LEVEL_LABEL[c.level]}
+                  </span>
 
                   {/* Price */}
                   <p className="text-[13px] font-semibold text-(--text-title)">
@@ -320,7 +259,7 @@ export default function CoursesTable({
                       }}
                       onEdit={() => {
                         setOpenMenuId(null);
-                        router.push(`/dashboard/instructor/course-builder?courseId=${c.id}`);
+                        router.push(`/dashboard/partnership/course-builder?courseId=${c.id}`);
                       }}
                       onArchive={() => handleArchive(c)}
                       onRework={() => handleRework(c)}

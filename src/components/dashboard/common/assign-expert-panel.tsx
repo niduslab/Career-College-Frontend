@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Loader2, UserPlus, X, Users } from "lucide-react";
 import type { Course } from "@/lib/course-api";
 import {
@@ -26,6 +26,18 @@ export default function AssignExpertPanel({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [assigningId, setAssigningId] = useState<number | null>(null);
   const [removingId, setRemovingId] = useState<number | null>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setPickerOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [pickerOpen]);
 
   useEffect(() => {
     let active = true;
@@ -91,7 +103,7 @@ export default function AssignExpertPanel({
           Instructor Roster
         </p>
         {!locked && (
-          <div className="relative">
+          <div ref={pickerRef} className="relative">
             <button
               type="button"
               onClick={() => setPickerOpen((v) => !v)}
