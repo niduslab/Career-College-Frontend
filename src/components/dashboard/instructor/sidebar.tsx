@@ -14,11 +14,11 @@ import {
   Award,
   Settings,
   BookOpen,
-  ChartColumn,
   MessageSquareMore,
   PenLine,
   Mail,
   Video,
+  KeyRound,
 } from "lucide-react";
 import { useConversationUnreadBadge } from "@/hooks/use-conversations";
 
@@ -42,15 +42,20 @@ const navSections = [
       //   href: "/dashboard/instructor/course-builder",
       // },
 
-      {
-        icon: Radio,
-        label: "Live Sessions",
-        href: "/dashboard/instructor/live-sessions",
-      },
+      // {
+      //   icon: Radio,
+      //   label: "Live Sessions",
+      //   href: "/dashboard/instructor/live-sessions",
+      // },
       {
         icon: Video,
         label: "My Webinars",
         href: "/dashboard/instructor/webinars",
+      },
+      {
+        icon: KeyRound,
+        label: "Learning Paths",
+        href: "/dashboard/instructor/learning-paths",
       },
     ],
   },
@@ -61,11 +66,6 @@ const navSections = [
         icon: Users,
         label: "Students",
         href: "/dashboard/instructor/students",
-      },
-      {
-        icon: ChartColumn,
-        label: "Analytics",
-        href: "/dashboard/instructor/analytics",
       },
       {
         icon: MessageSquareMore,
@@ -87,16 +87,16 @@ const navSections = [
         label: "Revenue",
         href: "/dashboard/instructor/revenue",
       },
-      {
-        icon: PenLine,
-        label: "Blogs",
-        href: "/dashboard/instructor/blogs",
-      },
-      {
-        icon: Award,
-        label: "Certificates",
-        href: "/dashboard/instructor/certificates",
-      },
+      // {
+      //   icon: PenLine,
+      //   label: "Blogs",
+      //   href: "/dashboard/instructor/blogs",
+      // },
+      // {
+      //   icon: Award,
+      //   label: "Certificates",
+      //   href: "/dashboard/instructor/certificates",
+      // },
       {
         icon: Settings,
         label: "Settings",
@@ -141,11 +141,7 @@ export default function InstructorSidebar() {
             onClick={close}
           >
             <div className="w-9 h-9 flex items-center justify-center">
-              <Image
-                src={logo}
-                alt=""
-                className="h-8 w-8 object-contain"
-              />
+              <Image src={logo} alt="" className="h-8 w-8 object-contain" />
             </div>
             <span className="font-medium text-(--primary-600) text-[16px] lg:text-[20px]">
               CareerCollege

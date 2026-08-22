@@ -20,10 +20,26 @@ export default function CoursesStatsCards({ courses }: StatsCardsProps) {
   ).length;
 
   const stats = [
-    { label: "Total Courses", value: String(total) },
-    { label: "Published", value: String(published) },
-    { label: "Drafts", value: String(drafts) },
-    { label: "Pending Review", value: String(pendingReview) },
+    {
+      label: "Total Courses",
+      value: String(total),
+      footer: total === 0 ? "No courses yet" : `${published} published so far`,
+    },
+    {
+      label: "Published",
+      value: String(published),
+      footer: total > 0 ? `${Math.round((published / total) * 100)}% of total` : "no courses yet",
+    },
+    {
+      label: "Drafts",
+      value: String(drafts),
+      footer: drafts === 0 ? "nothing in progress" : "in progress",
+    },
+    {
+      label: "Pending Review",
+      value: String(pendingReview),
+      footer: pendingReview === 0 ? "nothing awaiting review" : "awaiting a decision",
+    },
   ];
 
   useEffect(() => {
@@ -56,6 +72,8 @@ export default function CoursesStatsCards({ courses }: StatsCardsProps) {
                 <Icon className="w-6 h-6 xl:w-5 xl:h-5 text-(--primary-600)" />
               </div>
             </div>
+            <div className="border border-dashed border-gray-200 mt-2 mb-2" />
+            <p className="text-[12px] font-medium text-[#4a5565]">{s.footer}</p>
           </div>
         );
       })}

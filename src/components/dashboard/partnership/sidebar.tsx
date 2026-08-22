@@ -8,13 +8,11 @@ import logo from "@/assets/images/logo/career-college-logo.webp";
 import {
   X,
   LayoutDashboard,
-  ChartColumn,
   MessageSquareMore,
   DollarSign,
   Settings,
   GraduationCap,
   BookOpen,
-  UsersRound,
   Video,
 } from "lucide-react";
 import { useConversationUnreadBadge } from "@/hooks/use-conversations";
@@ -39,11 +37,6 @@ const navSections = [
         href: "/dashboard/partnership/courses",
       },
       {
-        icon: UsersRound,
-        label: "Cohorts",
-        href: "/dashboard/partnership/cohorts",
-      },
-      {
         icon: Video,
         label: "Webinars",
         href: "/dashboard/partnership/webinars",
@@ -51,35 +44,9 @@ const navSections = [
     ],
   },
 
-  // {
-  //   label: "Partnerships",
-  //   items: [
-  //     {
-  //       icon: Handshake,
-  //       label: "Partnerships",
-  //       href: "/dashboard/partnership/partnerships",
-  //     },
-  //     {
-  //       icon: Building2,
-  //       label: "Organizations",
-  //       href: "/dashboard/partnership/organizations",
-  //     },
-  //     {
-  //       icon: FileText,
-  //       label: "Proposals",
-  //       href: "/dashboard/partnership/proposals",
-  //     },
-  //   ],
-  // },
   {
     label: "Insights",
     items: [
-      {
-        icon: ChartColumn,
-        label: "Analytics",
-        href: "/dashboard/partnership/analytics",
-      },
-
       {
         icon: MessageSquareMore,
         label: "Messages",

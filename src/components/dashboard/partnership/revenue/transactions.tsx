@@ -1,14 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search } from "lucide-react";
-import { TRANSACTIONS, type TxStatus } from "./data";
-
-const STATUS_STYLES: Record<TxStatus, string> = {
-  Paid: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-  Pending: "bg-yellow-50 text-yellow-700 border border-yellow-200",
-  Processing: "bg-blue-50 text-blue-700 border border-blue-200",
-};
+import { Search, BookOpen, Video, Loader2 } from "lucide-react";
+import { usePartnerRevenueOrders } from "@/hooks/use-partner-revenue";
 
 const AVATAR_COLORS = [
   "bg-violet-100 text-violet-700",
@@ -19,32 +13,33 @@ const AVATAR_COLORS = [
   "bg-cyan-100 text-cyan-700",
 ];
 
-const PARTNER_COLOR_MAP: Record<string, number> = {
-  TC: 0,
-  GU: 1,
-  NT: 2,
-  AP: 3,
-  EC: 4,
-  BF: 5,
-};
+const COLS = "grid-cols-[1.4fr_1.6fr_1fr_100px_120px]";
 
-const COLS = "grid-cols-[1.4fr_1.6fr_1fr_1fr_100px]";
+type FilterTab = "all" | "course" | "webinar";
 
-type FilterTab = "All" | TxStatus;
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0][0]!.toUpperCase();
+  return (parts[0][0]! + parts[parts.length - 1][0]!).toUpperCase();
+}
 
 export default function Transactions() {
-  const [tab, setTab] = useState<FilterTab>("All");
+  const [tab, setTab] = useState<FilterTab>("all");
   const [search, setSearch] = useState("");
-
-  const filtered = TRANSACTIONS.filter((tx) => {
-    const matchTab = tab === "All" || tx.status === tab;
-    const q = search.toLowerCase();
-    const matchSearch =
-      !q ||
-      tx.partner.toLowerCase().includes(q) ||
-      tx.course.toLowerCase().includes(q);
-    return matchTab && matchSearch;
+  const { data, isLoading } = usePartnerRevenueOrders({
+    itemType: tab,
+    sort: "-paid_at",
   });
+
+  const orders = data?.results ?? [];
+  const q = search.toLowerCase();
+  const filtered = orders.filter(
+    (o) =>
+      !q ||
+      o.learner_name.toLowerCase().includes(q) ||
+      o.item.title.toLowerCase().includes(q),
+  );
 
   return (
     <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4">
@@ -55,29 +50,31 @@ export default function Transactions() {
             Transaction History
           </p>
           <p className="text-[12px] text-(--gray-400) mt-0.5">
-            All payouts and pending revenue
+            Paid orders on your courses and webinars
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Filter tabs */}
           <div className="flex gap-1 bg-(--gray-100) rounded-lg p-0.5">
-            {(["All", "Paid", "Processing", "Pending"] as FilterTab[]).map(
-              (t) => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className={`h-8 px-4 text-[12px]  rounded-md cursor-pointer transition-colors ${
-                    tab === t
-                      ? "bg-white text-(--text-title) shadow-sm font-medium"
-                      : "text-(--gray-500) hover:text-(--gray-700) font-normal"
-                  }`}
-                >
-                  {t}
-                </button>
-              ),
-            )}
+            {(
+              [
+                { key: "all", label: "All" },
+                { key: "course", label: "Courses" },
+                { key: "webinar", label: "Webinars" },
+              ] as { key: FilterTab; label: string }[]
+            ).map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`h-8 px-4 text-[12px] rounded-md cursor-pointer transition-colors ${
+                  tab === key
+                    ? "bg-white text-(--text-title) shadow-sm font-medium"
+                    : "text-(--gray-500) hover:text-(--gray-700) font-normal"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-          {/* Search */}
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-(--gray-400)" />
             <input
@@ -93,17 +90,8 @@ export default function Transactions() {
       {/* Table */}
       <div className="overflow-x-auto -mx-5 px-5">
         <div className="min-w-160">
-          {/* Head */}
-          <div
-            className={`grid ${COLS} gap-4 px-3 pb-2.5 border-b border-(--gray-100)`}
-          >
-            {[
-              "Partner",
-              "Course / Cohort",
-              "Amount",
-              "Commission",
-              "Status",
-            ].map((h) => (
+          <div className={`grid ${COLS} gap-4 px-3 pb-2.5 border-b border-(--gray-100)`}>
+            {["Learner", "Item", "Amount", "Type", "Paid"].map((h) => (
               <p
                 key={h}
                 className="text-[12px] font-semibold tracking-widest text-(--gray-400) uppercase"
@@ -113,58 +101,50 @@ export default function Transactions() {
             ))}
           </div>
 
-          {/* Rows */}
           <div className="divide-y divide-(--gray-50)">
-            {filtered.length === 0 ? (
+            {isLoading ? (
+              <div className="py-12 text-center">
+                <Loader2 className="w-5 h-5 text-(--gray-400) mx-auto animate-spin" />
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="py-12 text-center text-[14px] text-(--gray-400)">
                 No transactions found.
               </div>
             ) : (
-              filtered.map((tx) => {
-                const colorIdx = PARTNER_COLOR_MAP[tx.partnerInitials] ?? 0;
+              filtered.map((tx, i) => {
+                const Icon = tx.item.type === "course" ? BookOpen : Video;
                 return (
                   <div
-                    key={tx.id}
+                    key={tx.order_id}
                     className={`grid ${COLS} gap-4 items-center px-3 py-3.5 hover:bg-(--gray-50) rounded-xl transition-colors`}
                   >
-                    {/* Partner */}
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${AVATAR_COLORS[colorIdx]}`}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${AVATAR_COLORS[i % AVATAR_COLORS.length]}`}
                       >
-                        {tx.partnerInitials}
+                        {initialsOf(tx.learner_name)}
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-[14px] font-medium text-(--text-title) truncate">
-                          {tx.partner}
-                        </p>
-                        <p className="text-[12px] text-(--gray-400)">
-                          {tx.date}
-                        </p>
-                      </div>
+                      <p className="text-[14px] font-medium text-(--text-title) truncate">
+                        {tx.learner_name}
+                      </p>
                     </div>
 
-                    {/* Course */}
                     <p className="text-[14px] text-(--gray-600) truncate">
-                      {tx.course}
+                      {tx.item.title}
                     </p>
 
-                    {/* Amount */}
                     <p className="text-[14px] font-semibold text-(--text-title)">
-                      ${tx.amount.toLocaleString()}
+                      {Number(tx.amount).toLocaleString()} {tx.currency}
                     </p>
 
-                    {/* Commission */}
-                    <p className="text-[14px] text-(--primary-700) font-medium">
-                      ${tx.commission.toLocaleString()}
-                    </p>
-
-                    {/* Status */}
-                    <span
-                      className={`inline-flex items-center justify-center w-fit px-2.5 py-1 rounded-full text-[12px] font-semibold ${STATUS_STYLES[tx.status]}`}
-                    >
-                      {tx.status}
+                    <span className="inline-flex items-center gap-1.5 w-fit text-[12px] font-medium text-(--gray-600)">
+                      <Icon className="w-3.5 h-3.5 shrink-0" />
+                      {tx.item.type === "course" ? "Course" : "Webinar"}
                     </span>
+
+                    <p className="text-[12px] text-(--gray-400) whitespace-nowrap">
+                      {tx.paid_at ? new Date(tx.paid_at).toLocaleDateString() : "—"}
+                    </p>
                   </div>
                 );
               })

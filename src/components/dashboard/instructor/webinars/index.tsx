@@ -1,24 +1,32 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Video, Loader2 } from "lucide-react";
+import { Video, Loader2, AlertTriangle } from "lucide-react";
 import { listWebinars, type Webinar } from "@/lib/webinar-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 import WebinarCard from "./webinar-card";
 
-async function fetchWebinars(): Promise<Webinar[] | null> {
+interface FetchResult {
+  webinars: Webinar[];
+  error: string | null;
+}
+
+async function fetchWebinars(): Promise<FetchResult> {
   try {
     const res = await listWebinars(1, 100);
-    return res.results;
+    return { webinars: res.results, error: null };
   } catch (err) {
-    notify.error(err instanceof ApiError ? err.message : "Failed to load webinars.");
-    return null;
+    const message =
+      err instanceof ApiError ? err.message : "Failed to load webinars.";
+    notify.error(message);
+    return { webinars: [], error: message };
   }
 }
 
 export default function MyWebinarsPageContent() {
   const [webinars, setWebinars] = useState<Webinar[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -30,8 +38,9 @@ export default function MyWebinarsPageContent() {
   useEffect(() => {
     let active = true;
     fetchWebinars().then((result) => {
-      if (!active || !result) return;
-      setWebinars(result);
+      if (!active) return;
+      setWebinars(result.webinars);
+      setError(result.error);
       setLoading(false);
     });
     return () => {
@@ -44,6 +53,25 @@ export default function MyWebinarsPageContent() {
       <div className="flex items-center justify-center py-20 text-(--gray-500)">
         <Loader2 className="w-5 h-5 animate-spin mr-2" />
         Loading webinars…
+      </div>
+    );
+  }
+
+  // The toast alone isn't enough — it disappears in a few seconds and used
+  // to leave the page stuck on the spinner forever with nothing on screen
+  // to explain why (e.g. an unverified instructor gets a 403 here).
+  if (error) {
+    return (
+      <div className="bg-white border border-(--gray-200) rounded-2xl p-12 text-center">
+        <AlertTriangle className="w-8 h-8 text-(--warning-500) mx-auto mb-2" />
+        <p className="text-[14px] text-(--gray-500) mb-4">{error}</p>
+        <button
+          type="button"
+          onClick={refresh}
+          className="h-9 px-4 rounded-md border border-(--gray-200) text-[13px] font-medium text-(--gray-600) hover:bg-(--gray-50) transition-colors cursor-pointer"
+        >
+          Try again
+        </button>
       </div>
     );
   }

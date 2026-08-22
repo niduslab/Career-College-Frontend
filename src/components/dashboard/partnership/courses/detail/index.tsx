@@ -15,6 +15,7 @@ import { getCourse } from "@/lib/course-api";
 import type { Course } from "@/lib/course-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
 import CourseStatusBadge from "../status-badge";
 import { LEVEL_LABEL } from "../data";
 import AssignExpertPanel from "@/components/dashboard/common/assign-expert-panel";
@@ -110,7 +111,7 @@ export default function CourseDetailPageContent() {
           <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-(--gray-100) flex items-center justify-center">
             {course.thumbnail ? (
               <Image
-                src={course.thumbnail}
+                src={mediaUrl(course.thumbnail) as string}
                 alt={course.title}
                 width={64}
                 height={64}
@@ -155,7 +156,7 @@ export default function CourseDetailPageContent() {
           )}
           {editable && (
             <Link
-              href={`/dashboard/instructor/course-builder?courseId=${course.id}`}
+              href={`/dashboard/partnership/course-builder?courseId=${course.id}`}
               className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-(--primary-700) text-white text-[13px] font-medium hover:bg-(--primary-600) transition-colors"
             >
               <Pencil className="w-4 h-4" />
@@ -170,9 +171,16 @@ export default function CourseDetailPageContent() {
           {/* Description */}
           <div className="bg-white border border-(--gray-200) rounded-2xl p-5 space-y-2">
             <p className="text-[14px] font-semibold text-(--text-title)">Description</p>
-            <p className="text-[13px] text-(--gray-600) leading-relaxed whitespace-pre-line">
-              {course.description || "No description yet."}
-            </p>
+            {course.description ? (
+              <div
+                className="text-[13px] text-(--gray-600) leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: course.description }}
+              />
+            ) : (
+              <p className="text-[13px] text-(--gray-600) leading-relaxed">
+                No description yet.
+              </p>
+            )}
           </div>
 
           <AssignExpertPanel course={course} onChanged={refresh} />

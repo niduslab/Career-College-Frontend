@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Flame, BookOpen, Trophy } from "lucide-react";
+import { Flame, BookOpen, Trophy, Check } from "lucide-react";
 import gsap from "gsap";
 import { useLearnerSummary } from "@/hooks/use-learner-dashboard";
 
@@ -40,39 +40,51 @@ export default function ProgressSkill() {
         <p className="text-[13px] text-(--gray-400)">Loading...</p>
       ) : (
         <>
-          {/* 2 stat pills */}
+          {/* 2 stat cards — matches stats-cards.tsx / achievements pattern */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-3 bg-(--gray-50) rounded-xl px-4 py-3 border border-(--gray-100)">
-              <div className="w-9 h-9 shrink-0 rounded-lg bg-orange-50 flex items-center justify-center">
-                <Flame className="w-4.5 h-4.5 text-orange-500" />
+            <div className="bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[12px] text-(--gray-500) font-normal mb-2">
+                    Day Streak
+                  </p>
+                  <p className="text-[20px] lg:text-[24px] font-semibold text-(--text-title) leading-none">
+                    {summary?.day_streak ?? 0}
+                  </p>
+                </div>
+                <div className="w-10 h-10 rounded-[6px_4px_6px_6px] bg-orange-50 flex items-center justify-center shrink-0">
+                  <Flame className="w-6 h-6 text-orange-500" fill="currentColor" />
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-[20px] font-extrabold text-(--text-title) leading-none">
-                  {summary?.day_streak ?? 0}
-                </p>
-                <p className="text-[11px] text-(--gray-500) font-medium mt-1">
-                  Day streak
-                </p>
-              </div>
+              <div className="border border-dashed border-gray-200 my-1" />
+              <p className="text-[12px] font-medium text-(--success-500)">
+                consecutive days
+              </p>
             </div>
-            <div className="flex items-center gap-3 bg-(--gray-50) rounded-xl px-4 py-3 border border-(--gray-100)">
-              <div className="w-9 h-9 shrink-0 rounded-lg bg-(--primary-50) flex items-center justify-center">
-                <BookOpen className="w-4.5 h-4.5 text-(--primary-600)" />
+            <div className="bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[12px] text-(--gray-500) font-normal mb-2">
+                    Completed
+                  </p>
+                  <p className="text-[20px] lg:text-[24px] font-semibold text-(--text-title) leading-none">
+                    {summary?.courses_completed ?? 0}
+                  </p>
+                </div>
+                <div className="w-10 h-10 rounded-[6px_4px_6px_6px] bg-(--primary-50) flex items-center justify-center shrink-0">
+                  <BookOpen className="w-6 h-6 text-(--primary-600)" />
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-[20px] font-extrabold text-(--text-title) leading-none">
-                  {summary?.courses_completed ?? 0}
-                </p>
-                <p className="text-[11px] text-(--gray-500) font-medium mt-1">
-                  Completed
-                </p>
-              </div>
+              <div className="border border-dashed border-gray-200 my-1" />
+              <p className="text-[12px] font-medium text-(--success-500)">
+                courses
+              </p>
             </div>
           </div>
 
           {/* Week activity — presence only, never a duration/magnitude bar */}
-          <div className="rounded-2xl bg-(--gray-50) border border-(--gray-100) px-4 py-3.5">
-            <div className="flex items-center justify-between mb-3.5">
+          <div className="rounded-2xl bg-(--gray-50) border border-(--gray-100) px-4 py-4">
+            <div className="flex items-center justify-between mb-4">
               <p className="text-[13px] font-semibold text-(--text-title)">
                 This week
               </p>
@@ -80,7 +92,7 @@ export default function ProgressSkill() {
                 {activeDays} of 7 days active
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between">
               {week.map((d) => {
                 const isToday =
                   new Date(d.date).toDateString() ===
@@ -88,21 +100,26 @@ export default function ProgressSkill() {
                 return (
                   <div
                     key={d.date}
-                    className="flex-1 flex flex-col items-center gap-1.5"
+                    className="flex flex-col items-center gap-2"
                   >
                     <div
-                      className={`w-full h-9 rounded-lg flex items-center justify-center transition-colors ${
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
                         d.is_active
                           ? "bg-(--primary-600)"
-                          : "bg-white border border-(--gray-200)"
-                      } ${isToday && !d.is_active ? "border-(--primary-300) border-dashed" : ""}`}
+                          : isToday
+                            ? "bg-white border-2 border-dashed border-(--primary-300)"
+                            : "bg-white border border-(--gray-200)"
+                      }`}
                     >
                       {d.is_active && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                        <Check
+                          className="w-4 h-4 text-white"
+                          strokeWidth={3}
+                        />
                       )}
                     </div>
                     <span
-                      className={`text-[10px] font-medium ${isToday ? "text-(--primary-600)" : "text-(--gray-400)"}`}
+                      className={`text-[11px] font-medium ${isToday ? "text-(--primary-600)" : "text-(--gray-400)"}`}
                     >
                       {DAY_LABELS[new Date(d.date).getDay()]}
                     </span>
