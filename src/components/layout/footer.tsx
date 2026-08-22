@@ -37,7 +37,7 @@ export function Footer() {
                 alt=""
                 className="h-10 w-10 shrink-0 object-contain"
               />
-              Career College
+              Career Collegeer
             </h2>
             <p className="mt-4 max-w-70 sg-p-small text-white font-normal">
               Nidus Career College empowers you with expertled courses,
