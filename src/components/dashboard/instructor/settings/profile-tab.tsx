@@ -25,14 +25,12 @@ import {
 import { mediaUrl, initialsOf } from "../../settings-shared/helpers";
 import { EducationAndExperience } from "../../settings-shared/education-experience";
 
+type Section = "professional" | "location" | "social";
+
 export function ProfileTab() {
   const [loading, setLoading] = useState(true);
-  const [savingSection, setSavingSection] = useState<
-    "professional" | "social" | null
-  >(null);
-  const [savedSection, setSavedSection] = useState<
-    "professional" | "social" | null
-  >(null);
+  const [savingSection, setSavingSection] = useState<Section | null>(null);
+  const [savedSection, setSavedSection] = useState<Section | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -92,8 +90,10 @@ export function ProfileTab() {
       bio: p.bio ?? "",
       current_title: p.current_title ?? "",
       current_organization: p.current_organization ?? "",
-      years_of_experience:
-        p.years_of_experience != null ? String(p.years_of_experience) : "",
+      // 0 is the backend's "unset" value — show it as an empty input.
+      years_of_experience: p.years_of_experience
+        ? String(p.years_of_experience)
+        : "",
       specialization: (p.specialization ?? []).join(", "),
       city: p.city ?? "",
       state: p.state ?? "",
@@ -135,7 +135,7 @@ export function ProfileTab() {
       setErrors((prev) => ({ ...prev, [k]: "" }));
     };
 
-  const handleSave = async (section: "professional" | "social") => {
+  const handleSave = async (section: Section) => {
     const found = validate(form);
     if (Object.keys(found).length > 0) {
       setErrors(found);
@@ -149,9 +149,11 @@ export function ProfileTab() {
         bio: form.bio,
         current_title: form.current_title,
         current_organization: form.current_organization,
+        // Blank means "clear it" — the backend field is non-nullable, so 0 is
+        // the empty value. Sending undefined would leave the old number intact.
         years_of_experience: form.years_of_experience
           ? Number(form.years_of_experience)
-          : undefined,
+          : 0,
         specialization: form.specialization
           .split(",")
           .map((s) => s.trim())
@@ -164,6 +166,7 @@ export function ProfileTab() {
         website_url: form.website_url,
       });
       hydrateProfile(p);
+      notifyProfileUpdated();
       notify.success("Profile updated.");
       setSavedSection(section);
       setTimeout(
@@ -367,9 +370,9 @@ export function ProfileTab() {
         </div>
         <div className="flex justify-start pt-2">
           <AsyncSaveButton
-            onClick={() => handleSave("professional")}
-            saving={savingSection === "professional"}
-            saved={savedSection === "professional"}
+            onClick={() => handleSave("location")}
+            saving={savingSection === "location"}
+            saved={savedSection === "location"}
           />
         </div>
       </SectionCard>
