@@ -217,3 +217,15 @@ body {
   animation: industryMarquee 26s linear infinite;
   will-change: transform;
 }
+
+/* Hides the native scrollbar on a horizontally-scrollable element while
+   keeping it scrollable (wheel/touch/drag) — reusable anywhere a pill row,
+   tab strip, or carousel needs to scroll without a visible browser scrollbar. */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

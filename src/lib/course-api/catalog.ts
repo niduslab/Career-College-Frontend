@@ -90,14 +90,72 @@ export interface CatalogCourse {
   is_wishlisted: boolean;
 }
 
-/** Extra fields present only on the single-course catalog detail endpoint. */
+export interface CatalogCurriculumLecture {
+  id: number;
+  title: string;
+  lecture_type: "video" | "article";
+  is_preview: boolean;
+  duration_seconds: number | null;
+  /** Present only when is_preview && lecture_type === 'video'. */
+  preview_video_url?: string;
+  preview_renditions?: {
+    name: string;
+    playlist: string;
+    resolution: string;
+    bandwidth: number;
+  }[];
+}
+
+export interface CatalogCurriculumQuiz {
+  id: number;
+  title: string;
+}
+
+export interface CatalogCurriculumCoding {
+  id: number;
+  title: string;
+  language: string;
+}
+
+export interface CatalogCurriculumAssignment {
+  id: number;
+  title: string;
+}
+
+export interface CatalogCurriculumItem {
+  id: number;
+  item_type: "lecture" | "quiz" | "coding" | "assignment";
+  position: number;
+  object_id: number;
+  content:
+    | CatalogCurriculumLecture
+    | CatalogCurriculumQuiz
+    | CatalogCurriculumCoding
+    | CatalogCurriculumAssignment
+    | null;
+}
+
+export interface CatalogCurriculumSection {
+  id: number;
+  title: string;
+  description: string;
+  position: number;
+  total_items: number;
+  contents: CatalogCurriculumItem[];
+}
+
+/** Extra fields present only on the single-course catalog detail endpoint.
+ *  Notably absent: avg_rating/review_count (fetch getReviewSummary instead)
+ *  and is_enrolled (check getMyCourseDetail, which 403s when not enrolled). */
 export interface CatalogCourseDetail extends CatalogCourse {
   partner_institution: { id: number; institution_name: string } | null;
   learning_objectives: string;
   prerequisites: string;
   audiences: string;
+  course_outline: string;
   total_sections: number;
   total_content_items: number;
+  sections: CatalogCurriculumSection[];
 }
 
 export type CatalogSort =

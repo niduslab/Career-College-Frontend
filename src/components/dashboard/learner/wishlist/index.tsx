@@ -168,7 +168,7 @@ function WishlistCard({ entry }: { entry: WishlistEntry }) {
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-baseline gap-1.5">
             <span className="text-[20px] font-bold text-(--text-title)">
-              {isFree ? "Free" : `$${price.toFixed(2)}`}
+              {isFree ? "Free" : `BDT ${price.toFixed(2)}`}
             </span>
           </div>
           <div className="flex items-center gap-2">

@@ -193,7 +193,7 @@ export function UpcomingWebinars() {
                 </div>
 
                 <Link
-                  href="/course-details"
+                  href="/course-details-filter"
                   className="mt-4 h-10 w-full rounded-md border border-(--primary-700) bg-(--text-white) sg-p-default font-semibold text-(--text-title) cursor-pointer transition-all duration-300 ease-out hover:-translate-y-px hover:bg-(--primary-700) hover:text-(--text-white) active:translate-y-0 active:scale-[0.99] inline-flex items-center justify-center"
                 >
                   View Details
