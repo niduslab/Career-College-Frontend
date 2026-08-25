@@ -234,7 +234,7 @@ export function TrendingCourses() {
                   </p>
 
                   <Link
-                    href="/course-details"
+                    href="/course-details-filter"
                     className="h-10 rounded-md border bg-(--primary-700) sg-p-default  px-3  font-semibold text-(--text-white) transition-colors cursor-pointer inline-flex items-center"
                   >
                     View Details

@@ -5,10 +5,21 @@ import { BreadcrumbHero } from "@/components/common/breadcrumb-hero";
 import { CoursesFilterSidebar } from "@/components/course-details-filter/courses-filter-sidebar";
 import { CoursesFilterGrid } from "@/components/course-details-filter/courses-filter-grid";
 import { DreamCareerCta } from "@/components/common/dream-career-cta";
+import type { CatalogFilterParams } from "@/lib/course-api";
 
 export default function CourseDetailsFilterPage() {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
+
+  // Lifted here so the sidebar (writes) and grid (reads + pagination/sort)
+  // share one source of truth instead of duplicating filter state.
+  const [filters, setFilters] = useState<CatalogFilterParams>({});
+  const [page, setPage] = useState(1);
+
+  const updateFilters = (patch: Partial<CatalogFilterParams>) => {
+    setFilters((prev) => ({ ...prev, ...patch }));
+    setPage(1);
+  };
 
   return (
     <div className="min-h-screen">
@@ -29,11 +40,17 @@ export default function CourseDetailsFilterPage() {
               onMobileClose={() => setMobileFilterOpen(false)}
               desktopVisible={sidebarVisible}
               onDesktopToggle={() => setSidebarVisible((v) => !v)}
+              filters={filters}
+              onChange={updateFilters}
             />
             <CoursesFilterGrid
               onFilterOpen={() => setMobileFilterOpen(true)}
               onDesktopToggle={() => setSidebarVisible((v) => !v)}
               sidebarVisible={sidebarVisible}
+              filters={filters}
+              onSortChange={(sort) => updateFilters({ sort })}
+              page={page}
+              onPageChange={setPage}
             />
           </div>
         </div>

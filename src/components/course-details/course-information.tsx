@@ -1,149 +1,217 @@
 "use client";
-import React from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { Clock, BarChart3, CirclePlay, Medal } from "lucide-react";
-import image from "@/assets/images/courses-details/image.webp";
-
-const INFO_ITEMS = [
-  { icon: CirclePlay, label: "Total 92 Videos" },
-  { icon: Clock, label: "Duration 10 hours 45 min" },
-  { icon: BarChart3, label: "Intermediate Level" },
-  { icon: Medal, label: "Get Certificate" },
-];
-
-const SUBSCRIPTIONS = [
-  { id: "starter", label: "Starter", price: "$42.99", suffix: "/year" },
-  { id: "growth", label: "Growth", price: "$242.99", suffix: "/year" },
-  { id: "ultimate", label: "Ultimate", price: "$499.00", suffix: "/year" },
-];
-
-type Plan = "one-time" | "subscription";
+import { Clock, BarChart3, Layers, Heart, Loader2 } from "lucide-react";
+import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
+import { ApiError } from "@/lib/api";
+import { notify } from "@/lib/toast";
+import {
+  useEnrollInCourse,
+  useUnenrollFromCourse,
+} from "@/hooks/use-course-catalog";
+import { useCreateCheckoutSession } from "@/hooks/use-payments";
+import { useToggleWishlist } from "@/hooks/use-wishlist";
+import type { CatalogCourseDetail } from "@/lib/course-api";
 
 interface CourseInformationProps {
+  course: CatalogCourseDetail;
+  /** Undefined while the enrollment check is still loading. */
+  isEnrolled: boolean | undefined;
+  isOwnCourse: boolean;
   hideImage?: boolean;
 }
 
-function Radio({ checked }: { checked: boolean }) {
-  return (
-    <span
-      className={`w-5 h-5 rounded-full cursor-pointer border-2 flex items-center justify-center shrink-0 transition-colors ${
-        checked ? "border-purple-700 bg-purple-700" : "border-gray-500"
-      }`}
-    >
-      <span
-        className={`w-2 h-2 rounded-full ${checked ? "bg-white" : "bg-gray-200"}`}
-      />
-    </span>
-  );
+function formatDuration(minutes: number | null): string {
+  if (!minutes) return "Self-paced";
+  const hours = minutes / 60;
+  return hours >= 1
+    ? `${Math.round(hours * 10) / 10} hours`
+    : `${minutes} minutes`;
 }
 
+// No subscriptions, no cart, no membership tier — this platform sells one
+// course at one price via a hosted checkout, or lets a learner enroll free.
+// The mock version modeled a business (subscription plans, cart) that has no
+// backend behind it; see the instructor Billing tab removal for the same
+// reasoning applied the other direction.
 export default function CourseInformation({
+  course,
+  isEnrolled,
+  isOwnCourse,
   hideImage = false,
 }: CourseInformationProps) {
-  const [plan, setPlan] = React.useState<Plan>("one-time");
-  const [subPlan, setSubPlan] = React.useState("starter");
+  const enrollMutation = useEnrollInCourse();
+  const unenrollMutation = useUnenrollFromCourse();
+  const checkoutMutation = useCreateCheckoutSession();
+  const wishlistMutation = useToggleWishlist();
 
-  const isSubscription = plan === "subscription";
+  const price = Number(course.price);
+  const isFree = price <= 0;
+  const thumbnail = mediaUrl(course.thumbnail);
+  const busy =
+    enrollMutation.isPending ||
+    unenrollMutation.isPending ||
+    checkoutMutation.isPending;
+
+  const startCheckout = () => {
+    checkoutMutation.mutate(
+      { course_slug: course.slug },
+      {
+        onSuccess: (session) => {
+          window.location.href = session.gateway_url;
+        },
+        onError: (err) => {
+          notify.error(
+            err instanceof ApiError ? err.message : "Failed to start checkout.",
+          );
+        },
+      },
+    );
+  };
+
+  const handleEnroll = () => {
+    enrollMutation.mutate(course.slug, {
+      onSuccess: (res) => {
+        notify.success(res.message ?? "Enrolled successfully.");
+      },
+      onError: (err) => {
+        // Paid course with no prior order — the server refuses direct
+        // enrollment and expects checkout first, same pattern as the catalog card.
+        if (!isFree && err instanceof ApiError && err.status === 422) {
+          startCheckout();
+          return;
+        }
+        notify.error(err instanceof ApiError ? err.message : "Failed to enroll.");
+      },
+    });
+  };
+
+  const handleUnenroll = () => {
+    unenrollMutation.mutate(course.slug, {
+      onSuccess: (res) => {
+        notify.success(res.message ?? "Unenrolled successfully.");
+      },
+      onError: (err) => {
+        notify.error(
+          err instanceof ApiError ? err.message : "Failed to unenroll.",
+        );
+      },
+    });
+  };
+
+  const handleToggleWishlist = () => {
+    wishlistMutation.mutate(
+      { slug: course.slug, isWishlisted: course.is_wishlisted },
+      {
+        onError: (err) => {
+          notify.error(
+            err instanceof ApiError
+              ? err.message
+              : "Couldn't update your wishlist.",
+          );
+        },
+      },
+    );
+  };
 
   return (
-    <div className="sticky top-24 rounded-2xl w-full lg:w-90 xl:w-90 bg-white shadow-md overflow-hidden">
-      {/* Cover image */}
+    <div className="sticky top-24 rounded-2xl w-full lg:w-90 xl:w-90 bg-white border border-(--gray-200) shadow-lg overflow-hidden">
       {!hideImage && (
-        <div className="w-full h-75 relative rounded-t-2xl overflow-hidden">
-          <Image
-            src={image}
-            alt="Course Cover"
-            fill
-            sizes="(max-width: 1024px) 100vw, 360px"
-            className="object-cover"
-            loading="eager"
-            priority
-          />
+        <div className="w-full h-50 relative rounded-t-2xl overflow-hidden bg-(--gray-50)">
+          {thumbnail ? (
+            <Image
+              src={thumbnail}
+              alt={course.title}
+              fill
+              sizes="(max-width: 1024px) 100vw, 360px"
+              className="object-cover"
+              loading="eager"
+              priority
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-(--gray-300) text-[13px]">
+              No image
+            </div>
+          )}
         </div>
       )}
 
       <div className="p-5 pb-6">
+        {/* Price */}
+        <div className="flex items-baseline gap-2 mb-5">
+          <span className="text-[26px] font-bold --title-text">
+            {isFree ? "Free" : `BDT ${price.toFixed(2)}`}
+          </span>
+        </div>
+
         {/* Course info list */}
-        <h3 className="font-semibold lg:sg-h5 sg-p-big mb-6 mt-3 --title-text">
-          Course Information
-        </h3>
-        <ul className="space-y-2.5 lg:mt-6 mt-5 sg-p-default --text-paragraph mb-6">
-          {INFO_ITEMS.map(({ icon: Icon, label }) => (
-            <li key={label} className="flex items-center gap-2">
-              <Icon size={20} className="text-gray-500 shrink-0" />
-              {label}
-            </li>
-          ))}
+        <ul className="space-y-2.5 --text-paragraph sg-p-default mb-6">
+          <li className="flex items-center gap-2">
+            <Layers size={20} className="text-gray-500 shrink-0" />
+            {course.total_sections} section
+            {course.total_sections === 1 ? "" : "s"} ·{" "}
+            {course.total_content_items} item
+            {course.total_content_items === 1 ? "" : "s"}
+          </li>
+          <li className="flex items-center gap-2">
+            <Clock size={20} className="text-gray-500 shrink-0" />
+            {formatDuration(course.duration_minutes)}
+          </li>
+          <li className="flex items-center gap-2">
+            <BarChart3 size={20} className="text-gray-500 shrink-0" />
+            {course.level.charAt(0).toUpperCase() + course.level.slice(1)} level
+          </li>
         </ul>
-        <div className="border mb-6 mt-4"></div>
-        {/* Purchase options */}
-        <div className="space-y-4 mb-5">
-          {/* One-time option */}
-          <button
-            onClick={() => setPlan("one-time")}
-            className="w-full flex items-center gap-3 px-4 py-4 bg-gray-100 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-          >
-            <Radio checked={plan === "one-time"} />
-            <span className="flex-1 --text-title font-normal sg-p-default text-left">
-              One time for 1-person
-            </span>
-            <span className="text-sm font-bold text-gray-900">$42.99</span>
-          </button>
 
-          {/* Subscriptions toggle */}
-          <div className="rounded-lg border border-gray-200 overflow-hidden">
+        <div className="border mb-5"></div>
+
+        {/* Action */}
+        {isOwnCourse ? (
+          <p className="text-center sg-p-default --text-paragraph py-2">
+            This is your own course.
+          </p>
+        ) : isEnrolled === undefined ? (
+          <div className="h-12 rounded-lg bg-(--gray-100) animate-pulse" />
+        ) : isEnrolled ? (
+          <div className="space-y-3">
+            <p className="text-center sg-p-default font-medium text-(--success-500)">
+              You&apos;re enrolled in this course.
+            </p>
             <button
-              onClick={() => setPlan("subscription")}
-              className="bg-gray-100 w-full flex items-center gap-3 px-4 py-4 transition-colors"
+              onClick={handleUnenroll}
+              disabled={busy}
+              className="w-full inline-flex items-center justify-center gap-2 bg-gray-100 --text-title cursor-pointer font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors sg-p-default disabled:opacity-60"
             >
-              <Radio checked={isSubscription} />
-              <span className="flex-1 --text-title font-normal sg-p-default text-left">
-                Subscriptions
-              </span>
+              {unenrollMutation.isPending && (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              )}
+              Unenroll
             </button>
-
-            {/* Sub-options — visible only when subscription plan is selected */}
-            {isSubscription && (
-              <div className="border-t border-gray-200 bg-gray-100">
-                {SUBSCRIPTIONS.map((sub) => (
-                  <button
-                    key={sub.id}
-                    onClick={() => setSubPlan(sub.id)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors"
-                  >
-                    <Radio checked={subPlan === sub.id} />
-                    <span className="flex-1 --text-title font-normal sg-p-default text-left">
-                      {sub.label}
-                    </span>
-                    <span className="sg-p-default  font-semibold --title-text">
-                      {sub.price}
-                      <span className="sg-caption font-normal --text-paragraph">
-                        {sub.suffix}
-                      </span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
-        </div>
-
-        {/* Action buttons */}
-        <div className="space-y-3">
-          <Link
-            href="/add-to-cart"
-            className="w-full inline-flex items-center justify-center bg-(--primary-700) cursor-pointer text-white font-semibold py-3 rounded-lg transition-colors sg-p-default"
-          >
-            {isSubscription ? "Subscribe Now" : "Add to Cart"}
-          </Link>
-          <Link
-            href="/become-partner"
-            className="w-full inline-flex items-center justify-center bg-gray-100 --text-title cursor-pointer font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors sg-p-default"
-          >
-            Membership
-          </Link>
-        </div>
+        ) : (
+          <div className="space-y-3">
+            <button
+              onClick={handleEnroll}
+              disabled={busy}
+              className="w-full inline-flex items-center justify-center gap-2 bg-(--primary-700) cursor-pointer text-white font-semibold py-3 rounded-lg transition-colors sg-p-default disabled:opacity-60"
+            >
+              {busy && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isFree ? "Enroll for Free" : "Buy Now"}
+            </button>
+            <button
+              onClick={handleToggleWishlist}
+              disabled={wishlistMutation.isPending}
+              className="w-full inline-flex items-center justify-center gap-2 bg-gray-100 --text-title cursor-pointer font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors sg-p-default disabled:opacity-60"
+            >
+              <Heart
+                size={16}
+                className={
+                  course.is_wishlisted ? "fill-(--primary-600) text-(--primary-600)" : ""
+                }
+              />
+              {course.is_wishlisted ? "Saved to Wishlist" : "Add to Wishlist"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

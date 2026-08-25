@@ -1,45 +1,49 @@
-import logo from "@/assets/images/courses-details/logo.webp";
-import Image from "next/image";
-import { Users, Star, BarChart2, PlayCircle } from "lucide-react";
+import type { CourseBrief } from "@/lib/course-api";
 
-const STATS = [
-  { icon: Users, label: "885,935 Students" },
-  { icon: Star, label: "278,376 Reviews" },
-  { icon: BarChart2, label: "4.7 Ratings" },
-  { icon: PlayCircle, label: "38 Courses" },
-];
+interface CourseInstructorProps {
+  instructors: CourseBrief[];
+}
 
-export default function CourseInstructor() {
+function initialsOf(name: string): string {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+// `InstructorBriefSerializer` (backend) returns only id/full_name/email — no
+// photo, no per-instructor student/review/course counts. Showing those would
+// mean inventing numbers with nothing behind them.
+export default function CourseInstructor({
+  instructors,
+}: CourseInstructorProps) {
+  if (instructors.length === 0) return null;
+
   return (
     <div className="lg:mt-10 mt-6">
       <h2 className="sg-h5 font-semibold --title-text mb-4">
-        Course Instructor
+        {instructors.length > 1 ? "Course Instructors" : "Course Instructor"}
       </h2>
 
-      <div className="rounded-2xl  border-gray-200 p-6 flex items-center gap-5 shadow-sm">
-        <Image
-          src={logo}
-          alt="Daniel Walter Scott"
-          width={100}
-          height={100}
-          className="w-25 h-25 rounded-full object-cover shrink-0"
-        />
-        <div>
-          <h3 className="font-medium --text-title  sg-p-big mb-3">
-            Daniel Walter Scott
-          </h3>
-          <div className="grid grid-cols-1 gap-x-6 gap-y-1">
-            {STATS.map(({ icon: Icon, label }) => (
-              <div
-                key={label}
-                className="flex items-center gap-2 sg-p-small font-normal text-sm --text-paragraph"
-              >
-                <Icon size={16} className="text-gray-500 shrink-0" />
-                <span>{label}</span>
-              </div>
-            ))}
+      <div className="space-y-3">
+        {instructors.map((instructor) => (
+          <div
+            key={instructor.id}
+            className="rounded-2xl border border-gray-200 p-6 flex items-center gap-5 shadow-sm"
+          >
+            <div className="w-16 h-16 rounded-full bg-(--primary-50) text-(--primary-700) text-[18px] font-semibold flex items-center justify-center shrink-0">
+              {initialsOf(instructor.full_name)}
+            </div>
+            <div>
+              <h3 className="font-medium --text-title sg-p-big">
+                {instructor.full_name}
+              </h3>
+            </div>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );

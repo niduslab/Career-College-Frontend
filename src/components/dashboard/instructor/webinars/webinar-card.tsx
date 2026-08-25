@@ -24,6 +24,9 @@ import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
 interface WebinarCardProps {
   webinar: Webinar;
   onChanged: () => void;
+  /** First card in the list — Next.js flags its thumbnail as the LCP element
+   *  on this sparsely-populated page even though it's a small 48x48 icon. */
+  priority?: boolean;
 }
 
 const STATUS_STYLES: Record<Webinar["status"], string> = {
@@ -38,7 +41,7 @@ const STATUS_LABEL: Record<Webinar["status"], string> = {
   archived: "Archived",
 };
 
-export default function WebinarCard({ webinar, onChanged }: WebinarCardProps) {
+export default function WebinarCard({ webinar, onChanged, priority }: WebinarCardProps) {
   const [busy, setBusy] = useState(false);
 
   const run = async (fn: () => Promise<{ message?: string }>, successMsg: string) => {
@@ -65,6 +68,7 @@ export default function WebinarCard({ webinar, onChanged }: WebinarCardProps) {
               width={48}
               height={48}
               unoptimized
+              priority={priority}
               className="w-full h-full object-cover"
             />
           ) : (
