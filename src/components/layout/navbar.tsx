@@ -19,6 +19,7 @@ import { SearchableDropdown } from "@/components/dashboard/common/searchable-dro
 import logo from "@/assets/images/logo/career-college-logo.webp";
 
 const NAV_LINKS = [
+  { label: "Courses", href: "/course-details-filter" },
   { label: "Become an Instructor", href: "/become-instructor" },
 ];
 
