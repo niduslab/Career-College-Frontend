@@ -166,7 +166,14 @@ function SidebarContent({
 }) {
   const { data: categories = [] } = useCourseCategories();
   const [showAllCategories, setShowAllCategories] = useState(false);
-  const visibleCategories = showAllCategories
+  // If the active category (e.g. arrived via a navbar link) sits past the
+  // first 6, auto-expand so its checkmark isn't hidden behind "Show more".
+  const selectedCategoryIndex = filters.category
+    ? categories.findIndex((c) => c.slug === filters.category)
+    : -1;
+  const categoriesExpanded =
+    showAllCategories || selectedCategoryIndex >= 6;
+  const visibleCategories = categoriesExpanded
     ? categories
     : categories.slice(0, 6);
 
@@ -246,7 +253,7 @@ function SidebarContent({
             onClick={() => setShowAllCategories((v) => !v)}
             className="mt-1.5 text-[13px] font-semibold text-(--primary-700) cursor-pointer hover:underline"
           >
-            {showAllCategories ? "Show less" : "Show more"}
+            {categoriesExpanded ? "Show less" : "Show more"}
           </button>
         )}
       </FilterSection>
