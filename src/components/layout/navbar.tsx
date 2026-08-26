@@ -14,36 +14,20 @@ import { useEffect, useRef, useState } from "react";
 import { gsap } from "@/lib/gsap";
 import { useAuth } from "@/lib/use-auth";
 import { dashboardPathFor } from "@/lib/auth-api";
+import { useCourseCategories } from "@/hooks/use-course-catalog";
+import { SearchableDropdown } from "@/components/dashboard/common/searchable-dropdown";
 import logo from "@/assets/images/logo/career-college-logo.webp";
 
 const NAV_LINKS = [
-  { label: "Categories", href: "#" },
-  { label: "Courses", href: "#" },
   { label: "Become an Instructor", href: "/become-instructor" },
-];
-
-const CATEGORY_DROPDOWN = [
-  { label: "Artificial Intelligence", href: "#" },
-  { label: "UI/UX Design", href: "#" },
-  { label: "Marketing", href: "#" },
-  { label: "IT & Software", href: "#" },
-  { label: "Business", href: "#" },
-];
-
-const COURSES_DROPDOWN = [
-  { label: "Frontend Masterclass", href: "#" },
-  { label: "Data Analytics Bootcamp", href: "#" },
-  { label: "UI/UX Professional", href: "#" },
-  { label: "Digital Marketing Pro", href: "#" },
 ];
 
 export function Navbar() {
   const { authed, user, logout } = useAuth({ withUser: true });
+  const { data: categories = [] } = useCourseCategories();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileDropdown, setMobileDropdown] = useState<
-    "categories" | "courses" | null
-  >(null);
+  const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const searchBorderRefs = useRef<Array<HTMLDivElement | null>>([]);
   const mobilePanelRef = useRef<HTMLDivElement | null>(null);
@@ -61,7 +45,7 @@ export function Navbar() {
 
   const toggleMobileMenu = () => {
     setIsMobileOpen((prev) => !prev);
-    setMobileDropdown(null);
+    setMobileCategoriesOpen(false);
   };
 
   useEffect(() => {
@@ -137,7 +121,6 @@ export function Navbar() {
     const onResize = () => {
       if (window.innerWidth >= 1280) {
         setIsMobileOpen(false);
-        setMobileDropdown(null);
       }
     };
 
@@ -196,54 +179,30 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-6 xl:flex">
-          <div className="group relative">
-            <Link
-              href={NAV_LINKS[0].href}
-              className="inline-flex items-center gap-1 sg-p-default font-medium text-(--text-title) transition-colors hover:text-(--primary-700)"
-            >
-              {NAV_LINKS[0].label}
-              <ChevronDown size={16} strokeWidth={2.2} />
-            </Link>
-            <div className="invisible absolute  left-0 top-full z-30 mt-3 min-w-52 translate-y-1 rounded-2xl border border-(--gray-200) bg-(--text-white) p-2 opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
-              {CATEGORY_DROPDOWN.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="block rounded-xl px-3 py-2 text-sm text-(--text-title) transition-colors hover:bg-(--primary-50) hover:text-(--primary-700)"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </div>
+          <SearchableDropdown
+            value=""
+            triggerLabel="Categories"
+            triggerClassName="inline-flex items-center gap-1 sg-p-default font-medium text-(--text-title) transition-colors hover:text-(--primary-700) cursor-pointer"
+            onChange={() => {}}
+            searchable
+            searchPlaceholder="Search categories..."
+            minWidth="min-w-56"
+            options={categories.map((cat) => ({
+              value: cat.slug,
+              label: cat.name,
+              href: `/course-details-filter?category=${cat.slug}`,
+            }))}
+          />
 
-          <div className="group relative">
+          {NAV_LINKS.map((link) => (
             <Link
-              href={NAV_LINKS[1].href}
-              className="inline-flex items-center gap-1 sg-p-default  font-medium text-(--text-title) transition-colors hover:text-(--primary-700)"
+              key={link.label}
+              href={link.href}
+              className="inline-flex whitespace-nowrap sg-p-default font-medium text-(--text-title) transition-colors hover:text-(--primary-700)"
             >
-              {NAV_LINKS[1].label}
-              <ChevronDown size={16} strokeWidth={2.2} />
+              {link.label}
             </Link>
-            <div className="invisible absolute left-0 top-full z-30 mt-3 min-w-56 translate-y-1 rounded-2xl border border-(--gray-200) bg-(--text-white) p-2 opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
-              {COURSES_DROPDOWN.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="block rounded-xl px-3 py-2 text-sm text-(--text-title) transition-colors hover:bg-(--primary-50) hover:text-(--primary-700)"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          <Link
-            href={NAV_LINKS[2].href}
-            className="inline-flex whitespace-nowrap sg-p-default font-medium text-(--text-title) transition-colors hover:text-(--primary-700)"
-          >
-            {NAV_LINKS[2].label}
-          </Link>
+          ))}
         </nav>
 
         <div className="ml-auto hidden min-w-75 max-w-90 flex-1 items-center xl:flex xl:min-w-95 xl:max-w-95">
@@ -436,99 +395,54 @@ export function Navbar() {
               <button
                 type="button"
                 className="inline-flex cursor-pointer items-center justify-between text-[15px] font-medium text-(--text-title) transition-colors hover:text-(--primary-700)"
-                onClick={() =>
-                  setMobileDropdown((prev) =>
-                    prev === "categories" ? null : "categories",
-                  )
-                }
+                onClick={() => setMobileCategoriesOpen((v) => !v)}
               >
-                {NAV_LINKS[0].label}
+                Categories
                 <ChevronDown
                   size={16}
                   className={`transition-transform ${
-                    mobileDropdown === "categories" ? "rotate-180" : "rotate-0"
+                    mobileCategoriesOpen ? "rotate-180" : "rotate-0"
                   }`}
                 />
               </button>
               <div
                 className={`grid overflow-hidden transition-[grid-template-rows,opacity,margin] duration-300 ease-out ${
-                  mobileDropdown === "categories"
+                  mobileCategoriesOpen
                     ? "mt-1 grid-rows-[1fr] opacity-100"
                     : "mt-0 grid-rows-[0fr] opacity-0"
                 }`}
               >
                 <div className="min-h-0">
-                  <div className="rounded-xl border border-(--gray-200) p-2">
-                    {CATEGORY_DROPDOWN.map((item) => (
+                  <div className="max-h-64 overflow-y-auto rounded-xl border border-(--gray-200) p-2">
+                    {categories.map((cat) => (
                       <Link
-                        key={item.label}
-                        href={item.href}
+                        key={cat.slug}
+                        href={`/course-details-filter?category=${cat.slug}`}
                         className="block rounded-lg px-3 py-2 text-sm text-(--text-title) hover:bg-(--primary-50) hover:text-(--primary-700)"
                         onClick={() => {
                           setIsMobileOpen(false);
-                          setMobileDropdown(null);
+                          setMobileCategoriesOpen(false);
                         }}
                       >
-                        {item.label}
+                        {cat.name}
                       </Link>
                     ))}
                   </div>
                 </div>
               </div>
 
-              <button
-                type="button"
-                className="inline-flex cursor-pointer items-center justify-between text-[15px] font-medium text-(--text-title) transition-colors hover:text-(--primary-700)"
-                onClick={() =>
-                  setMobileDropdown((prev) =>
-                    prev === "courses" ? null : "courses",
-                  )
-                }
-              >
-                {NAV_LINKS[1].label}
-                <ChevronDown
-                  size={16}
-                  className={`transition-transform ${
-                    mobileDropdown === "courses" ? "rotate-180" : "rotate-0"
-                  }`}
-                />
-              </button>
-              <div
-                className={`grid overflow-hidden transition-[grid-template-rows,opacity,margin] duration-300 ease-out ${
-                  mobileDropdown === "courses"
-                    ? "mt-1 grid-rows-[1fr] opacity-100"
-                    : "mt-0 grid-rows-[0fr] opacity-0"
-                }`}
-              >
-                <div className="min-h-0">
-                  <div className="rounded-xl border border-(--gray-200) p-2">
-                    {COURSES_DROPDOWN.map((item) => (
-                      <Link
-                        key={item.label}
-                        href={item.href}
-                        className="block rounded-lg px-3 py-2 text-sm text-(--text-title) hover:bg-(--primary-50) hover:text-(--primary-700)"
-                        onClick={() => {
-                          setIsMobileOpen(false);
-                          setMobileDropdown(null);
-                        }}
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <Link
-                href={NAV_LINKS[2].href}
-                className="text-[15px] font-medium text-(--text-title) transition-colors hover:text-(--primary-700)"
-                onClick={() => {
-                  setIsMobileOpen(false);
-                  setMobileDropdown(null);
-                }}
-              >
-                {NAV_LINKS[2].label}
-              </Link>
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className="text-[15px] font-medium text-(--text-title) transition-colors hover:text-(--primary-700)"
+                  onClick={() => {
+                    setIsMobileOpen(false);
+                  }}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </nav>
 
             <div

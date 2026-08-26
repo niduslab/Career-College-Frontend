@@ -1,11 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ChevronDown, Search } from "lucide-react";
 
 interface DropdownOption<T> {
   value: T;
   label: string;
+  /** When set, the row renders as a real <Link> (navigation, works with
+   *  middle-click/open-in-new-tab) instead of a selection button. Use for
+   *  nav-style dropdowns where each item is its own destination rather than
+   *  a value to select. */
+  href?: string;
 }
 
 interface SearchableDropdownProps<T extends string | number> {
@@ -21,6 +27,13 @@ interface SearchableDropdownProps<T extends string | number> {
   /** Which side the menu opens from. Right-align on filter bars near the
    *  right edge of a card so the menu doesn't overflow off-screen. */
   align?: "left" | "right";
+  /** Fixed trigger text (e.g. "Categories") instead of the selected option's
+   *  label — for nav-style dropdowns with no real "current selection". */
+  triggerLabel?: string;
+  /** Overrides the trigger button's classes entirely — for embedding this
+   *  dropdown somewhere with different chrome (e.g. a navbar link) instead
+   *  of the default bordered-select look. */
+  triggerClassName?: string;
 }
 
 export function SearchableDropdown<T extends string | number>({
@@ -32,10 +45,13 @@ export function SearchableDropdown<T extends string | number>({
   searchable = false,
   searchPlaceholder = "Search...",
   align = "left",
+  triggerLabel,
+  triggerClassName,
 }: SearchableDropdownProps<T>) {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState("");
-  const current = options.find((o) => o.value === value)?.label ?? "Select";
+  const current =
+    triggerLabel ?? options.find((o) => o.value === value)?.label ?? "Select";
 
   const close = () => {
     setOpen(false);
@@ -54,7 +70,10 @@ export function SearchableDropdown<T extends string | number>({
       <button
         type="button"
         onClick={() => (open ? close() : setOpen(true))}
-        className="flex items-center gap-2 w-full h-10 px-3 border border-(--gray-200) rounded-lg bg-white text-[14px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors"
+        className={
+          triggerClassName ??
+          "flex items-center gap-2 w-full h-10 px-3 border border-(--gray-200) rounded-lg bg-white text-[14px] text-(--text-title) cursor-pointer hover:bg-(--gray-50) transition-colors"
+        }
       >
         {Icon && <Icon className="w-3.5 h-3.5 text-(--gray-500) shrink-0" />}
         <span className="flex-1 text-left truncate">{current}</span>
@@ -89,23 +108,38 @@ export function SearchableDropdown<T extends string | number>({
                   No matches.
                 </p>
               )}
-              {visible.map((o) => (
-                <button
-                  key={String(o.value)}
-                  type="button"
-                  onClick={() => {
-                    onChange(o.value);
-                    close();
-                  }}
-                  className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors truncate ${
-                    o.value === value
-                      ? "bg-(--primary-50) text-(--primary-600) font-semibold"
-                      : "text-(--gray-600) hover:bg-(--gray-50)"
-                  }`}
-                >
-                  {o.label}
-                </button>
-              ))}
+              {visible.map((o) =>
+                o.href ? (
+                  <Link
+                    key={String(o.value)}
+                    href={o.href}
+                    onClick={close}
+                    className={`block w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors truncate ${
+                      o.value === value
+                        ? "bg-(--primary-50) text-(--primary-600) font-semibold"
+                        : "text-(--gray-600) hover:bg-(--gray-50)"
+                    }`}
+                  >
+                    {o.label}
+                  </Link>
+                ) : (
+                  <button
+                    key={String(o.value)}
+                    type="button"
+                    onClick={() => {
+                      onChange(o.value);
+                      close();
+                    }}
+                    className={`w-full text-left px-4 py-2 text-[13px] cursor-pointer transition-colors truncate ${
+                      o.value === value
+                        ? "bg-(--primary-50) text-(--primary-600) font-semibold"
+                        : "text-(--gray-600) hover:bg-(--gray-50)"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                ),
+              )}
             </div>
           </div>
         </>

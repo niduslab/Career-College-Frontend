@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, Video, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { X, Video, Loader2, Upload } from "lucide-react";
 import { createWebinar } from "@/lib/webinar-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
@@ -56,7 +57,18 @@ export default function AddWebinarDrawer({
   const [errors, setErrors] = useState<
     Partial<Record<keyof FormState, string>>
   >({});
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(
+    null,
+  );
   const firstInputRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const pickFile = (file: File | undefined) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    setThumbnailFile(file);
+    setThumbnailPreview(URL.createObjectURL(file));
+  };
 
   useEffect(() => {
     let t: ReturnType<typeof setTimeout>;
@@ -68,6 +80,8 @@ export default function AddWebinarDrawer({
       t = setTimeout(() => {
         setForm(INITIAL);
         setErrors({});
+        setThumbnailFile(null);
+        setThumbnailPreview(null);
       }, 300);
     }
     return () => {
@@ -118,6 +132,7 @@ export default function AddWebinarDrawer({
           | "jitsi"
           | "other",
         meeting_url: form.meeting_url || undefined,
+        ...(thumbnailFile ? { thumbnail: thumbnailFile } : {}),
       });
       notify.success("Webinar created.");
       onSaved();
@@ -206,6 +221,63 @@ export default function AddWebinarDrawer({
             />
             {errors.description && (
               <p className="text-[12px] text-red-500">{errors.description}</p>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[14px] font-medium text-(--text-title)">
+              Thumbnail{" "}
+              <span className="text-[12px] text-(--gray-400) font-normal">
+                (optional)
+              </span>
+            </label>
+            <div
+              onClick={() => fileRef.current?.click()}
+              onDrop={(e) => {
+                e.preventDefault();
+                pickFile(e.dataTransfer.files[0]);
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              className="w-full aspect-video rounded-lg border-2 border-dashed border-(--gray-200) bg-(--gray-50) flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-(--primary-300) hover:bg-(--primary-50) transition-colors overflow-hidden"
+            >
+              {thumbnailPreview ? (
+                <Image
+                  src={thumbnailPreview}
+                  alt="Thumbnail preview"
+                  width={400}
+                  height={225}
+                  unoptimized
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <>
+                  <Upload className="w-6 h-6 text-(--gray-400)" />
+                  <p className="text-[12px] text-(--gray-400) text-center leading-snug">
+                    Drop Image
+                    <br />
+                    (1920x1080)
+                  </p>
+                </>
+              )}
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => pickFile(e.target.files?.[0])}
+            />
+            {thumbnailPreview && (
+              <button
+                type="button"
+                onClick={() => {
+                  setThumbnailFile(null);
+                  setThumbnailPreview(null);
+                }}
+                className="text-[12px] text-(--gray-400) hover:text-red-500 transition-colors cursor-pointer"
+              >
+                Remove image
+              </button>
             )}
           </div>
 
