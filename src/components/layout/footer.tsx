@@ -1,23 +1,20 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Mail, MapPin, Phone } from "lucide-react";
+import { useCourseCategories } from "@/hooks/use-course-catalog";
 import logo from "@/assets/images/logo/career-college-logo.webp";
 
 const COMPANY_LINKS = [
   { label: "About Us", href: "/about-us" },
   { label: "Become an Instructor", href: "/become-instructor" },
-  { label: "Courses", href: "/courses" },
+  { label: "Courses", href: "/course-details-filter" },
   { label: "Blog", href: "/all-blogs" },
   { label: "Contact Us", href: "/contact" },
 ];
 
-const CATEGORY_LINKS = [
-  "Artificial Intelligence",
-  "UI/UX Design",
-  "Marketing",
-  "IT & Software",
-  "Business",
-];
+const FOOTER_CATEGORY_COUNT = 5;
 
 const RESOURCE_LINKS = [
   { label: "Support", href: "/contact" },
@@ -26,6 +23,9 @@ const RESOURCE_LINKS = [
 ];
 
 export function Footer() {
+  const { data: categories = [] } = useCourseCategories();
+  const footerCategories = categories.slice(0, FOOTER_CATEGORY_COUNT);
+
   return (
     <footer className="w-full bg-(--gray-900) text-white">
       <div className="mx-auto w-full max-w-310 px-4 pb-6 pt-12 md:px-6 md:pb-8 md:pt-14 lg:px-8 lg:pb-10 lg:pt-16">
@@ -37,7 +37,7 @@ export function Footer() {
                 alt=""
                 className="h-10 w-10 shrink-0 object-contain"
               />
-              Career Collegeer
+              Career College
             </h2>
             <p className="mt-4 max-w-70 sg-p-small text-white font-normal">
               Nidus Career College empowers you with expertled courses,
@@ -100,16 +100,26 @@ export function Footer() {
                   Categories
                 </h3>
                 <ul className="mt-3 lg:mt-6 space-y-4">
-                  {CATEGORY_LINKS.map((item, index) => (
-                    <li key={`${item}-${index}`}>
+                  {footerCategories.map((cat) => (
+                    <li key={cat.slug}>
                       <Link
-                        href="#"
+                        href={`/course-details-filter?category=${cat.slug}`}
                         className="sg-p-small lg:sg-p-default text-white transition-colors hover:text-white/90"
                       >
-                        {item}
+                        {cat.name}
                       </Link>
                     </li>
                   ))}
+                  {categories.length > FOOTER_CATEGORY_COUNT && (
+                    <li>
+                      <Link
+                        href="/course-details-filter"
+                        className="sg-p-small lg:sg-p-default font-medium text-(--primary-300) transition-colors hover:text-(--primary-200)"
+                      >
+                        See more
+                      </Link>
+                    </li>
+                  )}
                 </ul>
               </div>
 

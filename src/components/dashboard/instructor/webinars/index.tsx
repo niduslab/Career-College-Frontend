@@ -106,8 +106,13 @@ export default function MyWebinarsPageContent() {
             {group.label}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {group.items.map((w) => (
-              <WebinarCard key={w.id} webinar={w} onChanged={refresh} />
+            {group.items.map((w, i) => (
+              <WebinarCard
+                key={w.id}
+                webinar={w}
+                onChanged={refresh}
+                priority={group === groups[0] && i === 0}
+              />
             ))}
           </div>
         </div>

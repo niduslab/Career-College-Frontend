@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import PageHeader from "@/components/dashboard/common/page-header";
 import CreateCourseDropdown from "@/components/dashboard/instructor/create-course-dropdown";
+import VerificationBanner from "@/components/dashboard/instructor/verification-banner";
 import { useInstructorAnalyticsSummary } from "@/hooks/use-instructor-analytics";
 
 // Merged instructor Dashboard + Analytics page — see backend
@@ -52,6 +53,8 @@ export default function InstructorDashboardPage() {
         subtitle="Your courses, students, and revenue at a glance."
         action={<CreateCourseDropdown />}
       />
+
+      <VerificationBanner />
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20 text-(--gray-500)">

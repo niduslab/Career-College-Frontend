@@ -75,6 +75,7 @@ export interface InstructorProfileUpdate {
   state?: string;
   country?: string;
   specialization?: string[];
+  /** Backend field is non-nullable (`default=0`) — send 0 to clear it. */
   years_of_experience?: number;
   current_title?: string;
   current_organization?: string;

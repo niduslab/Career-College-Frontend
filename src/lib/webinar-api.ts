@@ -70,12 +70,36 @@ export interface WebinarCreateInput {
   price?: string;
   meeting_provider?: MeetingProvider;
   meeting_url?: string;
+  thumbnail?: File | null;
   /** Full replace: omit to leave untouched, [] to clear. Values are experts' User PKs. */
   institutional_speaker_ids?: number[];
   guest_speakers?: GuestSpeaker[];
 }
 
 export type WebinarUpdateInput = Partial<WebinarCreateInput>;
+
+/** Uses multipart/form-data only when a thumbnail file is present — same
+ *  pattern as buildCourseFormData for course thumbnails. guest_speakers is
+ *  JSON-encoded since FormData can't carry a nested array natively. */
+export function buildWebinarFormData(
+  data: WebinarCreateInput | WebinarUpdateInput,
+): FormData {
+  const form = new FormData();
+  Object.entries(data).forEach(([key, value]) => {
+    if (value === undefined) return;
+    if (key === "thumbnail") {
+      if (value instanceof File) form.append("thumbnail", value);
+      return;
+    }
+    if (key === "guest_speakers" || key === "institutional_speaker_ids") {
+      form.append(key, JSON.stringify(value));
+      return;
+    }
+    if (value === null) return;
+    form.append(key, String(value));
+  });
+  return form;
+}
 
 /** List the caller's institution's webinars (or, for a host, webinars they're assigned to). */
 export async function listWebinars(
@@ -91,7 +115,9 @@ export async function listWebinars(
 export async function createWebinar(
   input: WebinarCreateInput,
 ): Promise<WithMessage<Webinar>> {
-  const res = await apiPost<Webinar>("/webinars/create/", input);
+  const body =
+    input.thumbnail instanceof File ? buildWebinarFormData(input) : input;
+  const res = await apiPost<Webinar>("/webinars/create/", body);
   return withMessage(res);
 }
 
@@ -105,7 +131,9 @@ export async function updateWebinar(
   webinarPk: number,
   input: WebinarUpdateInput,
 ): Promise<WithMessage<Webinar>> {
-  const res = await apiPatch<Webinar>(`/webinars/${webinarPk}/`, input);
+  const body =
+    input.thumbnail instanceof File ? buildWebinarFormData(input) : input;
+  const res = await apiPatch<Webinar>(`/webinars/${webinarPk}/`, body);
   return withMessage(res);
 }
 

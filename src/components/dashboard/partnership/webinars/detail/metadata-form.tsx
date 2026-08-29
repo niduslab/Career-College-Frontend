@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useRef, useState } from "react";
+import Image from "next/image";
+import { Loader2, Upload } from "lucide-react";
 import { updateWebinar, type Webinar } from "@/lib/webinar-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 import DateTimeField, { isoToLocalInput } from "@/components/common/datetime-field";
 import { SelectDropdown } from "@/components/common/select-dropdown";
+import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
 
 const PROVIDER_OPTIONS = [
   { value: "zoom", label: "Zoom" },
@@ -33,10 +35,21 @@ export default function MetadataForm({ webinar, editable, onChanged }: MetadataF
     meeting_provider: webinar.meeting_provider,
     meeting_url: webinar.meeting_url ?? "",
   });
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(
+    webinar.thumbnail,
+  );
   const [saving, setSaving] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
+
+  const pickFile = (file: File | undefined) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    setThumbnailFile(file);
+    setThumbnailPreview(URL.createObjectURL(file));
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -51,6 +64,7 @@ export default function MetadataForm({ webinar, editable, onChanged }: MetadataF
         price: form.price,
         meeting_provider: form.meeting_provider,
         meeting_url: form.meeting_url,
+        ...(thumbnailFile ? { thumbnail: thumbnailFile } : {}),
       });
       notify.success("Webinar updated.");
       onChanged();
@@ -70,6 +84,66 @@ export default function MetadataForm({ webinar, editable, onChanged }: MetadataF
           This webinar is published — editing is locked. Archive it to make changes.
         </p>
       )}
+
+      <div className="space-y-1.5">
+        <label className="text-[13px] font-medium text-(--text-title)">
+          Thumbnail
+        </label>
+        <div
+          onClick={() => editable && fileRef.current?.click()}
+          onDrop={(e) => {
+            if (!editable) return;
+            e.preventDefault();
+            pickFile(e.dataTransfer.files[0]);
+          }}
+          onDragOver={(e) => editable && e.preventDefault()}
+          className={`w-full max-h-56 rounded-lg border-2 border-dashed border-(--gray-200) bg-(--gray-50) flex flex-col items-center justify-center gap-2 overflow-hidden transition-colors ${
+            editable
+              ? "cursor-pointer hover:border-(--primary-300) hover:bg-(--primary-50)"
+              : "opacity-70"
+          }`}
+        >
+          {thumbnailPreview ? (
+            <Image
+              src={mediaUrl(thumbnailPreview) as string}
+              alt="Webinar thumbnail"
+              width={400}
+              height={225}
+              unoptimized
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <>
+              <Upload className="w-6 h-6 text-(--gray-400)" />
+              <p className="text-[12px] text-(--gray-400) text-center leading-snug">
+                Drop Image
+                <br />
+                (1920x1080)
+              </p>
+            </>
+          )}
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          disabled={!editable}
+          onChange={(e) => pickFile(e.target.files?.[0])}
+        />
+        {thumbnailPreview && editable && (
+          <button
+            type="button"
+            onClick={() => {
+              setThumbnailFile(null);
+              setThumbnailPreview(null);
+            }}
+            className="text-[12px] text-(--gray-400) hover:text-red-500 transition-colors cursor-pointer"
+          >
+            Remove image
+          </button>
+        )}
+      </div>
 
       <div className="space-y-1.5">
         <label className="text-[13px] font-medium text-(--text-title)">Title</label>

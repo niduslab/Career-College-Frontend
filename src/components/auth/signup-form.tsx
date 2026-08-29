@@ -405,14 +405,14 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
             <span className="text-(--gray-600)">
               I agree with the{" "}
               <Link
-                href="/terms"
+                href="/terms-conditions"
                 className="text-(--primary-700) hover:underline"
               >
                 Terms of Service
               </Link>{" "}
               and{" "}
               <Link
-                href="/privacy"
+                href="/privacy-policy"
                 className="text-(--primary-700) hover:underline"
               >
                 Privacy Policy

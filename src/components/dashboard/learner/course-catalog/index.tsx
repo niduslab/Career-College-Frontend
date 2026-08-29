@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   Clock,
   TrendingUp,
@@ -190,9 +191,12 @@ function CourseCard({
       {/* Body */}
       <div className="flex flex-col flex-1 p-4">
         {/* Title */}
-        <h3 className="text-[14px] font-semibold text-(--text-title) leading-snug mb-3 line-clamp-2 flex-1">
+        <Link
+          href={`/courses/${course.slug}`}
+          className="text-[14px] font-semibold text-(--text-title) leading-snug mb-3 line-clamp-2 flex-1 hover:text-(--primary-600) transition-colors"
+        >
           {course.title}
-        </h3>
+        </Link>
 
         {/* Instructor */}
         <div className="flex items-center gap-2 mb-3">

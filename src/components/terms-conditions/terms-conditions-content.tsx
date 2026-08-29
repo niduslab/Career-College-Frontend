@@ -198,7 +198,7 @@ export function TermsConditionsContent() {
             Career College platform. These Terms govern your access to and use
             of our website, courses, and related services operated by{" "}
             <span className="font-medium text-(--primary-700)">
-              Career College / NidusLab
+              Career College
             </span>
             . By registering an account or enrolling in any course, you
             acknowledge that you have read, understood, and agreed to be bound
