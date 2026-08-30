@@ -7,9 +7,11 @@ import {
   getMyPartnerProfile,
   updatePartnerProfile,
   updatePartnerImages,
+  updatePartnerSignature,
   INSTITUTION_TYPE_OPTIONS,
   type PartnerProfile,
 } from "@/lib/profile-api";
+import { SignatureUpload } from "@/components/common/signature-upload";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 import { notifyProfileUpdated } from "@/lib/profile-events";
@@ -34,10 +36,10 @@ const INSTITUTION_TYPE_LABEL = (v: string) =>
 export function ProfileTab() {
   const [loading, setLoading] = useState(true);
   const [savingSection, setSavingSection] = useState<
-    "institution" | "location" | "contact" | null
+    "institution" | "location" | "contact" | "signatory" | null
   >(null);
   const [savedSection, setSavedSection] = useState<
-    "institution" | "location" | "contact" | null
+    "institution" | "location" | "contact" | "signatory" | null
   >(null);
   const [uploading, setUploading] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -46,6 +48,7 @@ export function ProfileTab() {
 
   const [logo, setLogo] = useState<string | null>(null);
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [signature, setSignature] = useState<string | null>(null);
   const [institutionName, setInstitutionName] = useState("");
   const [institutionType, setInstitutionType] = useState("");
   const [form, setForm] = useState({
@@ -60,6 +63,8 @@ export function ProfileTab() {
     contact_phone: "",
     website_url: "",
     linkedin_url: "",
+    authorized_signatory_name: "",
+    authorized_signatory_designation: "",
   });
   const [errors, setErrors] = useState<
     Partial<Record<keyof typeof form, string>>
@@ -98,6 +103,7 @@ export function ProfileTab() {
   const hydrate = (p: PartnerProfile) => {
     setLogo(p.logo);
     setCoverImage(p.cover_image);
+    setSignature(p.authorized_signature ?? null);
     setInstitutionName(p.institution_name ?? "");
     setInstitutionType(p.institution_type ?? "");
     setForm({
@@ -112,6 +118,9 @@ export function ProfileTab() {
       contact_phone: p.contact_phone ?? "",
       website_url: p.website_url ?? "",
       linkedin_url: p.linkedin_url ?? "",
+      authorized_signatory_name: p.authorized_signatory_name ?? "",
+      authorized_signatory_designation:
+        p.authorized_signatory_designation ?? "",
     });
     setErrors({});
   };
@@ -143,7 +152,9 @@ export function ProfileTab() {
       setErrors((prev) => ({ ...prev, [k]: "" }));
     };
 
-  const handleSave = async (section: "institution" | "location" | "contact") => {
+  const handleSave = async (
+    section: "institution" | "location" | "contact" | "signatory",
+  ) => {
     const found = validate(form);
     if (Object.keys(found).length > 0) {
       setErrors(found);
@@ -164,6 +175,8 @@ export function ProfileTab() {
         contact_phone: form.contact_phone,
         website_url: form.website_url,
         linkedin_url: form.linkedin_url,
+        authorized_signatory_name: form.authorized_signatory_name,
+        authorized_signatory_designation: form.authorized_signatory_designation,
       });
       hydrate(p);
       notify.success("Profile updated.");
@@ -383,6 +396,46 @@ export function ProfileTab() {
             onClick={() => handleSave("institution")}
             saving={savingSection === "institution"}
             saved={savedSection === "institution"}
+          />
+        </div>
+      </SectionCard>
+
+      {/* Authorized signatory */}
+      <SectionCard
+        title="Authorized Signatory"
+        description="Printed on certificates for your institution's courses. Leave blank to use the platform default."
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Signatory name">
+            <Input
+              value={form.authorized_signatory_name}
+              onChange={set("authorized_signatory_name")}
+              placeholder="e.g. John Doe"
+            />
+          </Field>
+          <Field label="Designation">
+            <Input
+              value={form.authorized_signatory_designation}
+              onChange={set("authorized_signatory_designation")}
+              placeholder="e.g. Academic Director"
+            />
+          </Field>
+        </div>
+        <div className="pt-4">
+          <SignatureUpload
+            value={signature}
+            label="Authorized signature"
+            onUpload={async (file) => {
+              const p = await updatePartnerSignature(file);
+              hydrate(p);
+            }}
+          />
+        </div>
+        <div className="flex justify-start pt-2">
+          <AsyncSaveButton
+            onClick={() => handleSave("signatory")}
+            saving={savingSection === "signatory"}
+            saved={savedSection === "signatory"}
           />
         </div>
       </SectionCard>

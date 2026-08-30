@@ -7,9 +7,11 @@ import {
   getMyInstructorProfile,
   updateInstructorProfile,
   updateInstructorPhoto,
+  updateInstructorSignature,
   type MyInstructorProfileResponse,
   type InstructorProfile,
 } from "@/lib/profile-api";
+import { SignatureUpload } from "@/components/common/signature-upload";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 import { notifyProfileUpdated } from "@/lib/profile-events";
@@ -38,6 +40,7 @@ export function ProfileTab() {
     null,
   );
   const [photo, setPhoto] = useState<string | null>(null);
+  const [signature, setSignature] = useState<string | null>(null);
   const [form, setForm] = useState({
     headline: "",
     bio: "",
@@ -85,6 +88,7 @@ export function ProfileTab() {
 
   const hydrateProfile = (p: InstructorProfile) => {
     setPhoto(p.profile_photo);
+    setSignature(p.signature ?? null);
     setForm({
       headline: p.headline ?? "",
       bio: p.bio ?? "",
@@ -273,6 +277,20 @@ export function ProfileTab() {
             </button>
           </div>
         </div>
+      </SectionCard>
+
+      {/* Certificate signature */}
+      <SectionCard
+        title="Certificate Signature"
+        description="Printed on the certificates of learners who complete your courses, above your name and title."
+      >
+        <SignatureUpload
+          value={signature}
+          onUpload={async (file) => {
+            const p = await updateInstructorSignature(file);
+            hydrateProfile(p);
+          }}
+        />
       </SectionCard>
 
       {/* Professional info */}

@@ -7,6 +7,7 @@ import {
   Download,
   Link2,
   Award,
+  ShieldX,
 } from "lucide-react";
 import gsap from "gsap";
 import { Pagination } from "@/components/common/pagination";
@@ -15,8 +16,13 @@ import {
   EmptyState,
   ErrorState,
 } from "@/components/common/query-states";
+import Link from "next/link";
 import { useMyCertificates } from "@/hooks/use-certificates";
-import { certificateUrl, type LearnerCertificate } from "@/lib/certificates-api";
+import {
+  certificateUrl,
+  certificateVerifyPath,
+  type LearnerCertificate,
+} from "@/lib/certificates-api";
 
 const PAGE_SIZE = 6;
 
@@ -27,15 +33,17 @@ function formatIssued(iso: string): string {
   });
 }
 
-/** Short, human-readable form of the certificate UUID. The full value is
- *  still what the verify URL carries. */
+/** Fallback for pre-migration rows that have no credential ID yet. */
 function shortCredentialId(uid: string): string {
   return uid.split("-")[0].toUpperCase();
 }
 
 export function CertificateCard({ cert }: { cert: LearnerCertificate }) {
-  const verifyHref = certificateUrl(cert.verify_url);
+  // The public verify page lives on THIS app, not the backend API route — it is
+  // what the PDF prints and the QR encodes.
+  const verifyHref = certificateVerifyPath(cert);
   const downloadHref = certificateUrl(cert.download_url);
+  const isRevoked = cert.status === "revoked";
 
   return (
     <div className="bg-white rounded-2xl border border-(--gray-200) overflow-hidden hover:shadow-md transition-shadow duration-200">
@@ -47,15 +55,20 @@ export function CertificateCard({ cert }: { cert: LearnerCertificate }) {
               Career College
             </span>
           </div>
-          <a
-            href={verifyHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-[12px] font-semibold text-(--primary-600) bg-(--primary-50) px-2.5 py-1 rounded-full hover:bg-(--primary-100) transition-colors"
-          >
-            <BadgeCheck className="w-3 h-4" />
-            Verify
-          </a>
+          {isRevoked ? (
+            <span className="flex items-center gap-1 text-[12px] font-semibold text-red-600 bg-red-50 px-2.5 py-1 rounded-full">
+              <ShieldX className="w-3 h-4" />
+              Revoked
+            </span>
+          ) : (
+            <Link
+              href={verifyHref}
+              className="flex items-center gap-1 text-[12px] font-semibold text-(--primary-600) bg-(--primary-50) px-2.5 py-1 rounded-full hover:bg-(--primary-100) transition-colors"
+            >
+              <BadgeCheck className="w-3 h-4" />
+              Verify
+            </Link>
+          )}
         </div>
 
         <p className="text-[10px] font-semibold uppercase tracking-widest mb-1 text-(--gray-400)">
@@ -85,9 +98,9 @@ export function CertificateCard({ cert }: { cert: LearnerCertificate }) {
           <p className="text-[12px] text-(--gray-500)">Credential ID</p>
           <p
             className="text-[12px] md:text-[14px] lg:text-[14px] font-medium text-(--text-title) font-mono"
-            title={cert.certificate_uid}
+            title={cert.certificate_id ?? cert.certificate_uid}
           >
-            {shortCredentialId(cert.certificate_uid)}
+            {cert.certificate_id ?? shortCredentialId(cert.certificate_uid)}
           </p>
         </div>
       </div>
@@ -102,15 +115,13 @@ export function CertificateCard({ cert }: { cert: LearnerCertificate }) {
           <Download className="w-4 h-4" />
           PDF
         </a>
-        <a
+        <Link
           href={verifyHref}
-          target="_blank"
-          rel="noopener noreferrer"
           className="flex-1 flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg border border-(--gray-200) text-(--gray-500) hover:bg-(--gray-50) text-[12px] md:text-[14px] lg:text-[14px] font-medium transition-colors cursor-pointer"
         >
           <Link2 className="w-4 h-4" />
           Public link
-        </a>
+        </Link>
       </div>
     </div>
   );

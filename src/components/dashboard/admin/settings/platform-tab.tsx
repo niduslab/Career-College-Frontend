@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Mail, Globe } from "lucide-react";
 import { SectionCard, Field, Input, Toggle, SaveButton } from "../../settings-shared/ui";
+import { CertificateSignatorySection } from "./certificate-signatory-section";
 
 export function PlatformTab() {
   const [general, setGeneral] = useState({
@@ -30,6 +31,8 @@ export function PlatformTab() {
 
   return (
     <div className="space-y-4">
+      <CertificateSignatorySection />
+
       {/* General */}
       <SectionCard title="General" description="Basic platform-wide configuration.">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

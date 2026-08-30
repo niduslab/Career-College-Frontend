@@ -149,6 +149,7 @@ export interface SetupForm {
   description: string;
   price: string;
   durationMinutes: string;
+  learningHours: string;
   learningObjectives: string;
   prerequisites: string;
   audiences: string;
@@ -417,6 +418,22 @@ export default function SetupTab({
                 placeholder="e.g. 240"
                 className="w-full h-12 px-3 text-[14px] mt-1 border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[13px] font-medium text-(--text-title)">
+                Learning hours
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={form.learningHours}
+                onChange={(e) => set("learningHours", e.target.value)}
+                placeholder="e.g. 120"
+                className="w-full h-12 px-3 text-[14px] mt-1 border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <p className="text-[12px] text-(--gray-400)">
+                Total effort including practice — printed on the certificate.
+              </p>
             </div>
           </div>
 
