@@ -33,11 +33,16 @@ function formatDate(iso: string | null): string {
 }
 
 /** One signature column. The image is the copy frozen at issue time, so it
- *  never changes when the signatory later updates their signature. */
+ *  never changes when the signatory later updates their signature.
+ *
+ *  `role` is what distinguishes the two columns — without it they are
+ *  identically shaped and a reader cannot tell which is the instructor. */
 function SignatoryBlock({
+  role,
   signatory,
   issuer,
 }: {
+  role: string;
   signatory: CertificateSignatory;
   issuer: string;
 }) {
@@ -58,6 +63,9 @@ function SignatoryBlock({
         ) : null}
       </div>
       <div className="border-t border-dotted border-(--gray-300) pt-2">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-(--primary-600) mb-0.5">
+          {role}
+        </p>
         <p className="text-[14px] font-semibold text-(--text-title)">
           {signatory.name}
         </p>
@@ -178,8 +186,13 @@ export function VerifyCertificate({ cert }: { cert: PublicCertificate }) {
         </div>
 
         <div className="flex flex-col md:flex-row gap-8 px-5 sm:px-8 py-6">
-          <SignatoryBlock signatory={cert.instructor} issuer={issuer} />
           <SignatoryBlock
+            role="Course Instructor"
+            signatory={cert.instructor}
+            issuer={issuer}
+          />
+          <SignatoryBlock
+            role="Authorized Signatory"
             signatory={cert.authorized_signatory}
             issuer={issuer}
           />
