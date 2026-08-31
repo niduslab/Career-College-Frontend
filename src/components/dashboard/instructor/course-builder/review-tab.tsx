@@ -29,6 +29,8 @@ interface ReviewModule {
   title: string;
   lessons: number;
   videos: number;
+  /** Lessons created but never given a video or article — these block submission. */
+  awaitingTitles: string[];
 }
 
 const STATUS_LABEL: Record<CourseStatus, string> = {
@@ -87,14 +89,24 @@ export default function ReviewTab({
         const withContents = await Promise.all(
           sections.map(async (s) => {
             const contents = await listSectionContents(s.id);
+            const awaiting = contents.filter(
+              (c) =>
+                c.item_type === "lecture" &&
+                (c.content as LectureContent).is_awaiting_content,
+            );
             return {
               title: s.title,
               lessons: contents.length,
+              // Only lectures that actually have a video count as videos.
               videos: contents.filter(
                 (c) =>
                   c.item_type === "lecture" &&
-                  (c.content as LectureContent).lecture_type === "video",
+                  (c.content as LectureContent).lecture_type === "video" &&
+                  !(c.content as LectureContent).is_awaiting_content,
               ).length,
+              awaitingTitles: awaiting.map(
+                (c) => (c.content as LectureContent).title,
+              ),
             };
           }),
         );
@@ -117,6 +129,7 @@ export default function ReviewTab({
 
   const totalLessons = modules.reduce((s, m) => s + m.lessons, 0);
   const totalVideos = modules.reduce((s, m) => s + m.videos, 0);
+  const awaitingTitles = modules.flatMap((m) => m.awaitingTitles);
 
   const checks = [
     {
@@ -127,6 +140,15 @@ export default function ReviewTab({
     {
       label: "Each module has content",
       ready: modules.length >= 1 && modules.every((m) => m.lessons >= 1),
+    },
+    {
+      // Mirrors the backend's `empty_lectures` submission check, so the
+      // blocker is visible here instead of arriving as a 422.
+      label:
+        awaitingTitles.length > 0
+          ? `Every lesson has content (missing: ${awaitingTitles.join(", ")})`
+          : "Every lesson has content",
+      ready: awaitingTitles.length === 0,
     },
   ];
 

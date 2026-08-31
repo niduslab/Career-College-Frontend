@@ -34,17 +34,31 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { Lesson } from "./types";
 import ModuleModal from "./module-modal";
-import LessonModal from "./lesson-modal";
+import LessonModal, { type LectureSavePayload } from "./lesson-modal";
+import OutlinePreviewModal, {
+  type OutlineApplyMode,
+} from "./outline-preview-modal";
+import { readAiSectionIds, writeAiSectionIds } from "@/lib/ai-outline-store";
 import {
+  generateCourseOutline,
+  toPlainText,
+  type CourseOutlineDraft,
+  type CourseOutlineGenerateInput,
+  type OutlineModule,
+  type PlannedItem,
   createSection,
   updateSection,
   deleteSection,
   listSections,
   listSectionContents,
-  createArticleLecture,
-  createVideoLecture,
+  createLecture,
   updateLecture,
+  uploadLectureVideo,
   deleteLecture,
+  deleteQuiz,
+  deleteCodingExercise,
+  deleteAssignment,
+  type ContentItemBase,
   reorderSectionContent,
   getLecture,
   createQuiz,
@@ -65,6 +79,9 @@ interface UiModule {
   loadingLessons: boolean;
   contents: SectionContentItem[];
 }
+
+/** The Setup-step fields the AI outline generator needs. */
+export type OutlineMeta = Omit<CourseOutlineGenerateInput, "extra_instructions">;
 
 function contentToLesson(item: SectionContentItem): Lesson {
   if (item.item_type === "quiz") {
@@ -109,6 +126,7 @@ function contentToLesson(item: SectionContentItem): Lesson {
     id: String(item.id),
     type: "Lecture",
     lectureType: isVideo ? "Video" : "Article",
+    awaitingContent: !!content.is_awaiting_content,
     videoStatus: isVideo ? content.active_video_asset?.status : undefined,
     title: content.title,
     videoType:
@@ -128,11 +146,13 @@ function SortableLesson({
   processing,
   loadingEdit,
   onEdit,
+  onAddContent,
 }: {
   lesson: Lesson;
   processing?: boolean;
   loadingEdit?: boolean;
   onEdit: () => void;
+  onAddContent: () => void;
 }) {
   const {
     attributes,
@@ -181,6 +201,19 @@ function SortableLesson({
           <Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing…
         </span>
       )}
+      {lesson.awaitingContent && !processing && (
+        <>
+          <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-[12px] font-medium text-amber-700 shrink-0 whitespace-nowrap">
+            No content
+          </span>
+          <button
+            onClick={onAddContent}
+            className="inline-flex items-center gap-1 rounded-md border border-(--primary-300) px-2.5 h-7 text-[12px] font-medium text-(--primary-700) hover:bg-(--primary-50) cursor-pointer transition-colors shrink-0 whitespace-nowrap"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add content
+          </button>
+        </>
+      )}
       {lesson.isFreePreview && (
         <span className="inline-flex items-center rounded-full bg-(--primary-50) px-2.5 py-0.5 text-[12px] font-medium text-(--primary-700) shrink-0 whitespace-nowrap">
           Free Preview
@@ -211,6 +244,7 @@ function SortableModule({
   onEditModule,
   onAddLesson,
   onEditLesson,
+  onAddLessonContent,
   onReorderLessons,
   onMoveModuleUp,
   onMoveModuleDown,
@@ -224,6 +258,7 @@ function SortableModule({
   onEditModule: () => void;
   onAddLesson: () => void;
   onEditLesson: (content: SectionContentItem) => void;
+  onAddLessonContent: (content: SectionContentItem) => void;
   onReorderLessons: (
     moduleId: number,
     oldIndex: number,
@@ -342,6 +377,7 @@ function SortableModule({
                       )}
                       loadingEdit={loadingEditLessonId === mod.contents[i]?.id}
                       onEdit={() => onEditLesson(mod.contents[i])}
+                      onAddContent={() => onAddLessonContent(mod.contents[i])}
                     />
                   ))}
                 </SortableContext>
@@ -366,13 +402,39 @@ function SortableModule({
 
 export default function CurriculumTab({
   courseId,
+  meta,
   onContinue,
 }: {
   courseId: number;
+  /** Course metadata from the Setup step, used as the AI generation input.
+   *  Passed down rather than re-fetched so unsaved Setup edits are honoured —
+   *  same arrangement as ReviewTab's `data` prop. */
+  meta?: OutlineMeta;
   onContinue?: () => void;
 }) {
   const [modules, setModules] = useState<UiModule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aiFocus, setAiFocus] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [creatingSections, setCreatingSections] = useState(false);
+  const [outlineDraft, setOutlineDraft] = useState<CourseOutlineDraft | null>(
+    null,
+  );
+  const [outlineError, setOutlineError] = useState<string | null>(null);
+  /** Ids of the sections the last AI apply wrote, in outline order. A second
+   *  apply reuses these instead of appending a fresh batch. Seeded from
+   *  localStorage so a reload keeps working; when there is no record the modal
+   *  asks instead of assuming (see ai-outline-store.ts). */
+  const [aiSectionIds, setAiSectionIds] = useState<number[]>(() =>
+    readAiSectionIds(courseId),
+  );
+
+  /** Record the apply's result in both places at once — in-memory for this
+   *  session, localStorage so a reload still knows. */
+  const rememberAiSections = (ids: number[]) => {
+    setAiSectionIds(ids);
+    writeAiSectionIds(courseId, ids);
+  };
   const [moduleModal, setModuleModal] = useState<
     { mode: "add" } | { mode: "edit"; moduleId: number } | null
   >(null);
@@ -383,6 +445,11 @@ export default function CurriculumTab({
   const [savingLesson, setSavingLesson] = useState(false);
   const [deletingLesson, setDeletingLesson] = useState(false);
   const [editingLesson, setEditingLesson] = useState<{
+    moduleId: number;
+    content: SectionContentItem;
+  } | null>(null);
+  /** Step 2 target: a lecture created earlier that has no payload yet. */
+  const [addingContentTo, setAddingContentTo] = useState<{
     moduleId: number;
     content: SectionContentItem;
   } | null>(null);
@@ -609,20 +676,400 @@ export default function CurriculumTab({
     }
   };
 
+  // ------------------------------------------------------------ AI outline
+
+  /** Ask the backend for an outline draft. Nothing is saved by this call —
+   *  the preview modal is where the instructor decides what to keep. */
+  const runGenerate = async (isRegenerate: boolean) => {
+    if (!meta) {
+      notify.error("Complete Course Setup first so the AI has something to work from.");
+      return;
+    }
+    // Guard before spending a paid, several-second call.
+    const missing = (
+      [
+        ["title", meta.title],
+        ["description", meta.description],
+        ["audience", meta.audience],
+      ] as const
+    )
+      .filter(([, value]) => !toPlainText(value ?? "").trim())
+      .map(([field]) => field);
+
+    if (missing.length > 0) {
+      notify.error(
+        `Add a ${missing.join(", ")} on the Setup step before generating an outline.`,
+      );
+      return;
+    }
+
+    setGenerating(true);
+    setOutlineError(null);
+    try {
+      const draft = await generateCourseOutline({
+        ...meta,
+        extra_instructions: aiFocus.trim(),
+      });
+      if (!draft?.modules?.length) {
+        notify.error("The generator returned no modules. Try again.");
+        return;
+      }
+      setOutlineDraft(draft);
+      if (isRegenerate) notify.success("New outline generated.");
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.detail : "Failed to generate an outline.";
+      // Keep a failed regenerate inside the modal; surface a first-run
+      // failure as a toast, since there is no modal open to hold it.
+      if (isRegenerate) setOutlineError(message);
+      else notify.error(message);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  /** Create one planned item as an empty content row.
+   *
+   *  Every shell is deliberately incomplete: a lecture with no video, a quiz
+   *  with no questions, a coding exercise with no evaluation script, an
+   *  assignment with no questions. Each of those blocks course submission until
+   *  the instructor fills it in, so the plan is an enforced to-do list rather
+   *  than a way to publish a hollow course. */
+  const createPlannedItem = async (
+    sectionId: number,
+    item: PlannedItem,
+    position: number,
+  ) => {
+    const title = item.title.trim();
+    switch (item.item_type) {
+      case "quiz":
+        await createQuiz(sectionId, {
+          title,
+          description: item.description,
+          position,
+        });
+        return;
+      case "coding":
+        await createCodingExercise(sectionId, {
+          title,
+          description: item.description,
+          // The service only sets a language on coding items; default to the
+          // one the Django model defaults to if it somehow arrives null.
+          language: item.language ?? "python",
+          position,
+        });
+        return;
+      case "assignment":
+        // Scores are left at 0 for the instructor to set — the serializer only
+        // requires passing_score <= total_score, which 0/0 satisfies.
+        await createAssignment(sectionId, {
+          title,
+          description: item.description,
+          total_score: 0,
+          passing_score: 0,
+          position,
+        });
+        return;
+      default:
+        // Lecture. `description` has nowhere to go — Lecture has no such
+        // column — so it survives only in the preview and `outline_text`.
+        await createLecture(sectionId, { title, position });
+    }
+  };
+
+  /** Delete one content row by its type. */
+  const deleteContentItem = async (item: SectionContentItem) => {
+    switch (item.item_type) {
+      case "quiz":
+        await deleteQuiz(item.object_id);
+        return;
+      case "coding":
+        await deleteCodingExercise(item.object_id);
+        return;
+      case "assignment":
+        await deleteAssignment(item.object_id);
+        return;
+      default:
+        await deleteLecture(item.object_id);
+    }
+  };
+
+  /** Rows the AI apply may clear out of a reused section.
+   *
+   *  Only shells — a row whose `is_awaiting_content` is true holds nothing the
+   *  instructor authored (no video, no questions, no code), so replacing it
+   *  with the new plan's item loses no work. Anything with real content is
+   *  never touched, whoever created it. */
+  const replaceableShells = (contents: SectionContentItem[]) =>
+    contents.filter(
+      (c) => (c.content as ContentItemBase | null)?.is_awaiting_content === true,
+    );
+
+  /** Sections this tab produced from an earlier AI apply, in order, filtered to
+   *  those that still exist. A second apply overwrites these rather than piling
+   *  a new batch on top — see `handleCreateSectionsFromOutline`. */
+  const reusableAiSectionIds = aiSectionIds.filter((id) =>
+    modules.some((m) => m.id === id),
+  );
+
+  /** Apply the approved modules to real CourseSection rows, plus a content row
+   *  per kept planned item.
+   *
+   *  Regenerating and applying again **updates the sections the last apply
+   *  produced** instead of appending a second batch. Nothing is ever deleted:
+   *  a reused row keeps its id, its position, and any lessons already inside
+   *  it, so no authored content is lost and the operation is reversible by
+   *  editing. Only modules beyond the reusable rows create new sections.
+   *
+   *  In a reused section, unfilled shells from the previous apply are deleted
+   *  and replaced by the new plan's items, so the lessons track the regenerated
+   *  outline without the curriculum doubling. A row with anything authored in
+   *  it — a video, questions, code — is never touched, so nothing is lost.
+   *  Item writes are best-effort: a failure is counted and reported, never
+   *  fatal, because aborting halfway through a module's items would leave the
+   *  section partly rebuilt with no way to resume.
+   *
+   *  Rows the instructor made by hand are never touched — only ids this tab
+   *  recorded from its own applies, and only those still present (one deleted
+   *  in the meantime is dropped from the list, not resurrected).
+   *
+   *  Sequential, not Promise.all: `position` is server-ordered, so a
+   *  concurrent burst would race for the same slots. On a mid-run failure the
+   *  rows already written stay written and the draft is narrowed to the
+   *  modules that did not land, so a retry cannot duplicate them. */
+  const handleCreateSectionsFromOutline = async (
+    drafts: OutlineModule[],
+    mode: OutlineApplyMode,
+  ) => {
+    setCreatingSections(true);
+    setOutlineError(null);
+
+    // Which existing rows to overwrite. The tracked list wins when present.
+    // Otherwise `mode` carries the user's explicit answer: 'update' targets the
+    // first N sections as currently ordered (which may include hand-made ones —
+    // the modal says so before offering it), 'append' targets nothing.
+    const reusable =
+      reusableAiSectionIds.length > 0
+        ? reusableAiSectionIds
+        : mode === "update"
+          ? modules.map((m) => m.id)
+          : [];
+    // A reused section may already contain lessons authored against its old
+    // title. That is worth saying out loud rather than silently retitling.
+    const reusedWithLessons = reusable
+      .slice(0, drafts.length)
+      .filter(
+        (id) => (modules.find((m) => m.id === id)?.contents.length ?? 0) > 0,
+      ).length;
+
+    let processed = 0;
+    let updated = 0;
+    let created = 0;
+    let itemsCreated = 0;
+    let itemsFailed = 0;
+    let shellsReplaced = 0;
+    let sectionsWithAuthoredKept = 0;
+    const usedIds: number[] = [];
+    const touchedSectionIds: number[] = [];
+
+    /** Write a module's planned items into its section.
+     *
+     *  Best-effort by design: a failed item is counted and reported, never
+     *  fatal. The section-level resume logic below assumes a module is either
+     *  written or not, and aborting halfway through a module's items would
+     *  leave a section that a retry then skips (it is no longer empty),
+     *  stranding the rest. Everything here is recoverable by hand. */
+    const createItemsFor = async (sectionId: number, items: PlannedItem[]) => {
+      for (const [itemIndex, item] of items.entries()) {
+        try {
+          await createPlannedItem(sectionId, item, itemIndex + 1);
+          itemsCreated += 1;
+        } catch {
+          itemsFailed += 1;
+        }
+      }
+      if (items.length > 0) touchedSectionIds.push(sectionId);
+    };
+
+    try {
+      for (const [index, draft] of drafts.entries()) {
+        const reuseId = reusable[index];
+        const plan = draft.content_plan ?? [];
+
+        if (reuseId !== undefined) {
+          const { data: section } = await updateSection(reuseId, {
+            title: draft.title,
+            description: draft.summary,
+          });
+          updated += 1;
+          usedIds.push(section.id);
+          setModules((prev) =>
+            prev.map((m) =>
+              m.id === section.id
+                ? { ...m, title: section.title, summary: section.description }
+                : m,
+            ),
+          );
+          // A reused section keeps everything the instructor authored. Only
+          // unfilled shells from a previous apply are cleared out, so the
+          // lessons track the new outline without the curriculum doubling on
+          // every regenerate and without losing real work.
+          if (plan.length > 0) {
+            const current =
+              modules.find((m) => m.id === section.id)?.contents ?? [];
+            const shells = replaceableShells(current);
+            const authored = current.length - shells.length;
+
+            for (const shell of shells) {
+              try {
+                await deleteContentItem(shell);
+                shellsReplaced += 1;
+              } catch {
+                // Leave it in place and carry on; the new items still land, so
+                // the worst case is a duplicate the instructor can delete.
+                itemsFailed += 1;
+              }
+            }
+            if (authored > 0) sectionsWithAuthoredKept += 1;
+            await createItemsFor(section.id, plan);
+          }
+        } else {
+          const { data: section } = await createSection(courseId, {
+            title: draft.title,
+            description: draft.summary,
+            position: modules.length + created + 1,
+          });
+          created += 1;
+          usedIds.push(section.id);
+          setModules((prev) => [
+            ...prev,
+            {
+              id: section.id,
+              title: section.title,
+              summary: section.description,
+              expanded: false,
+              loadingLessons: false,
+              contents: [],
+            },
+          ]);
+          // A brand-new section is empty by definition, so its plan always runs.
+          await createItemsFor(section.id, plan);
+        }
+        processed += 1;
+      }
+
+      // Pull the real rows back for every section that gained items, so the
+      // freshly created shells (and their "No content" badges) render without
+      // a manual refresh.
+      await Promise.all(touchedSectionIds.map((id) => loadLessonsFor(id)));
+
+      rememberAiSections(usedIds);
+      setOutlineDraft(null);
+      setAiFocus("");
+
+      // Modules dropped since the last apply leave their sections behind. They
+      // are NOT deleted — say so, so the leftovers are not a silent surprise.
+      const leftover = reusable.length - drafts.length;
+      const parts: string[] = [];
+      if (updated) parts.push(`${updated} section${updated === 1 ? "" : "s"} updated`);
+      if (created) parts.push(`${created} added`);
+      if (itemsCreated) {
+        parts.push(`${itemsCreated} empty lesson${itemsCreated === 1 ? "" : "s"} created`);
+      }
+      let message = `${parts.join(", ")}.`;
+      if (itemsCreated > 0) {
+        message += ` Add their content before submitting for review.`;
+      }
+      if (shellsReplaced > 0) {
+        message += ` ${shellsReplaced} empty lesson${shellsReplaced === 1 ? "" : "s"} from the previous outline ${shellsReplaced === 1 ? "was" : "were"} replaced.`;
+      }
+      if (sectionsWithAuthoredKept > 0) {
+        message += ` ${sectionsWithAuthoredKept} reused section${sectionsWithAuthoredKept === 1 ? "" : "s"} had lessons with real content — those were kept, so check for overlap with the new ones.`;
+      }
+      if (itemsFailed > 0) {
+        message += ` ${itemsFailed} lesson${itemsFailed === 1 ? "" : "s"} could not be created — add ${itemsFailed === 1 ? "it" : "them"} by hand.`;
+      }
+      if (leftover > 0) {
+        message += ` ${leftover} earlier section${leftover === 1 ? "" : "s"} left untouched — delete ${leftover === 1 ? "it" : "them"} yourself if no longer needed.`;
+      }
+      if (reusedWithLessons > 0) {
+        message += ` ${reusedWithLessons} reused section${reusedWithLessons === 1 ? "" : "s"} already had lessons — check they still fit the new title.`;
+      }
+      notify.success(message);
+    } catch (err) {
+      const reason =
+        err instanceof ApiError ? err.detail : "Failed to save sections.";
+      if (processed > 0) {
+        rememberAiSections([
+          ...usedIds,
+          ...aiSectionIds.filter((id) => !usedIds.includes(id)),
+        ]);
+        // Narrow the draft to what did NOT land, so retrying cannot duplicate a
+        // row that is already saved. `outline_text` is left as-is: it is a
+        // copy-paste convenience, not part of this write path.
+        setOutlineDraft((prev) =>
+          prev ? { ...prev, modules: drafts.slice(processed) } : prev,
+        );
+        setOutlineError(
+          `${processed} of ${drafts.length} modules were saved, then it stopped: ${reason} The remaining modules are still listed below.`,
+        );
+      } else {
+        setOutlineError(reason);
+      }
+    } finally {
+      setCreatingSections(false);
+    }
+  };
+
+  /**
+   * Step 1 of two-step lecture authoring: create the lesson from its details.
+   * It lands with no payload ("No content"); the video or article follows via
+   * `handleSaveLectureContent`.
+   */
   const handleAddLecture = async (
     moduleId: number,
-    lesson: Omit<Lesson, "id"> & { articleContent?: string; videoFile?: File },
+    lesson: Omit<Lesson, "id">,
   ) => {
     setSavingLesson(true);
     try {
       const position =
         (modules.find((m) => m.id === moduleId)?.contents.length ?? 0) + 1;
 
-      if (lesson.videoFile) {
-        const { data: created } = await createVideoLecture(moduleId, {
+      const { message } = await createLecture(moduleId, {
+        title: lesson.title,
+        position,
+        is_preview: lesson.isFreePreview,
+      });
+      notify.success(message ?? "Lesson added. Add its content next.");
+      setModules((prev) =>
+        prev.map((m) => (m.id === moduleId ? { ...m, loadingLessons: true } : m)),
+      );
+      await loadLessonsFor(moduleId);
+      setLessonModalModuleId(null);
+    } catch (err) {
+      notify.error(
+        err instanceof ApiError ? err.message : "Failed to add lesson.",
+      );
+    } finally {
+      setSavingLesson(false);
+    }
+  };
+
+  /**
+   * Step 2: commit the lecture to a kind and attach its payload. Video goes
+   * as multipart (and starts transcoding); article goes as JSON.
+   */
+  const handleSaveLectureContent = async (
+    moduleId: number,
+    lectureId: number,
+    lesson: LectureSavePayload,
+  ) => {
+    setSavingLesson(true);
+    try {
+      if (lesson.chosenLectureType === "Video") {
+        if (!lesson.videoFile) return;
+        await uploadLectureVideo(lectureId, lesson.videoFile, {
           title: lesson.title,
-          video_file: lesson.videoFile,
-          position,
           is_preview: lesson.isFreePreview,
         });
         setModules((prev) =>
@@ -631,15 +1078,15 @@ export default function CurriculumTab({
           ),
         );
         await loadLessonsFor(moduleId);
-        pollVideoStatus(created.object_id, moduleId);
+        pollVideoStatus(lectureId, moduleId);
       } else {
-        const { message } = await createArticleLecture(moduleId, {
+        const { message } = await updateLecture(lectureId, {
           title: lesson.title,
+          lecture_type: "article",
           article_content: lesson.articleContent ?? "",
-          position,
           is_preview: lesson.isFreePreview,
         });
-        notify.success(message ?? "Lesson added.");
+        notify.success(message ?? "Lesson content added.");
         setModules((prev) =>
           prev.map((m) =>
             m.id === moduleId ? { ...m, loadingLessons: true } : m,
@@ -647,10 +1094,10 @@ export default function CurriculumTab({
         );
         await loadLessonsFor(moduleId);
       }
-      setLessonModalModuleId(null);
+      setAddingContentTo(null);
     } catch (err) {
       notify.error(
-        err instanceof ApiError ? err.message : "Failed to add lesson.",
+        err instanceof ApiError ? err.message : "Failed to add lesson content.",
       );
     } finally {
       setSavingLesson(false);
@@ -794,13 +1241,25 @@ export default function CurriculumTab({
   const handleEditLecture = async (
     moduleId: number,
     lectureId: number,
-    lesson: Omit<Lesson, "id"> & { articleContent?: string },
+    lesson: LectureSavePayload,
   ) => {
+    // Editing a lecture that still has no content is really step 2 —
+    // it may also be replacing an uploaded video with a new file.
+    if (lesson.videoFile) {
+      await handleSaveLectureContent(moduleId, lectureId, lesson);
+      setEditingLesson(null);
+      return;
+    }
     setSavingLesson(true);
     try {
       const { message } = await updateLecture(lectureId, {
         title: lesson.title,
-        article_content: lesson.articleContent,
+        ...(lesson.chosenLectureType === "Article"
+          ? {
+              lecture_type: "article" as const,
+              article_content: lesson.articleContent ?? "",
+            }
+          : {}),
         is_preview: lesson.isFreePreview,
       });
       notify.success(message ?? "Lesson updated.");
@@ -889,6 +1348,9 @@ export default function CurriculumTab({
                     }
                     onAddLesson={() => setLessonModalModuleId(mod.id)}
                     onEditLesson={(content) => openEditLesson(mod.id, content)}
+                    onAddLessonContent={(content) =>
+                      setAddingContentTo({ moduleId: mod.id, content })
+                    }
                     onReorderLessons={handleReorderLessons}
                     onMoveModuleUp={() => moveModule(mod.id, -1)}
                     onMoveModuleDown={() => moveModule(mod.id, 1)}
@@ -927,15 +1389,24 @@ export default function CurriculumTab({
               </h3>
             </div>
             <p className="text-[12px] text-[#f7f5f2] font-normal leading-relaxed">
-              Generate a starter curriculum from a topic. Editable results.
+              Generate a starter curriculum from your course details. Review and
+              edit before anything is created.
             </p>
             <input
               type="text"
-              placeholder="e.g. UX Research"
-              className="w-full h-9 px-3 text-[12px] rounded-md bg-(--gray-700)   placeholder:text-gray-500 border border-(--gray-700) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+              value={aiFocus}
+              onChange={(e) => setAiFocus(e.target.value)}
+              disabled={generating}
+              placeholder="Optional focus, e.g. hands-on labs"
+              className="w-full h-9 px-3 text-[12px] rounded-md bg-(--gray-700)   placeholder:text-gray-500 border border-(--gray-700) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow disabled:opacity-60"
             />
-            <button className="w-full h-9 bg-(--primary-700) hover:bg-(--primary-950) text-[#f7f5f2] text-[14px] font-semibold rounded-md cursor-pointer transition-colors">
-              Generate Outline
+            <button
+              onClick={() => runGenerate(false)}
+              disabled={generating}
+              className="w-full h-9 bg-(--primary-700) hover:bg-(--primary-950) text-[#f7f5f2] text-[14px] font-semibold rounded-md cursor-pointer transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {generating && <Loader2 className="w-4 h-4 animate-spin" />}
+              {generating ? "Generating…" : "Generate Outline"}
             </button>
           </div>
 
@@ -982,6 +1453,24 @@ export default function CurriculumTab({
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
+
+      {outlineDraft && (
+        <OutlinePreviewModal
+          draft={outlineDraft}
+          generating={generating}
+          creating={creatingSections}
+          error={outlineError}
+          reusableCount={reusableAiSectionIds.length}
+          existingSectionCount={modules.length}
+          onRegenerate={() => runGenerate(true)}
+          onApply={handleCreateSectionsFromOutline}
+          onClose={() => {
+            if (generating || creatingSections) return;
+            setOutlineDraft(null);
+            setOutlineError(null);
+          }}
+        />
+      )}
 
       {moduleModal &&
         (() => {
@@ -1090,6 +1579,10 @@ export default function CurriculumTab({
                 ? "Video"
                 : "Article"
             }
+            lectureAwaitingContent={
+              !!(editingLesson.content.content as LectureContent)
+                .is_awaiting_content
+            }
             saving={savingLesson}
             deleting={deletingLesson}
             onSave={(lesson) =>
@@ -1110,6 +1603,25 @@ export default function CurriculumTab({
             }
           />
         ))}
+
+      {/* Step 2 — pick the lecture kind and supply its payload. */}
+      {addingContentTo && (
+        <LessonModal
+          contentStep
+          lectureAwaitingContent
+          initialLesson={contentToLesson(addingContentTo.content)}
+          initialLectureType="Video"
+          saving={savingLesson}
+          onSave={(lesson) =>
+            handleSaveLectureContent(
+              addingContentTo.moduleId,
+              addingContentTo.content.object_id,
+              lesson,
+            )
+          }
+          onClose={() => !savingLesson && setAddingContentTo(null)}
+        />
+      )}
     </>
   );
 }

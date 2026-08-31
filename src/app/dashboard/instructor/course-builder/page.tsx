@@ -15,7 +15,12 @@ import ScheduleTab from "@/components/dashboard/instructor/course-builder/schedu
 import TeamTab from "@/components/dashboard/instructor/course-builder/team-tab";
 import CurriculumTab from "@/components/dashboard/instructor/course-builder/curriculum-tab";
 import ReviewTab from "@/components/dashboard/instructor/course-builder/review-tab";
-import { createCourse, updateCourse, getCourse } from "@/lib/course-api";
+import {
+  createCourse,
+  updateCourse,
+  getCourse,
+  type CourseLevel,
+} from "@/lib/course-api";
 import { fetchMe } from "@/lib/auth-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
@@ -329,6 +334,18 @@ export default function CourseBuilderPage() {
         (courseId !== null ? (
           <CurriculumTab
             courseId={courseId}
+            meta={{
+              title: form.title,
+              description: form.description,
+              audience: form.audiences,
+              prerequisites: form.prerequisites,
+              level: form.level.toLowerCase() as CourseLevel,
+              language: form.language,
+              duration_minutes: form.durationMinutes
+                ? Number(form.durationMinutes)
+                : null,
+              category: form.category,
+            }}
             onContinue={() => setActiveStep("Review")}
           />
         ) : (

@@ -14,6 +14,9 @@ import { ApiError } from "@/lib/api";
 export type LectureSavePayload = Omit<Lesson, "id"> & {
   articleContent?: string;
   videoFile?: File;
+  /** Which kind of lecture the payload is for. Absent on step 1, where the
+   *  lesson is created from its details alone and has no payload yet. */
+  chosenLectureType?: LectureType;
 };
 
 function isRichTextEmpty(html: string): boolean {
@@ -38,6 +41,8 @@ function currentVideoLabel(lesson?: Omit<Lesson, "id">): string {
 export default function LessonModal({
   initialLesson,
   initialLectureType,
+  contentStep = false,
+  lectureAwaitingContent = false,
   initialQuizId,
   initialCodingExerciseId,
   initialAssignmentId,
@@ -56,6 +61,12 @@ export default function LessonModal({
   initialLesson?: Omit<Lesson, "id">;
   /** For an existing Lecture, whether it's a video or article — determines which fields render in edit mode. */
   initialLectureType?: LectureType;
+  /** Step 2 of two-step authoring: show only the lecture-type picker and its
+   *  payload fields. The lesson's details were already saved in step 1. */
+  contentStep?: boolean;
+  /** The lecture exists but has no payload yet, so its type is still free to
+   *  choose and its payload is required. */
+  lectureAwaitingContent?: boolean;
   initialQuizId?: number;
   initialCodingExerciseId?: number;
   initialAssignmentId?: number;
@@ -103,6 +114,16 @@ export default function LessonModal({
     articleContent?: string;
   }>({});
   const isEditingLecture = !!initialLesson && !!initialLectureType;
+
+  // Two-step authoring:
+  //   step 1 (`isDetailsStep`) — creating a lesson: title + preview flag only.
+  //   step 2 (`contentStep`)   — picking the kind and supplying its payload.
+  // Editing a finished lecture is neither: it shows both, with the type locked.
+  const isDetailsStep = !initialLesson && !contentStep;
+  const showLecturePayload = !isDetailsStep;
+  const lockLectureType = isEditingLecture && !lectureAwaitingContent;
+  // Nothing is stored yet, so the payload can't be "left unchanged".
+  const payloadRequired = !isEditingLecture || lectureAwaitingContent;
 
   // Quiz fields
   const [quizTitle, setQuizTitle] = useState(
@@ -184,11 +205,13 @@ export default function LessonModal({
       if (!title.trim()) {
         nextErrors.title = "Lesson title is required.";
       }
-      if (lectureType === "Video" && !videoFile && !isEditingLecture) {
-        nextErrors.videoFile = "Please upload a video file.";
-      }
-      if (lectureType === "Article" && isRichTextEmpty(articleContent)) {
-        nextErrors.articleContent = "Article content is required.";
+      if (showLecturePayload) {
+        if (lectureType === "Video" && !videoFile && payloadRequired) {
+          nextErrors.videoFile = "Please upload a video file.";
+        }
+        if (lectureType === "Article" && isRichTextEmpty(articleContent)) {
+          nextErrors.articleContent = "Article content is required.";
+        }
       }
       if (Object.keys(nextErrors).length > 0) {
         setErrors(nextErrors);
@@ -202,9 +225,15 @@ export default function LessonModal({
         duration: "",
         description: "",
         isFreePreview,
-        articleContent: lectureType === "Article" ? articleContent : undefined,
+        chosenLectureType: showLecturePayload ? lectureType : undefined,
+        articleContent:
+          showLecturePayload && lectureType === "Article"
+            ? articleContent
+            : undefined,
         videoFile:
-          lectureType === "Video" ? (videoFile ?? undefined) : undefined,
+          showLecturePayload && lectureType === "Video"
+            ? (videoFile ?? undefined)
+            : undefined,
       });
     }
   };
@@ -281,7 +310,11 @@ export default function LessonModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-(--gray-100)">
           <h3 className="text-[16px] lg:text-[20px] font-semibold text-(--text-title)">
-            {isEdit ? "Edit Lesson" : "Add Lesson"}
+            {contentStep
+              ? "Add Lecture Content"
+              : isEdit
+                ? "Edit Lesson"
+                : "Add Lesson"}
           </h3>
           <button
             onClick={onClose}
@@ -293,8 +326,9 @@ export default function LessonModal({
 
         {/* Body */}
         <div className="overflow-y-auto px-6 py-5 pb-6 space-y-5 flex-1">
-          {/* Lesson Type */}
-          <div className="space-y-2">
+          {/* Lesson Type — step 2 is about the payload only, the kind of
+              lesson was already settled in step 1. */}
+          <div className={`space-y-2 ${contentStep ? "hidden" : ""}`}>
             <label className="text-[14px] lg:text-[16px] font-medium text-(--text-title)">
               Lesson Type
             </label>
@@ -344,42 +378,45 @@ export default function LessonModal({
           {/* Lecture fields */}
           {lessonType === "Lecture" && (
             <>
-              {/* Lecture type toggle: Video / Article */}
-              <div className="space-y-2">
-                <label className="text-[14px] font-normal text-(--text-title)">
-                  Lecture Type
-                </label>
-                <div className="flex gap-2 mt-1">
-                  {(["Video", "Article"] as LectureType[]).map((t) => {
-                    const Icon = t === "Video" ? Video : FileText;
-                    return (
-                      <button
-                        key={t}
-                        type="button"
-                        disabled={isEditingLecture}
-                        onClick={() => setLectureType(t)}
-                        className={`flex items-center gap-2 px-4 h-9 rounded-md text-[13px] border transition-colors ${
-                          isEditingLecture
-                            ? "cursor-not-allowed opacity-60"
-                            : "cursor-pointer"
-                        } ${
-                          lectureType === t
-                            ? "bg-(--primary-700) text-white border-(--primary-700) font-semibold"
-                            : "border-(--gray-200) text-(--text-paragraph) hover:border-(--primary-300) hover:bg-(--primary-50)"
-                        }`}
-                      >
-                        <Icon className="w-4 h-4 shrink-0" />
-                        {t}
-                      </button>
-                    );
-                  })}
+              {/* Lecture type toggle: Video / Article. Hidden on step 1 —
+                  the kind is chosen when the content is added. */}
+              {showLecturePayload && (
+                <div className="space-y-2">
+                  <label className="text-[14px] font-normal text-(--text-title)">
+                    Lecture Type
+                  </label>
+                  <div className="flex gap-2 mt-1">
+                    {(["Video", "Article"] as LectureType[]).map((t) => {
+                      const Icon = t === "Video" ? Video : FileText;
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          disabled={lockLectureType}
+                          onClick={() => setLectureType(t)}
+                          className={`flex items-center gap-2 px-4 h-9 rounded-md text-[13px] border transition-colors ${
+                            lockLectureType
+                              ? "cursor-not-allowed opacity-60"
+                              : "cursor-pointer"
+                          } ${
+                            lectureType === t
+                              ? "bg-(--primary-700) text-white border-(--primary-700) font-semibold"
+                              : "border-(--gray-200) text-(--text-paragraph) hover:border-(--primary-300) hover:bg-(--primary-50)"
+                          }`}
+                        >
+                          <Icon className="w-4 h-4 shrink-0" />
+                          {t}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {lockLectureType && (
+                    <p className="text-[12px] text-(--gray-500)">
+                      Lecture type can&apos;t be changed once content is added.
+                    </p>
+                  )}
                 </div>
-                {isEditingLecture && (
-                  <p className="text-[12px] text-(--gray-500)">
-                    Lecture type can&apos;t be changed after creation.
-                  </p>
-                )}
-              </div>
+              )}
 
               {/* Lesson Title */}
               <div className="space-y-1.5">
@@ -409,6 +446,13 @@ export default function LessonModal({
                     {errors.title}
                   </p>
                 )}
+                {isDetailsStep && (
+                  <p className="text-[12px] text-(--gray-500) mt-1">
+                    Save the lesson first, then add its video or article with
+                    “Add content”. A lesson with no content can&apos;t be
+                    submitted for review.
+                  </p>
+                )}
               </div>
 
               {/* Free Preview checkbox */}
@@ -428,17 +472,15 @@ export default function LessonModal({
                 </label>
               </div>
 
-              {lectureType === "Video" && (
+              {showLecturePayload && lectureType === "Video" && (
                 <>
                   {/* Upload Video */}
                   <div className="space-y-1.5">
                     <label className="text-[14px] font-normal text-(--text-title)">
                       Upload Video{" "}
-                      {!isEditingLecture && (
-                        <span className="text-red-500">*</span>
-                      )}
+                      {payloadRequired && <span className="text-red-500">*</span>}
                     </label>
-                    {isEditingLecture && (
+                    {!payloadRequired && (
                       <p className="text-[12px] text-(--gray-500)">
                         Leave empty to keep the current video.
                       </p>
@@ -485,7 +527,7 @@ export default function LessonModal({
                 </>
               )}
 
-              {lectureType === "Article" && (
+              {showLecturePayload && lectureType === "Article" && (
                 <div className="space-y-1.5">
                   <label className="text-[14px] font-normal text-(--text-title)">
                     Article Content <span className="text-red-500">*</span>
@@ -700,9 +742,11 @@ export default function LessonModal({
                       ? "Saving…"
                       : isQuiz || isAssignment
                         ? "Next"
-                        : isEdit
-                          ? "Update Lesson"
-                          : "Save Lesson"}
+                        : contentStep
+                          ? "Save Content"
+                          : isEdit
+                            ? "Update Lesson"
+                            : "Create Lesson"}
                 </button>
               );
             })()}
