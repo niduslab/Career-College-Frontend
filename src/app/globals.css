@@ -229,3 +229,79 @@ body {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* AI Outline Generator card — gradient frame + sparkle pulse, signaling
+   "AI-powered" without a static flat panel. Border is drawn as a gradient
+   background clipped to the border-box so it survives the card's own
+   rounded corners without a wrapping element. */
+@keyframes aiGlowPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes aiSparklePulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 rgba(135, 76, 255, 0));
+  }
+  50% {
+    transform: scale(1.12);
+    filter: drop-shadow(0 0 6px rgba(135, 76, 255, 0.65));
+  }
+}
+
+.ai-panel-frame {
+  position: relative;
+  border-radius: 1rem;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    var(--primary-400),
+    var(--primary-700) 45%,
+    var(--primary-400)
+  );
+}
+
+.ai-panel-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    var(--primary-400),
+    transparent 40%,
+    var(--primary-500)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: aiGlowPulse 3.2s ease-in-out infinite;
+}
+
+.ai-panel-sparkle {
+  animation: aiSparklePulse 2.4s ease-in-out infinite;
+}
+
+/* Faster pulse while a generate call is in flight — real-time feedback
+   beyond the button's own spinner/label swap. */
+.ai-panel-frame--active::before {
+  animation-duration: 1.4s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-panel-frame::before,
+  .ai-panel-sparkle {
+    animation: none;
+  }
+}

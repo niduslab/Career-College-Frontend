@@ -261,7 +261,7 @@ export default function CourseBuilderPage() {
               notify.info("Save the course in Setup before previewing it.");
               return;
             }
-            window.open(`/course-player/${courseSlug}`, "_blank");
+            router.push(`/course-player/${courseSlug}`);
           }}
           disabled={!courseSlug}
           className="flex items-center cursor-pointer gap-2 bg-(--primary-700) hover:bg-(--primary-900) text-white text-[13px] font-semibold px-4 h-12 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

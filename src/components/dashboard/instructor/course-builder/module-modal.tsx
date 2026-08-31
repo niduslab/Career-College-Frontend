@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, BookOpen, Trash, Trash2 } from "lucide-react";
+import RichTextEditor from "@/components/common/rich-text-editor";
 
 export default function ModuleModal({
   module,
@@ -52,12 +53,11 @@ export default function ModuleModal({
             <label className="text-[14px] font-medium text-(--text-title)">
               Summary
             </label>
-            <textarea
+            <RichTextEditor
               value={summary}
-              onChange={(e) => setSummary(e.target.value)}
-              rows={5}
+              onChange={setSummary}
               placeholder="e.g. An introduction to the fundamentals of React..."
-              className="w-full mt-1 px-3 py-2.5 text-[14px] border border-(--gray-200) rounded-lg bg-(--gray-50) text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow "
+              minHeight="120px"
             />
           </div>
 
