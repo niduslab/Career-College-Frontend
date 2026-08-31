@@ -1,7 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { X, Upload, Trash2, Video, FileText, Loader2 } from "lucide-react";
+import {
+  X,
+  Upload,
+  Trash2,
+  Video,
+  FileText,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
 import RichTextEditor from "@/components/common/rich-text-editor";
 import type { Lesson, LessonType, LectureType } from "./types";
 import { LESSON_TYPES } from "./constants";
@@ -10,6 +18,11 @@ import CodingExerciseModal from "./coding-exercise-modal";
 import type { CreateCodingExercisePayload } from "./coding-exercise-modal";
 import AssignmentBuilder from "./assignment-builder";
 import { ApiError } from "@/lib/api";
+import {
+  generateArticleLecture,
+  type ArticleLectureDraft,
+  type ArticleLectureGenerateInput,
+} from "@/lib/course-api";
 
 export type LectureSavePayload = Omit<Lesson, "id"> & {
   articleContent?: string;
@@ -18,6 +31,13 @@ export type LectureSavePayload = Omit<Lesson, "id"> & {
    *  lesson is created from its details alone and has no payload yet. */
   chosenLectureType?: LectureType;
 };
+
+/** Course-level context handed to the AI article writer. Every field is
+ *  optional — the lesson title alone is enough to generate from. */
+export type ArticleAiContext = Pick<
+  ArticleLectureGenerateInput,
+  "course_title" | "section_title" | "audience" | "level" | "language"
+>;
 
 function isRichTextEmpty(html: string): boolean {
   return !html.replace(/<[^>]*>/g, "").trim();
@@ -41,6 +61,7 @@ function currentVideoLabel(lesson?: Omit<Lesson, "id">): string {
 export default function LessonModal({
   initialLesson,
   initialLectureType,
+  articleAiContext,
   contentStep = false,
   lectureAwaitingContent = false,
   initialQuizId,
@@ -61,6 +82,9 @@ export default function LessonModal({
   initialLesson?: Omit<Lesson, "id">;
   /** For an existing Lecture, whether it's a video or article — determines which fields render in edit mode. */
   initialLectureType?: LectureType;
+  /** Course/module context for the AI article writer. Omitting it only makes
+   *  the generated article less specific — the panel still works. */
+  articleAiContext?: ArticleAiContext;
   /** Step 2 of two-step authoring: show only the lecture-type picker and its
    *  payload fields. The lesson's details were already saved in step 1. */
   contentStep?: boolean;
@@ -114,6 +138,61 @@ export default function LessonModal({
     articleContent?: string;
   }>({});
   const isEditingLecture = !!initialLesson && !!initialLectureType;
+
+  // AI article drafting. Nothing here is saved — a generated draft only lands
+  // on the lecture if the instructor then saves the modal like any other edit.
+  const [aiFocus, setAiFocus] = useState("");
+  const [aiMinutes, setAiMinutes] = useState("");
+  const [aiWithCode, setAiWithCode] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiDraft, setAiDraft] = useState<ArticleLectureDraft | null>(null);
+  /** Set on the first click when the editor already holds text: generating
+   *  replaces everything, so the second click is the confirmation. */
+  const [aiConfirmReplace, setAiConfirmReplace] = useState(false);
+  /** Bumped to remount the editor. `RichTextEditor` reads `value` only when it
+   *  mounts, so a new draft is invisible without a fresh instance — and a
+   *  full replacement is exactly when losing the undo stack is acceptable. */
+  const [editorVersion, setEditorVersion] = useState(0);
+
+  const runArticleAi = async () => {
+    if (!title.trim()) {
+      setErrors((prev) => ({
+        ...prev,
+        title: "Add a lesson title first — the article is written from it.",
+      }));
+      return;
+    }
+    if (!isRichTextEmpty(articleContent) && !aiConfirmReplace) {
+      setAiConfirmReplace(true);
+      return;
+    }
+
+    setAiGenerating(true);
+    setAiError(null);
+    try {
+      const draft = await generateArticleLecture({
+        ...articleAiContext,
+        lecture_title: title.trim(),
+        target_duration_minutes: aiMinutes ? Number(aiMinutes) : null,
+        include_code_examples: aiWithCode,
+        extra_instructions: aiFocus.trim(),
+      });
+      setArticleContent(draft.article_html);
+      setAiDraft(draft);
+      setEditorVersion((v) => v + 1);
+      setErrors((prev) => ({ ...prev, articleContent: undefined }));
+    } catch (err) {
+      setAiError(
+        err instanceof ApiError
+          ? err.message
+          : "Could not generate the article. Please try again.",
+      );
+    } finally {
+      setAiGenerating(false);
+      setAiConfirmReplace(false);
+    }
+  };
 
   // Two-step authoring:
   //   step 1 (`isDetailsStep`) — creating a lesson: title + preview flag only.
@@ -532,8 +611,98 @@ export default function LessonModal({
                   <label className="text-[14px] font-normal text-(--text-title)">
                     Article Content <span className="text-red-500">*</span>
                   </label>
+
+                  {/* AI drafting. A draft is loaded into the editor below and
+                      is saved only when the instructor saves the lesson. */}
+                  <div className="mt-1 rounded-lg border border-(--primary-200) bg-(--primary-50) px-3 py-3 space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-(--primary-700) shrink-0" />
+                      <p className="text-[13px] font-semibold text-(--text-title)">
+                        Write with AI
+                      </p>
+                    </div>
+                    <p className="text-[12px] text-(--gray-500)">
+                      Drafts the article from the lesson title and the course
+                      around it. Read it through and edit before saving —
+                      nothing is stored until you save the lesson.
+                    </p>
+
+                    <input
+                      type="text"
+                      value={aiFocus}
+                      onChange={(e) => setAiFocus(e.target.value)}
+                      placeholder="Optional: what to focus on, e.g. “open with a worked example”"
+                      className="w-full h-10 px-3 text-[13px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+                    />
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <label className="flex items-center gap-2 text-[12px] text-(--text-paragraph)">
+                        Reading time
+                        <input
+                          type="number"
+                          min="1"
+                          max="120"
+                          value={aiMinutes}
+                          onChange={(e) => setAiMinutes(e.target.value)}
+                          placeholder="auto"
+                          className="w-20 h-9 px-2 text-[12px] border border-(--gray-200) rounded-md bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+                        />
+                        min
+                      </label>
+                      <label className="flex items-center gap-2 text-[12px] text-(--text-paragraph) cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={aiWithCode}
+                          onChange={(e) => setAiWithCode(e.target.checked)}
+                          className="w-4 h-4 rounded border-(--gray-300) accent-(--primary-700) cursor-pointer"
+                        />
+                        Include code examples
+                      </label>
+                      <button
+                        type="button"
+                        onClick={runArticleAi}
+                        disabled={aiGenerating || !!saving}
+                        className={`ml-auto flex items-center gap-2 px-4 h-9 text-[13px] font-semibold rounded-md transition-colors ${
+                          aiGenerating || saving
+                            ? "bg-(--gray-200) text-(--gray-400) cursor-not-allowed"
+                            : "bg-(--primary-700) hover:bg-(--primary-900) text-white cursor-pointer"
+                        }`}
+                      >
+                        {aiGenerating ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-4 h-4" />
+                        )}
+                        {aiGenerating
+                          ? "Writing…"
+                          : aiConfirmReplace
+                            ? "Replace it"
+                            : aiDraft
+                              ? "Regenerate"
+                              : "Generate article"}
+                      </button>
+                    </div>
+
+                    {aiConfirmReplace && (
+                      <p className="text-[12px] text-(--gray-600)">
+                        This replaces everything currently in the editor. Click
+                        again to continue.
+                      </p>
+                    )}
+                    {aiError && (
+                      <p className="text-[12px] text-red-500">{aiError}</p>
+                    )}
+                    {aiDraft && !aiGenerating && (
+                      <p className="text-[12px] text-(--gray-500)">
+                        Draft loaded — {aiDraft.word_count} words, about{" "}
+                        {aiDraft.estimated_reading_minutes} min to read.
+                      </p>
+                    )}
+                  </div>
+
                   <div className="mt-1">
                     <RichTextEditor
+                      key={`article-editor-${editorVersion}`}
                       value={articleContent}
                       onChange={(html) => {
                         setArticleContent(html);
