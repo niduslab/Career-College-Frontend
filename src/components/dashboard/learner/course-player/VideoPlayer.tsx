@@ -23,7 +23,7 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
 } from "lucide-react";
-import { SPEEDS, VIDEO_SRC } from "./data";
+import { SPEEDS } from "./data";
 
 function fmt(sec: number) {
   const m = Math.floor(sec / 60);
@@ -123,18 +123,15 @@ export default function VideoPlayer({
     };
   }, []);
 
-  // Load the HLS source (real lecture) or fall back to the mock MP4 clip.
+  // Load the HLS source for the active lecture. No fallback clip — a
+  // lecture with no video yet (still processing, or never uploaded) shows
+  // the empty state below instead of a placeholder video.
   useEffect(() => {
     const v = videoRef.current;
-    if (!v) return;
+    if (!v || !src) return;
 
     hlsRef.current?.destroy();
     hlsRef.current = null;
-
-    if (!src) {
-      v.src = VIDEO_SRC;
-      return;
-    }
 
     if (Hls.isSupported()) {
       const hls = new Hls();
@@ -268,6 +265,19 @@ export default function VideoPlayer({
   const pct = durationSec > 0 ? (currentSec / durationSec) * 100 : 0;
   const VolumeIcon =
     muted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
+
+  if (!src) {
+    return (
+      <div
+        className="relative flex w-full items-center justify-center bg-black"
+        style={{ aspectRatio: "16/9" }}
+      >
+        <p className="px-6 text-center text-[14px] text-white/50">
+          This lecture&apos;s video isn&apos;t ready yet.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div

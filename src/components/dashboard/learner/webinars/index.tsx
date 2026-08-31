@@ -214,6 +214,7 @@ export default function WebinarsPageContent() {
   useEffect(() => {
     if (!gridRef.current) return;
     const cards = Array.from(gridRef.current.querySelectorAll(".webinar-card"));
+    if (cards.length === 0) return;
     gsap.killTweensOf(cards);
     const ctx = gsap.context(() => {
       gsap.fromTo(

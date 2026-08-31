@@ -46,9 +46,14 @@ export function CertificateCard({ cert }: { cert: LearnerCertificate }) {
   const isRevoked = cert.status === "revoked";
 
   return (
-    <div className="bg-white rounded-2xl border border-(--gray-200) overflow-hidden hover:shadow-md transition-shadow duration-200">
-      <div className="relative p-5 border-b border-(--gray-100)">
-        <div className="flex items-center justify-between mb-4">
+    <div className="relative bg-white rounded-2xl border border-(--gray-200) overflow-hidden hover:shadow-lg transition-shadow duration-200">
+      {/* Certificate frame — a double rule just inside the card edge, the
+          way a printed certificate is bordered, kept flat/subtle rather
+          than an ornate gold-foil treatment. */}
+      <div className="pointer-events-none absolute inset-2.5 rounded-xl border border-(--primary-100)" />
+
+      <div className="relative bg-linear-to-br from-(--primary-50) to-white p-5 pb-4">
+        <div className="flex items-start justify-between mb-5">
           <div className="flex items-center gap-2">
             <GraduationCap className="w-5 h-5 text-(--primary-600)" />
             <span className="text-[12px] font-semibold text-(--primary-600) tracking-widest uppercase">
@@ -63,7 +68,7 @@ export function CertificateCard({ cert }: { cert: LearnerCertificate }) {
           ) : (
             <Link
               href={verifyHref}
-              className="flex items-center gap-1 text-[12px] font-semibold text-(--primary-600) bg-(--primary-50) px-2.5 py-1 rounded-full hover:bg-(--primary-100) transition-colors"
+              className="flex items-center gap-1 text-[12px] font-semibold text-(--primary-600) bg-white px-2.5 py-1 rounded-full border border-(--primary-100) hover:bg-(--primary-50) transition-colors"
             >
               <BadgeCheck className="w-3 h-4" />
               Verify
@@ -71,33 +76,45 @@ export function CertificateCard({ cert }: { cert: LearnerCertificate }) {
           )}
         </div>
 
-        <p className="text-[10px] font-semibold uppercase tracking-widest mb-1 text-(--gray-400)">
-          Certificate of Completion
-        </p>
-        {/* The frozen snapshot, not the live course title — this is the
-            record of what was awarded. */}
-        <h3 className="text-[16px] md:text-[18px] font-semibold text-(--text-title) leading-tight mb-4 line-clamp-2">
-          {cert.course_title}
-        </h3>
-        <div>
-          <p className="text-[10px] font-medium text-(--gray-400)">Awarded to</p>
-          <p className="text-[12px] md:text-[14px] lg:text-[14px] font-semibold text-(--text-title)">
+        <div className="flex items-start gap-3">
+          {/* Seal — the certificate's visual anchor, standing in for a wax
+              seal/ribbon without going skeuomorphic. */}
+          <div className="shrink-0 mt-0.5 flex h-11 w-11 items-center justify-center rounded-full bg-(--primary-600) text-white shadow-sm ring-4 ring-(--primary-100)">
+            <Award className="w-5 h-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-(--primary-500) mb-1">
+              Certificate of Completion
+            </p>
+            {/* The frozen snapshot, not the live course title — this is the
+                record of what was awarded. */}
+            <h3 className="text-[18px] md:text-[20px] font-bold text-(--text-title) leading-snug line-clamp-2">
+              {cert.course_title}
+            </h3>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-dashed border-(--primary-100)">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-(--gray-400)">
+            Awarded to
+          </p>
+          <p className="text-[14px] font-semibold text-(--text-title)">
             {cert.learner_name}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center justify-between px-4 sm:px-5 pt-3 pb-1">
+      <div className="relative flex items-center justify-between px-5 py-3 bg-(--gray-50)">
         <div>
-          <p className="text-[12px] text-(--gray-500)">Issued</p>
-          <p className="text-[12px] md:text-[14px] lg:text-[14px] font-medium text-(--text-title)">
+          <p className="text-[11px] text-(--gray-500)">Issued</p>
+          <p className="text-[13px] font-medium text-(--text-title)">
             {formatIssued(cert.issued_at)}
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[12px] text-(--gray-500)">Credential ID</p>
+          <p className="text-[11px] text-(--gray-500)">Credential ID</p>
           <p
-            className="text-[12px] md:text-[14px] lg:text-[14px] font-medium text-(--text-title) font-mono"
+            className="text-[13px] font-medium text-(--text-title) font-mono"
             title={cert.certificate_id ?? cert.certificate_uid}
           >
             {cert.certificate_id ?? shortCredentialId(cert.certificate_uid)}
@@ -105,19 +122,19 @@ export function CertificateCard({ cert }: { cert: LearnerCertificate }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 px-4 sm:px-5 py-3">
+      <div className="relative flex items-center gap-2 px-5 py-3">
         <a
           href={downloadHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg bg-(--primary-700) hover:bg-(--primary-900) text-white text-[12px] md:text-[14px] lg:text-[14px] font-medium transition-colors cursor-pointer"
+          className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg bg-(--primary-700) hover:bg-(--primary-900) text-white text-[13px] font-medium transition-colors cursor-pointer"
         >
           <Download className="w-4 h-4" />
           PDF
         </a>
         <Link
           href={verifyHref}
-          className="flex-1 flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg border border-(--gray-200) text-(--gray-500) hover:bg-(--gray-50) text-[12px] md:text-[14px] lg:text-[14px] font-medium transition-colors cursor-pointer"
+          className="flex-1 flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg border border-(--gray-200) text-(--gray-500) hover:bg-white text-[13px] font-medium transition-colors cursor-pointer"
         >
           <Link2 className="w-4 h-4" />
           Public link
@@ -165,9 +182,9 @@ export default function CertificatesPage() {
           Certificates
         </h1>
         <p className="text-[14px] text-(--gray-500) mt-1">
-          <span className="font-medium">{isLoading ? "—" : total}</span> verified
-          credential{total === 1 ? "" : "s"} · Share the public link with
-          employers.
+          <span className="font-medium">{isLoading ? "—" : total}</span>{" "}
+          verified credential{total === 1 ? "" : "s"} · Share the public link
+          with employers.
         </p>
       </div>
 
