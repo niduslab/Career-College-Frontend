@@ -229,7 +229,7 @@ export default function DiscussionPanel({
   };
 
   return (
-    <div className="max-w-3xl mt-6 pt-6 border-t border-(--gray-100)">
+    <div className="max-w-3xl mt-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-[16px] font-bold text-(--text-title)">
           Discussion Q&A

@@ -139,11 +139,7 @@ export default function ReviewsPanel({
   const reviews = reviewsPage?.results ?? [];
 
   return (
-    <div className="max-w-3xl mt-6 pt-6 border-t border-(--gray-100)">
-      <h3 className="text-[16px] font-bold text-(--text-title) mb-4">
-        Ratings & Reviews
-      </h3>
-
+    <div className="max-w-3xl mt-4">
       {/* Summary */}
       <div className="flex items-center gap-4 mb-6">
         <div className="text-[28px] font-bold text-(--text-title)">

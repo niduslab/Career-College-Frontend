@@ -48,6 +48,8 @@ export interface InstructorProfile {
   linkedin_url: string;
   github_url: string;
   website_url: string;
+  /** Signature image copied onto certificates at issue time. */
+  signature: string | null;
   is_verified?: boolean;
   is_profile_public: boolean;
 }
@@ -103,6 +105,10 @@ export interface PartnerProfile {
   contact_phone: string;
   website_url: string;
   linkedin_url: string;
+  /** Authorized signatory printed on certificates for this institution's courses. */
+  authorized_signatory_name: string;
+  authorized_signatory_designation: string;
+  authorized_signature: string | null;
   is_verified?: boolean;
   is_profile_public: boolean;
 }
@@ -126,6 +132,8 @@ export interface PartnerProfileUpdate {
   contact_phone?: string;
   website_url?: string;
   linkedin_url?: string;
+  authorized_signatory_name?: string;
+  authorized_signatory_designation?: string;
   is_profile_public?: boolean;
 }
 
@@ -228,6 +236,24 @@ export async function updateInstructorPhoto(
   return extractInstructorProfile(res.data);
 }
 
+/** Max signature upload size, mirroring the backend's 2 MB validator. */
+export const MAX_SIGNATURE_BYTES = 2 * 1024 * 1024;
+
+/**
+ * Upload/replace the instructor's certificate signature. Pass `null` to clear.
+ *
+ * Only affects certificates issued from now on — every already-issued
+ * certificate carries its own frozen copy of the signature.
+ */
+export async function updateInstructorSignature(
+  file: File | null,
+): Promise<InstructorProfile> {
+  const form = new FormData();
+  form.append("signature", file ?? "");
+  const res = await apiPatch("/auth/profile/me/", form);
+  return extractInstructorProfile(res.data);
+}
+
 // Partner institution profile
 
 export async function getMyPartnerProfile(): Promise<MyPartnerProfileResponse> {
@@ -260,6 +286,19 @@ export async function updatePartnerImages(args: {
   if (args.logo !== undefined) form.append("logo", args.logo ?? "");
   if (args.cover_image !== undefined)
     form.append("cover_image", args.cover_image ?? "");
+  const res = await apiPatch("/auth/profile/me/", form);
+  return extractPartnerProfile(res.data);
+}
+
+/**
+ * Upload/replace the institution's authorized-signatory signature.
+ * Pass `null` to clear. Only affects certificates issued from now on.
+ */
+export async function updatePartnerSignature(
+  file: File | null,
+): Promise<PartnerProfile> {
+  const form = new FormData();
+  form.append("authorized_signature", file ?? "");
   const res = await apiPatch("/auth/profile/me/", form);
   return extractPartnerProfile(res.data);
 }

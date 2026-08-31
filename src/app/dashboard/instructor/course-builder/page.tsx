@@ -34,6 +34,7 @@ const INITIAL_FORM: SetupForm = {
   description: "",
   price: "",
   durationMinutes: "",
+  learningHours: "",
   learningObjectives: "",
   prerequisites: "",
   audiences: "",
@@ -151,6 +152,8 @@ export default function CourseBuilderPage() {
             course.duration_minutes != null
               ? String(course.duration_minutes)
               : "",
+          learningHours:
+            course.learning_hours != null ? String(course.learning_hours) : "",
           learningObjectives: course.learning_objectives,
           prerequisites: course.prerequisites,
           audiences: course.audiences,
@@ -203,6 +206,9 @@ export default function CourseBuilderPage() {
         price: form.price,
         duration_minutes: form.durationMinutes
           ? Number(form.durationMinutes)
+          : undefined,
+        learning_hours: form.learningHours
+          ? Number(form.learningHours)
           : undefined,
 
         learning_objectives: form.learningObjectives,

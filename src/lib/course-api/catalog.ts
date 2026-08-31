@@ -19,6 +19,9 @@ export interface Course {
   language: string;
   level: CourseLevel;
   duration_minutes: number | null;
+  /** Instructor-declared learning hours, printed on the certificate.
+   *  Distinct from duration_minutes, which is raw video runtime. */
+  learning_hours: number | null;
   status: CourseStatus;
   is_published: boolean;
   rejection_reason: string;
@@ -44,6 +47,7 @@ export interface CourseCreateInput {
   language?: string;
   level?: CourseLevel;
   duration_minutes?: number;
+  learning_hours?: number;
   learning_objectives?: string;
   prerequisites?: string;
   audiences?: string;

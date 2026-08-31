@@ -12,6 +12,7 @@ import AssignmentPanel from "./AssignmentPanel";
 import CodingExercisePanel from "./CodingExercisePanel";
 import ReviewsPanel from "./ReviewsPanel";
 import DiscussionPanel from "./DiscussionPanel";
+import CourseTabs from "@/components/course-details/course-tabs";
 import AiCopilot from "./AiCopilot";
 import { AI_INITIAL } from "./data";
 import type { AiMessage } from "./types";
@@ -39,6 +40,9 @@ export default function CoursePlayerPage({
   const { data: curriculum, isLoading: curriculumLoading } =
     useLearnerCurriculum(courseSlug);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [belowPlayerTab, setBelowPlayerTab] = useState<"Reviews" | "Discussion">(
+    "Reviews",
+  );
   const [aiOpen, setAiOpen] = useState(false);
   const [aiInput, setAiInput] = useState("");
   const [aiMessages, setAiMessages] = useState<AiMessage[]>([
@@ -498,17 +502,30 @@ export default function CoursePlayerPage({
             </div>
           )}
 
-        {/* Course reviews — tied to the course, not the active curriculum item. */}
+        {/* Reviews / Discussion — tied to the course, not the active
+            curriculum item. Tabbed (same CourseTabs used on the public
+            course-details page) instead of always stacked, since each
+            section can run long on its own. */}
         <div className="flex-1 bg-white px-4 sm:px-6 lg:px-8 pb-6">
           <div className="max-w-3xl">
-            <ReviewsPanel
-              courseSlug={courseSlug}
-              isInstructorPreview={isInstructorPreview}
+            <CourseTabs
+              tabs={[{ label: "Reviews" }, { label: "Discussion" }]}
+              activeTab={belowPlayerTab}
+              setActiveTab={(label) =>
+                setBelowPlayerTab(label as "Reviews" | "Discussion")
+              }
             />
-            <DiscussionPanel
-              courseSlug={courseSlug}
-              isInstructorPreview={isInstructorPreview}
-            />
+            {belowPlayerTab === "Reviews" ? (
+              <ReviewsPanel
+                courseSlug={courseSlug}
+                isInstructorPreview={isInstructorPreview}
+              />
+            ) : (
+              <DiscussionPanel
+                courseSlug={courseSlug}
+                isInstructorPreview={isInstructorPreview}
+              />
+            )}
           </div>
         </div>
       </div>
