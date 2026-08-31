@@ -13,6 +13,10 @@ import CodingExercisePanel from "./CodingExercisePanel";
 import ReviewsPanel from "./ReviewsPanel";
 import DiscussionPanel from "./DiscussionPanel";
 import CourseTabs from "@/components/course-details/course-tabs";
+import CourseDescription from "@/components/course-details/course-description";
+import CourseRequirements from "@/components/course-details/course-requirements";
+import WhatYouWillLearn from "@/components/course-details/what-you-will-learn";
+import { RichText } from "@/components/common/rich-text";
 import AiCopilot from "./AiCopilot";
 import { AI_INITIAL } from "./data";
 import type { AiMessage } from "./types";
@@ -43,6 +47,14 @@ export default function CoursePlayerPage({
   const [belowPlayerTab, setBelowPlayerTab] = useState<"Reviews" | "Discussion">(
     "Reviews",
   );
+  const PREVIEW_TABS = [
+    "Audiences",
+    "Description",
+    "What You Will Learn",
+    "Requirements",
+  ] as const;
+  const [previewTab, setPreviewTab] =
+    useState<(typeof PREVIEW_TABS)[number]>("Audiences");
   const [aiOpen, setAiOpen] = useState(false);
   const [aiInput, setAiInput] = useState("");
   const [aiMessages, setAiMessages] = useState<AiMessage[]>([
@@ -340,9 +352,13 @@ export default function CoursePlayerPage({
                   </p>
                 </div>
                 {isInstructorPreview ? (
-                  <span className="shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
-                    Instructor Preview
-                  </span>
+                  <button
+                    onClick={() => router.back()}
+                    className="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap cursor-pointer hover:bg-amber-100 transition-colors"
+                  >
+                    <ChevronLeft className="w-3 h-3" />
+                    Instructor Preview — Back to Course Builder
+                  </button>
                 ) : (
                   courseDetail.enrollment && (
                     <div className="flex items-center gap-2 shrink-0">
@@ -508,23 +524,64 @@ export default function CoursePlayerPage({
             section can run long on its own. */}
         <div className="flex-1 bg-white px-4 sm:px-6 lg:px-8 pb-6">
           <div className="max-w-3xl">
-            <CourseTabs
-              tabs={[{ label: "Reviews" }, { label: "Discussion" }]}
-              activeTab={belowPlayerTab}
-              setActiveTab={(label) =>
-                setBelowPlayerTab(label as "Reviews" | "Discussion")
-              }
-            />
-            {belowPlayerTab === "Reviews" ? (
-              <ReviewsPanel
-                courseSlug={courseSlug}
-                isInstructorPreview={isInstructorPreview}
-              />
+            {courseLoading ? null : isInstructorPreview ? (
+              courseDetail?.course && (
+                <>
+                  <CourseTabs
+                    tabs={PREVIEW_TABS.map((label) => ({ label }))}
+                    activeTab={previewTab}
+                    setActiveTab={(label) =>
+                      setPreviewTab(label as (typeof PREVIEW_TABS)[number])
+                    }
+                  />
+                  {previewTab === "Audiences" &&
+                    (courseDetail.course.audiences?.trim() ? (
+                      <div className="mt-6 lg:mt-8">
+                        <div className="rounded-xl border border-gray-200 shadow-sm p-6">
+                          <RichText
+                            html={courseDetail.course.audiences}
+                            className="sg-p-small --text-paragraph leading-relaxed [&_p]:mb-3 last:[&_p]:mb-0"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-6 text-[13px] text-(--gray-400)">
+                        No audiences added yet.
+                      </p>
+                    ))}
+                  {previewTab === "Description" && (
+                    <CourseDescription description={courseDetail.course.description} />
+                  )}
+                  {previewTab === "What You Will Learn" && (
+                    <WhatYouWillLearn
+                      learningObjectives={courseDetail.course.learning_objectives}
+                    />
+                  )}
+                  {previewTab === "Requirements" && (
+                    <CourseRequirements
+                      prerequisites={courseDetail.course.prerequisites}
+                    />
+                  )}
+                </>
+              )
             ) : (
-              <DiscussionPanel
-                courseSlug={courseSlug}
-                isInstructorPreview={isInstructorPreview}
-              />
+              <>
+                <CourseTabs
+                  tabs={[{ label: "Reviews" }, { label: "Discussion" }]}
+                  activeTab={belowPlayerTab}
+                  setActiveTab={(label) =>
+                    setBelowPlayerTab(label as "Reviews" | "Discussion")
+                  }
+                />
+                {belowPlayerTab === "Reviews" ? (
+                  <ReviewsPanel courseSlug={courseSlug} />
+                ) : (
+                  <DiscussionPanel
+                    courseSlug={courseSlug}
+                    isInstructorPreview={isInstructorPreview}
+                  />
+                )}
+              </>
             )}
           </div>
         </div>

@@ -67,10 +67,8 @@ function StarPicker({
 
 export default function ReviewsPanel({
   courseSlug,
-  isInstructorPreview,
 }: {
   courseSlug?: string;
-  isInstructorPreview?: boolean;
 }) {
   const { data: summary } = useReviewSummary(courseSlug);
   const { data: reviewsPage, isLoading: reviewsLoading } =
@@ -155,8 +153,7 @@ export default function ReviewsPanel({
       </div>
 
       {/* Own review — enrolled learners only */}
-      {!isInstructorPreview && (
-        <div className="mb-6 p-4 rounded-lg border border-(--gray-200) bg-(--gray-50)">
+      <div className="mb-6 p-4 rounded-lg border border-(--gray-200) bg-(--gray-50)">
           {myReviewLoading ? (
             <div className="flex items-center gap-2 text-(--gray-400) text-[13px]">
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -237,7 +234,6 @@ export default function ReviewsPanel({
             </button>
           )}
         </div>
-      )}
 
       {/* Review list */}
       {reviewsLoading ? (

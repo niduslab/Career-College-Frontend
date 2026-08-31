@@ -117,6 +117,8 @@ export default function RichTextEditor({
 }: RichTextEditorProps) {
   const [spacingOpen, setSpacingOpen] = useState(false);
   const [currentSpacing, setCurrentSpacing] = useState("1.5");
+  const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -138,10 +140,21 @@ export default function RichTextEditor({
     },
   });
 
-  const addLink = () => {
-    const url = window.prompt("Enter URL");
-    if (!url || !editor) return;
-    editor.chain().focus().setLink({ href: url }).run();
+  const openLinkPopover = () => {
+    if (!editor) return;
+    setLinkUrl(editor.getAttributes("link").href ?? "");
+    setLinkPopoverOpen(true);
+  };
+
+  const applyLink = () => {
+    if (!editor) return;
+    const url = linkUrl.trim();
+    if (url) {
+      editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    } else {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+    }
+    setLinkPopoverOpen(false);
   };
 
   const applySpacing = (val: string) => {
@@ -160,9 +173,9 @@ export default function RichTextEditor({
   if (!editor) return null;
 
   return (
-    <div className="border border-(--gray-200) rounded-lg bg-white overflow-hidden focus-within:ring-2 focus-within:ring-(--primary-700) transition-shadow">
+    <div className="border border-(--gray-200) rounded-lg bg-white focus-within:ring-2 focus-within:ring-(--primary-700) transition-shadow">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-(--gray-200) bg-(--gray-50)">
+      <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-(--gray-200) bg-(--gray-50) rounded-t-lg">
         {/* History */}
         {/* <ToolbarButton
           title="Undo"
@@ -279,13 +292,62 @@ export default function RichTextEditor({
         <div className="w-px h-5 bg-(--gray-200) mx-1" />
 
         {/* Link */}
-        <ToolbarButton
-          title="Add Link"
-          active={editor.isActive("link")}
-          onClick={addLink}
-        >
-          <LinkIcon className="w-3.5 h-3.5" />
-        </ToolbarButton>
+        <div className="relative">
+          <ToolbarButton
+            title="Add Link"
+            active={editor.isActive("link")}
+            onClick={openLinkPopover}
+          >
+            <LinkIcon className="w-3.5 h-3.5" />
+          </ToolbarButton>
+
+          {linkPopoverOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setLinkPopoverOpen(false)}
+              />
+              <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-56 max-w-[calc(100vw-2rem)] sm:absolute sm:top-full sm:left-auto sm:right-0 sm:translate-x-0 sm:translate-y-0 sm:mt-1 sm:w-64 bg-white border border-(--gray-200) rounded-lg shadow-lg z-50 p-2">
+                <input
+                  type="url"
+                  autoFocus
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      applyLink();
+                    }
+                    if (e.key === "Escape") setLinkPopoverOpen(false);
+                  }}
+                  placeholder="https://example.com"
+                  className="w-full h-8 px-2 text-[13px] border border-(--gray-200) rounded-md outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow"
+                />
+                <div className="flex items-center justify-end gap-1.5 mt-2">
+                  {editor.isActive("link") && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        editor.chain().focus().extendMarkRange("link").unsetLink().run();
+                        setLinkPopoverOpen(false);
+                      }}
+                      className="h-7 px-2.5 text-[12px] text-(--gray-500) hover:bg-(--gray-100) rounded-md transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={applyLink}
+                    className="h-7 px-2.5 text-[12px] font-medium text-white bg-(--primary-700) hover:bg-(--primary-900) rounded-md transition-colors"
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
 
         <div className="w-px h-5 bg-(--gray-200) mx-1" />
 

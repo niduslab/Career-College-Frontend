@@ -1381,33 +1381,40 @@ export default function CurriculumTab({
             </button>
           </div>
 
-          <div className="bg-(--gray-950) rounded-2xl p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-(--primary-600)" />
-              <h3 className="text-[12px] font-normal text-(--primary-100)">
-                AI Outline Generator
-              </h3>
+          {/* Gradient-framed "AI panel" — visually distinct from the plain
+              white cards around it, signaling this is the AI-powered tool
+              on the page rather than another settings block. */}
+          <div
+            className={`ai-panel-frame ${generating ? "ai-panel-frame--active" : ""}`}
+          >
+            <div className="bg-(--gray-950) rounded-2xl p-4 space-y-3.5">
+              <div className="flex items-center gap-2">
+                <Sparkles className="ai-panel-sparkle w-4 h-4 text-(--primary-400)" />
+                <h3 className="text-[13px] font-semibold tracking-wide text-white">
+                  AI Outline Generator
+                </h3>
+              </div>
+              <p className="text-[12px] text-(--gray-400) font-normal leading-relaxed">
+                Generate a starter curriculum from your course details. Review
+                and edit before anything is created.
+              </p>
+              <input
+                type="text"
+                value={aiFocus}
+                onChange={(e) => setAiFocus(e.target.value)}
+                disabled={generating}
+                placeholder="Optional focus, e.g. hands-on labs"
+                className="w-full h-10 px-3 text-[12px] rounded-md bg-(--gray-900) text-white placeholder:text-(--gray-500) border border-(--gray-700) outline-none focus:ring-2 focus:ring-(--primary-500) focus:border-(--primary-500) transition-shadow disabled:opacity-60"
+              />
+              <button
+                onClick={() => runGenerate(false)}
+                disabled={generating}
+                className="w-full h-10 bg-(--primary-600) hover:bg-(--primary-500) text-white text-[14px] font-semibold rounded-md cursor-pointer transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {generating && <Loader2 className="w-4 h-4 animate-spin" />}
+                {generating ? "Generating…" : "Generate Outline"}
+              </button>
             </div>
-            <p className="text-[12px] text-[#f7f5f2] font-normal leading-relaxed">
-              Generate a starter curriculum from your course details. Review and
-              edit before anything is created.
-            </p>
-            <input
-              type="text"
-              value={aiFocus}
-              onChange={(e) => setAiFocus(e.target.value)}
-              disabled={generating}
-              placeholder="Optional focus, e.g. hands-on labs"
-              className="w-full h-9 px-3 text-[12px] rounded-md bg-(--gray-700)   placeholder:text-gray-500 border border-(--gray-700) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow disabled:opacity-60"
-            />
-            <button
-              onClick={() => runGenerate(false)}
-              disabled={generating}
-              className="w-full h-9 bg-(--primary-700) hover:bg-(--primary-950) text-[#f7f5f2] text-[14px] font-semibold rounded-md cursor-pointer transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {generating && <Loader2 className="w-4 h-4 animate-spin" />}
-              {generating ? "Generating…" : "Generate Outline"}
-            </button>
           </div>
 
           <div className="bg-white border border-(--gray-200) rounded-2xl p-4 space-y-3">
