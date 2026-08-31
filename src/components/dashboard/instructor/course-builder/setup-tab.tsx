@@ -456,39 +456,50 @@ export default function SetupTab({
             )}
           </div>
 
-          {form.deliveryMode === "scheduled" && (
-            <div className="space-y-1.5">
-              <label className="text-[14px] font-normal text-(--text-title)">
-                Course Outline <span className="text-red-500">*</span>
-                <span className="text-[12px] text-(--gray-400) font-normal ml-1">
-                  (required before submitting a scheduled course)
-                </span>
-              </label>
-              <div className="mt-1">
-                <WeekOutlineEditor
-                  value={form.courseOutline}
-                  onChange={(next) => {
-                    set("courseOutline", next);
-                    setErrors((prev) => ({
-                      ...prev,
-                      courseOutline: undefined,
-                    }));
-                  }}
-                  hasError={!!errors.courseOutline}
-                />
-              </div>
-              {errors.courseOutline && (
-                <p className="text-[12px] text-red-500 mt-1">
-                  {errors.courseOutline}
-                </p>
+          {/* Shown for both delivery modes. The backend accepts course_outline
+              on either, and only *requires* it at submission time for scheduled
+              courses — so it is optional here for self-paced, not hidden. */}
+          <div className="space-y-1.5">
+            <label className="text-[14px] font-normal text-(--text-title)">
+              Course Outline{" "}
+              {form.deliveryMode === "scheduled" && (
+                <>
+                  <span className="text-red-500">*</span>
+                  <span className="text-[12px] text-(--gray-400) font-normal ml-1">
+                    (required before submitting a scheduled course)
+                  </span>
+                </>
               )}
-              <p className="text-[12px] text-(--gray-500)">
-                A written outline stands in for a fully-built curriculum on
-                scheduled courses — you can still add real sections/lessons, but
-                they aren&apos;t required before submitting.
-              </p>
+              {form.deliveryMode === "self_paced" && (
+                <span className="text-[12px] text-(--gray-400) font-normal ml-1">
+                  (optional)
+                </span>
+              )}
+            </label>
+            <div className="mt-1">
+              <WeekOutlineEditor
+                value={form.courseOutline}
+                onChange={(next) => {
+                  set("courseOutline", next);
+                  setErrors((prev) => ({
+                    ...prev,
+                    courseOutline: undefined,
+                  }));
+                }}
+                hasError={!!errors.courseOutline}
+              />
             </div>
-          )}
+            {errors.courseOutline && (
+              <p className="text-[12px] text-red-500 mt-1">
+                {errors.courseOutline}
+              </p>
+            )}
+            <p className="text-[12px] text-(--gray-500)">
+              {form.deliveryMode === "scheduled"
+                ? "A written outline stands in for a fully-built curriculum on scheduled courses — you can still add real sections/lessons, but they aren't required before submitting."
+                : "A high-level plan for the course. Optional for self-paced courses, where the curriculum you build is what learners follow."}
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="space-y-1.5">

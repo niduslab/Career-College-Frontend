@@ -7,6 +7,8 @@ export interface Lesson {
   id: string;
   type: LessonType;
   lectureType?: LectureType;
+  /** Lecture created in step 1 whose video/article hasn't been added yet. */
+  awaitingContent?: boolean;
   videoStatus?: "uploading" | "processing" | "ready" | "failed";
   title: string;
   videoType: string;

@@ -63,16 +63,23 @@ export default function PreviewDrawer({
         const withContents = await Promise.all(
           sections.map(async (s) => {
             const contents = await listSectionContents(s.id);
+            // This drawer previews what a learner would see, and lessons
+            // still awaiting their content are hidden from learners.
+            const visible = contents.filter(
+              (c) =>
+                c.item_type !== "lecture" ||
+                !(c.content as LectureContent).is_awaiting_content,
+            );
             return {
               id: s.id,
               title: s.title,
-              lessons: contents.length,
-              videos: contents.filter(
+              lessons: visible.length,
+              videos: visible.filter(
                 (c) =>
                   c.item_type === "lecture" &&
                   (c.content as LectureContent).lecture_type === "video",
               ).length,
-              durationMinutes: contents.reduce((sum, c) => {
+              durationMinutes: visible.reduce((sum, c) => {
                 if (c.item_type !== "lecture") return sum;
                 const seconds = (c.content as LectureContent)
                   .active_video_asset?.duration_seconds;
