@@ -34,7 +34,10 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { Lesson } from "./types";
 import ModuleModal from "./module-modal";
-import LessonModal, { type LectureSavePayload } from "./lesson-modal";
+import LessonModal, {
+  type ArticleAiContext,
+  type LectureSavePayload,
+} from "./lesson-modal";
 import OutlinePreviewModal, {
   type OutlineApplyMode,
 } from "./outline-preview-modal";
@@ -435,6 +438,17 @@ export default function CurriculumTab({
     setAiSectionIds(ids);
     writeAiSectionIds(courseId, ids);
   };
+
+  /** Course + module context for the AI article writer inside LessonModal.
+   *  Read from the same `meta` the outline generator uses, so an unsaved Setup
+   *  edit is honoured here too. */
+  const articleAiContext = (moduleId: number): ArticleAiContext => ({
+    course_title: meta?.title ?? "",
+    section_title: modules.find((m) => m.id === moduleId)?.title ?? "",
+    audience: meta?.audience ?? "",
+    level: meta?.level ?? "",
+    language: meta?.language ?? "English",
+  });
   const [moduleModal, setModuleModal] = useState<
     { mode: "add" } | { mode: "edit"; moduleId: number } | null
   >(null);
@@ -1590,6 +1604,7 @@ export default function CurriculumTab({
               !!(editingLesson.content.content as LectureContent)
                 .is_awaiting_content
             }
+            articleAiContext={articleAiContext(editingLesson.moduleId)}
             saving={savingLesson}
             deleting={deletingLesson}
             onSave={(lesson) =>
@@ -1618,6 +1633,7 @@ export default function CurriculumTab({
           lectureAwaitingContent
           initialLesson={contentToLesson(addingContentTo.content)}
           initialLectureType="Video"
+          articleAiContext={articleAiContext(addingContentTo.moduleId)}
           saving={savingLesson}
           onSave={(lesson) =>
             handleSaveLectureContent(

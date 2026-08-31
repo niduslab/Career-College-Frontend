@@ -93,3 +93,97 @@ export async function generateCourseOutline(
   );
   return res.data as CourseOutlineDraft;
 }
+
+// --------------------------------------------------------------------------
+// Article lectures
+// --------------------------------------------------------------------------
+
+/** Languages the AI service will tag a code sample with. Only used as a
+ *  `language-*` class on the rendered `<code>` element. */
+export type ArticleCodeLanguage =
+  | "python"
+  | "javascript"
+  | "typescript"
+  | "java"
+  | "cpp"
+  | "csharp"
+  | "go"
+  | "rust"
+  | "php"
+  | "ruby"
+  | "sql"
+  | "bash"
+  | "html"
+  | "css"
+  | "json"
+  | "yaml"
+  | "text";
+
+export interface ArticleCode {
+  language: ArticleCodeLanguage;
+  caption: string;
+  code: string;
+}
+
+export interface ArticleSection {
+  heading: string;
+  paragraphs: string[];
+  bullets: string[];
+  /** Null unless `include_code_examples` was set on the request. */
+  code: ArticleCode | null;
+}
+
+export interface ArticleLectureDraft {
+  /** Opening paragraph — what the lesson covers. */
+  summary: string;
+  sections: ArticleSection[];
+  /** "Key takeaways", in the article's own language. */
+  takeaways_heading: string;
+  key_takeaways: string[];
+  /** The same content as HTML, using only the tags the rich-text editor
+   *  parses. This is what goes into `article_content`; the structured fields
+   *  above are for preview and are never saved. */
+  article_html: string;
+  word_count: number;
+  estimated_reading_minutes: number;
+}
+
+export interface ArticleLectureGenerateInput {
+  /** The lesson's own title — the only required field. */
+  lecture_title: string;
+  course_title?: string;
+  section_title?: string;
+  /** What the lesson should cover, in the instructor's words. */
+  description?: string;
+  /** Points the article must cover, one per entry. At most 12. */
+  key_points?: string[];
+  audience?: string;
+  level?: CourseLevel | "";
+  language?: string;
+  /** Target *reading* time in minutes; a hint, not a constraint. */
+  target_duration_minutes?: number | null;
+  /** Off by default — a code block in a non-programming lesson is worse than
+   *  none, and the model volunteers them freely. */
+  include_code_examples?: boolean;
+  /** Optional free-text steer, e.g. "open with a worked example". */
+  extra_instructions?: string;
+}
+
+/** Draft the body of one article lecture.
+ *
+ *  Nothing is saved. The returned `article_html` is loaded into the editor for
+ *  the instructor to read and edit; it only reaches the lecture when they save
+ *  it through the normal `updateLecture` PATCH.
+ */
+export async function generateArticleLecture(
+  input: ArticleLectureGenerateInput,
+): Promise<ArticleLectureDraft> {
+  const res = await apiPost<ArticleLectureDraft>(
+    "/courses/ai/article-lecture-preview/",
+    {
+      ...input,
+      description: toPlainText(input.description ?? ""),
+    },
+  );
+  return res.data as ArticleLectureDraft;
+}
