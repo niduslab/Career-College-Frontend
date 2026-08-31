@@ -9,3 +9,4 @@ export * from "./status";
 export * from "./schedules";
 export * from "./invites";
 export * from "./learning-paths";
+export * from "./ai";

@@ -75,6 +75,21 @@ export interface LectureContent {
   article_content?: string;
   is_preview?: boolean;
   active_video_asset?: VideoAsset | null;
+  /** Step 1 of two-step authoring: the lecture exists but has no payload yet.
+   *  Such a lecture is hidden from learners and blocks course submission. */
+  is_awaiting_content?: boolean;
+}
+
+/** Fields every content type reports in the `/contents/` list.
+ *
+ *  `is_awaiting_content` means the row exists but nothing has been authored in
+ *  it — a lecture with no video, a quiz or assignment with no questions, a
+ *  coding exercise with no code. Such a row blocks course submission, and can
+ *  be replaced without losing work. */
+export interface ContentItemBase {
+  id: number;
+  title: string;
+  is_awaiting_content?: boolean;
 }
 
 export interface SectionContentItem {
@@ -83,7 +98,7 @@ export interface SectionContentItem {
   item_type: SectionItemType;
   object_id: number;
   position: number;
-  content: LectureContent | Record<string, unknown>;
+  content: LectureContent | ContentItemBase | Record<string, unknown>;
 }
 
 export interface CreateArticleLectureInput {
@@ -104,7 +119,33 @@ export interface CreateVideoLectureInput {
   is_preview?: boolean;
 }
 
-/** Create an article lecture (JSON body). */
+export interface CreateLectureInput {
+  title: string;
+  position?: number;
+  is_preview?: boolean;
+}
+
+/**
+ * Step 1 of two-step lecture authoring: create the lesson from its details
+ * alone. The backend defaults it to an empty video lecture; the payload
+ * arrives later via `setLectureArticle` / `uploadLectureVideo`.
+ */
+export async function createLecture(
+  sectionId: number,
+  input: CreateLectureInput,
+): Promise<WithMessage<SectionContentItem>> {
+  const res = await apiPost<SectionContentItem>(
+    `/courses/sections/${sectionId}/contents/`,
+    { item_type: "lecture", ...input },
+  );
+  return withMessage(res);
+}
+
+/**
+ * Create an article lecture in one shot (JSON body). Still supported by the
+ * backend; the builder uses the two-step flow (`createLecture` then
+ * `updateLecture`) instead.
+ */
 export async function createArticleLecture(
   sectionId: number,
   input: Omit<CreateArticleLectureInput, "item_type" | "lecture_type">,
@@ -116,6 +157,8 @@ export async function createArticleLecture(
   return withMessage(res);
 }
 
+/** Create a video lecture and upload its file in one shot. See the note on
+ *  `createArticleLecture` — the builder uses the two-step flow. */
 export async function createVideoLecture(
   sectionId: number,
   input: Omit<CreateVideoLectureInput, "item_type" | "lecture_type">,
@@ -153,11 +196,14 @@ export async function getLecture(lectureId: number): Promise<LectureContent> {
 
 export interface LectureUpdateInput {
   title?: string;
+  /** Set on step 2 to commit the lecture to a kind. Switching to "video"
+   *  clears any article body server-side. */
+  lecture_type?: LectureType;
   article_content?: string;
   is_preview?: boolean;
 }
 
-/** Partial update of an existing lecture (title / article content / preview flag). */
+/** Partial update of an existing lecture (title / type / article content / preview flag). */
 export async function updateLecture(
   lectureId: number,
   input: LectureUpdateInput,
@@ -165,6 +211,29 @@ export async function updateLecture(
   const res = await apiPatch<LectureContent>(
     `/courses/lectures/${lectureId}/`,
     input,
+  );
+  return withMessage(res);
+}
+
+/**
+ * Step 2, video branch: attach (or replace) the lecture's video. Multipart
+ * PATCH — the backend deactivates any previous asset and enqueues transcoding,
+ * so poll `getLecture` until `active_video_asset.status` is "ready".
+ */
+export async function uploadLectureVideo(
+  lectureId: number,
+  file: File,
+  extra: { title?: string; is_preview?: boolean } = {},
+): Promise<WithMessage<LectureContent>> {
+  const form = new FormData();
+  form.append("lecture_type", "video");
+  form.append("video_file", file);
+  if (extra.title !== undefined) form.append("title", extra.title);
+  if (extra.is_preview !== undefined)
+    form.append("is_preview", String(extra.is_preview));
+  const res = await apiPatch<LectureContent>(
+    `/courses/lectures/${lectureId}/`,
+    form,
   );
   return withMessage(res);
 }
