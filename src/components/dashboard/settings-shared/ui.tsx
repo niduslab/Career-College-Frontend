@@ -76,9 +76,12 @@ export function Field({
 
 export function Input({
   icon: Icon,
+  error,
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement> & {
   icon?: React.ElementType;
+  /** When set, the input gets a red border/ring instead of the default focus color. */
+  error?: string;
 }) {
   return (
     <div className="relative">
@@ -87,7 +90,11 @@ export function Input({
       )}
       <input
         {...props}
-        className={`w-full h-12 ${Icon ? "pl-9" : "pl-3"} pr-3 text-[14px] border border-(--gray-200) rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none focus:ring-2 focus:ring-(--primary-700) transition-shadow disabled:bg-(--gray-50) disabled:text-(--gray-500) disabled:cursor-not-allowed`}
+        className={`w-full h-12 ${Icon ? "pl-9" : "pl-3"} pr-3 text-[14px] border rounded-lg bg-white text-(--text-title) placeholder:text-(--gray-400) outline-none transition-shadow disabled:bg-(--gray-50) disabled:text-(--gray-500) disabled:cursor-not-allowed ${
+          error
+            ? "border-red-300 focus:ring-2 focus:ring-red-200"
+            : "border-(--gray-200) focus:ring-2 focus:ring-(--primary-700)"
+        }`}
       />
     </div>
   );

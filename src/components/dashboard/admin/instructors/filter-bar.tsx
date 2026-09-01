@@ -1,8 +1,13 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Search, ChevronDown, Download } from "lucide-react";
-import { STATUSES, InstructorStatus } from "./data";
+import { Search, ChevronDown } from "lucide-react";
+
+export type InstructorStatus = "Active" | "Suspended";
+export type InstructorVerification = "Verified" | "Unverified";
+
+const STATUSES: InstructorStatus[] = ["Active", "Suspended"];
+const VERIFICATIONS: InstructorVerification[] = ["Verified", "Unverified"];
 
 interface FilterDropdownProps<T extends string> {
   label: string;
@@ -46,7 +51,7 @@ function FilterDropdown<T extends string>({
         />
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-10 py-1 min-w-32.5">
+        <div className="absolute right-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-10 py-1 min-w-32.5">
           <button
             onClick={() => onSelect("All")}
             className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-colors ${
@@ -81,8 +86,12 @@ interface InstructorsFilterBarProps {
   onSearchChange: (v: string) => void;
   status: InstructorStatus | "All";
   onStatusChange: (v: InstructorStatus | "All") => void;
+  verification: InstructorVerification | "All";
+  onVerificationChange: (v: InstructorVerification | "All") => void;
   statusOpen: boolean;
   onStatusToggle: () => void;
+  verificationOpen: boolean;
+  onVerificationToggle: () => void;
 }
 
 export default function InstructorsFilterBar({
@@ -90,8 +99,12 @@ export default function InstructorsFilterBar({
   onSearchChange,
   status,
   onStatusChange,
+  verification,
+  onVerificationChange,
   statusOpen,
   onStatusToggle,
+  verificationOpen,
+  onVerificationToggle,
 }: InstructorsFilterBarProps) {
   return (
     <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -107,6 +120,14 @@ export default function InstructorsFilterBar({
 
       <div className="flex items-center gap-2 flex-wrap">
         <FilterDropdown
+          label="Verification"
+          value={verification}
+          options={VERIFICATIONS}
+          open={verificationOpen}
+          onToggle={onVerificationToggle}
+          onSelect={onVerificationChange}
+        />
+        <FilterDropdown
           label="Status"
           value={status}
           options={STATUSES}
@@ -114,10 +135,6 @@ export default function InstructorsFilterBar({
           onToggle={onStatusToggle}
           onSelect={onStatusChange}
         />
-        <button className="text-[12px] cursor-pointer font-medium text-(--gray-600) border border-(--gray-200) rounded-lg px-3 py-2 flex items-center gap-1.5 hover:bg-(--gray-50) transition-colors">
-          <Download className="w-4 h-4" />
-          Export
-        </button>
       </div>
     </div>
   );

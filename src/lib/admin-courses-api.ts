@@ -206,6 +206,27 @@ export async function listPendingReviewCourses(
   return res.data ?? { count: 0, next: null, previous: null, results: [] };
 }
 
+export type AdminCourseSort = "-created_at" | "created_at" | "title" | "-title";
+
+export interface ListAdminCoursesParams {
+  search?: string;
+  status?: CourseStatus | "";
+  delivery_mode?: DeliveryMode | "";
+  category?: number;
+  sort?: AdminCourseSort;
+  page?: number;
+  page_size?: number;
+}
+
+export async function listAdminCourses(
+  params: ListAdminCoursesParams = {},
+): Promise<PaginatedResult<AdminCourse>> {
+  const res = (await apiGet(
+    `/courses/admin/${buildQuery({ ...params })}`,
+  )) as ApiEnvelope<PaginatedResult<AdminCourse>>;
+  return res.data ?? { count: 0, next: null, previous: null, results: [] };
+}
+
 export async function getCourseReviewDetail(id: number): Promise<AdminCourseDetail> {
   const res = (await apiGet(`/courses/${id}/review/`)) as ApiEnvelope<AdminCourseDetail>;
   if (!res.data) throw new Error("Course not found.");

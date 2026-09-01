@@ -1,22 +1,49 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Search, ChevronDown, Download } from "lucide-react";
-import { CATEGORIES, STATUSES, CourseCategory, CourseStatus } from "./data";
+import { Search, ChevronDown } from "lucide-react";
+import type { CourseStatus, DeliveryMode } from "@/lib/admin-courses-api";
+
+const STATUS_OPTIONS: CourseStatus[] = [
+  "draft",
+  "institution_review",
+  "under_review",
+  "published",
+  "rejected",
+  "archived",
+];
+
+const STATUS_LABEL: Record<CourseStatus, string> = {
+  draft: "Draft",
+  institution_review: "Institution Review",
+  under_review: "Under Review",
+  published: "Published",
+  rejected: "Rejected",
+  archived: "Archived",
+};
+
+const DELIVERY_MODE_OPTIONS: DeliveryMode[] = ["self_paced", "scheduled"];
+
+const DELIVERY_MODE_LABEL: Record<DeliveryMode, string> = {
+  self_paced: "Self-paced",
+  scheduled: "Scheduled",
+};
 
 interface FilterDropdownProps<T extends string> {
   label: string;
-  value: T | "All";
+  value: T | "";
   options: T[];
+  optionLabel: Record<T, string>;
   open: boolean;
   onToggle: () => void;
-  onSelect: (value: T | "All") => void;
+  onSelect: (value: T | "") => void;
 }
 
 function FilterDropdown<T extends string>({
   label,
   value,
   options,
+  optionLabel,
   open,
   onToggle,
   onSelect,
@@ -40,17 +67,17 @@ function FilterDropdown<T extends string>({
         onClick={onToggle}
         className="text-[12px] cursor-pointer text-(--gray-600) border border-(--gray-200) rounded-lg px-3 py-2 flex items-center gap-1.5 hover:bg-(--gray-50) transition-colors"
       >
-        {value === "All" ? label : value}
+        {value === "" ? label : optionLabel[value]}
         <ChevronDown
           className={`w-4 h-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
         />
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-10 py-1 min-w-32.5">
+        <div className="absolute right-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-10 py-1 min-w-40">
           <button
-            onClick={() => onSelect("All")}
+            onClick={() => onSelect("")}
             className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-colors ${
-              value === "All"
+              value === ""
                 ? "bg-(--primary-50) text-(--primary-600) font-semibold"
                 : "text-(--gray-600) hover:bg-(--gray-50)"
             }`}
@@ -67,7 +94,7 @@ function FilterDropdown<T extends string>({
                   : "text-(--gray-600) hover:bg-(--gray-50)"
               }`}
             >
-              {o}
+              {optionLabel[o]}
             </button>
           ))}
         </div>
@@ -79,27 +106,27 @@ function FilterDropdown<T extends string>({
 interface CoursesFilterBarProps {
   search: string;
   onSearchChange: (v: string) => void;
-  category: CourseCategory | "All";
-  onCategoryChange: (v: CourseCategory | "All") => void;
-  status: CourseStatus | "All";
-  onStatusChange: (v: CourseStatus | "All") => void;
-  categoryOpen: boolean;
-  onCategoryToggle: () => void;
+  status: CourseStatus | "";
+  onStatusChange: (v: CourseStatus | "") => void;
+  deliveryMode: DeliveryMode | "";
+  onDeliveryModeChange: (v: DeliveryMode | "") => void;
   statusOpen: boolean;
   onStatusToggle: () => void;
+  deliveryModeOpen: boolean;
+  onDeliveryModeToggle: () => void;
 }
 
 export default function CoursesFilterBar({
   search,
   onSearchChange,
-  category,
-  onCategoryChange,
   status,
   onStatusChange,
-  categoryOpen,
-  onCategoryToggle,
+  deliveryMode,
+  onDeliveryModeChange,
   statusOpen,
   onStatusToggle,
+  deliveryModeOpen,
+  onDeliveryModeToggle,
 }: CoursesFilterBarProps) {
   return (
     <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -108,32 +135,30 @@ export default function CoursesFilterBar({
         <input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search by title or instructor..."
+          placeholder="Search by course title..."
           className="lg:w-62.5 w-full h-9 pl-9 pr-3 rounded-lg border border-(--gray-200) text-[13px] text-(--text-title) placeholder:text-(--gray-400) focus:outline-none focus:ring-2 focus:ring-(--primary-200) focus:border-(--primary-300) transition-all"
         />
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
         <FilterDropdown
-          label="Category"
-          value={category}
-          options={CATEGORIES}
-          open={categoryOpen}
-          onToggle={onCategoryToggle}
-          onSelect={onCategoryChange}
-        />
-        <FilterDropdown
           label="Status"
           value={status}
-          options={STATUSES}
+          options={STATUS_OPTIONS}
+          optionLabel={STATUS_LABEL}
           open={statusOpen}
           onToggle={onStatusToggle}
           onSelect={onStatusChange}
         />
-        <button className="text-[12px] cursor-pointer font-medium text-(--gray-600) border border-(--gray-200) rounded-lg px-3 py-2 flex items-center gap-1.5 hover:bg-(--gray-50) transition-colors">
-          <Download className="w-4 h-4" />
-          Export
-        </button>
+        <FilterDropdown
+          label="Delivery Mode"
+          value={deliveryMode}
+          options={DELIVERY_MODE_OPTIONS}
+          optionLabel={DELIVERY_MODE_LABEL}
+          open={deliveryModeOpen}
+          onToggle={onDeliveryModeToggle}
+          onSelect={onDeliveryModeChange}
+        />
       </div>
     </div>
   );

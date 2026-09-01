@@ -14,7 +14,6 @@ import {
   GraduationCap,
   Building2,
   Flag,
-  DollarSign,
   Wallet,
   Tag,
   Award,
@@ -91,24 +90,19 @@ const navSections: { label: string; items: NavItem[] }[] = [
       },
     ],
   },
-  {
-    label: "Quality",
-    items: [
-      {
-        icon: Flag,
-        label: "Moderation",
-        href: "/dashboard/admin/moderation",
-      },
-    ],
-  },
+  // {
+  //   label: "Quality",
+  //   items: [
+  //     {
+  //       icon: Flag,
+  //       label: "Moderation",
+  //       href: "/dashboard/admin/moderation",
+  //     },
+  //   ],
+  // },
   {
     label: "Finance",
     items: [
-      {
-        icon: DollarSign,
-        label: "Revenue",
-        href: "/dashboard/admin/revenue",
-      },
       {
         icon: Wallet,
         label: "Payouts",
@@ -189,11 +183,7 @@ export default function AdminSidebar() {
             onClick={close}
           >
             <div className="w-9 h-9 flex items-center justify-center">
-              <Image
-                src={logo}
-                alt=""
-                className="h-8 w-8 object-contain"
-              />
+              <Image src={logo} alt="" className="h-8 w-8 object-contain" />
             </div>
             <span className="font-medium text-(--primary-600) text-[16px] lg:text-[20px]">
               CareerCollege

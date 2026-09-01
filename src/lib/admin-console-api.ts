@@ -2,6 +2,14 @@ import { apiGet, apiPost, type ApiEnvelope } from "./api";
 
 export type AdminUserType = "learner" | "instructor" | "partner_institution" | "admin";
 
+export type InstitutionType =
+  | "university"
+  | "college"
+  | "training_center"
+  | "corporate"
+  | "nonprofit"
+  | "other";
+
 export interface AdminUser {
   id: number;
   email: string;
@@ -15,6 +23,9 @@ export interface AdminUser {
   is_deleted: boolean;
   is_staff: boolean;
   registration_date: string;
+  /** Only set for user_type='partner_institution' accounts; null otherwise. */
+  institution_name: string | null;
+  institution_type: InstitutionType | null;
 }
 
 /** Full account detail — adds soft-delete + timestamp fields over the list row. */
@@ -34,6 +45,7 @@ export interface PaginatedResult<T> {
 export interface ListAdminUsersParams {
   search?: string;
   user_type?: AdminUserType | "";
+  institution_type?: InstitutionType | "";
   is_active?: boolean;
   is_restricted_by_admin?: boolean;
   is_verified?: boolean;

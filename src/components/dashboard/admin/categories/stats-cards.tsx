@@ -2,51 +2,43 @@
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { BookOpen, CheckCircle2, Clock, FileEdit, Loader2 } from "lucide-react";
-import { useAdminAnalyticsSummary } from "@/hooks/use-admin-analytics";
+import { FolderTree, Layers, FolderCheck, Folder, Loader2 } from "lucide-react";
+import { useAllCategories } from "@/hooks/use-admin-categories";
 
-function formatNumber(n: number | undefined): string {
-  if (n === undefined) return "—";
+function formatNumber(n: number): string {
   return n.toLocaleString();
 }
 
-function pctOfTotal(n: number | undefined, total: number | undefined): string {
-  if (n === undefined || !total) return "";
-  return `${Math.round((n / total) * 1000) / 10}% of total`;
-}
-
-export default function CoursesStatsCards() {
+export default function CategoriesStatsCards() {
   const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
-  const { data: summary, isLoading } = useAdminAnalyticsSummary();
+  const { data: allCategories, isLoading } = useAllCategories();
 
-  const courses = summary?.courses;
-  const breakdown = courses?.status_breakdown ?? {};
-  const underReview = breakdown.under_review ?? 0;
+  const categories = allCategories ?? [];
+  const totalCategories = categories.length;
+  const totalSubcategories = categories.reduce((sum, c) => sum + c.children.length, 0);
+  const withSubcategories = categories.filter((c) => c.children.length > 0).length;
+  const withoutSubcategories = categories.filter((c) => c.children.length === 0).length;
 
   const stats = [
     {
-      label: "Total Courses",
-      value: formatNumber(courses?.total),
-      change: courses ? `${formatNumber(courses.published)} published` : "",
-      icon: BookOpen,
+      label: "Total Categories",
+      value: formatNumber(totalCategories),
+      icon: FolderTree,
     },
     {
-      label: "Published",
-      value: formatNumber(courses?.published),
-      change: pctOfTotal(courses?.published, courses?.total),
-      icon: CheckCircle2,
+      label: "Total Subcategories",
+      value: formatNumber(totalSubcategories),
+      icon: Layers,
     },
     {
-      label: "Under Review",
-      value: formatNumber(underReview),
-      change: "Awaiting admin decision",
-      icon: Clock,
+      label: "With Subcategories",
+      value: formatNumber(withSubcategories),
+      icon: FolderCheck,
     },
     {
-      label: "Draft",
-      value: formatNumber(courses?.draft),
-      change: pctOfTotal(courses?.draft, courses?.total),
-      icon: FileEdit,
+      label: "Without Subcategories",
+      value: formatNumber(withoutSubcategories),
+      icon: Folder,
     },
   ];
 
@@ -99,9 +91,6 @@ export default function CoursesStatsCards() {
               </div>
             </div>
             <div className="border border-dashed border-gray-200" />
-            <p className="text-[12px] font-medium text-(--gray-500)">
-              {isLoading ? "Loading…" : s.change}
-            </p>
           </div>
         );
       })}
