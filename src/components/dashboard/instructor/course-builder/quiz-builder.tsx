@@ -17,6 +17,11 @@ import {
 } from "@dnd-kit/sortable";
 import type { UiQuizQuestion } from "./quiz-types";
 import QuestionCard from "./question-card";
+import QuizAiPanel, {
+  DEFAULT_QUIZ_AI_SETTINGS,
+  type QuizAiSettings,
+} from "./quiz-ai-panel";
+import QuizPreviewModal from "./quiz-preview-modal";
 import {
   updateQuiz,
   deleteQuiz,
@@ -28,6 +33,10 @@ import {
   listQuizAnswers,
   updateQuizAnswer,
   deleteQuizAnswer,
+  bulkCreateQuizQuestions,
+  generateQuizQuestions,
+  type BulkQuizQuestionInput,
+  type QuizQuestionsDraft,
 } from "@/lib/course-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
@@ -55,6 +64,16 @@ export default function QuizBuilder({
   const [deletingQuiz, setDeletingQuiz] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor));
   const debounceSave = useDebouncedSave();
+
+  // AI question drafting. Nothing here is saved until the instructor accepts
+  // the draft in the review modal, which then writes in one bulk call.
+  const [aiSettings, setAiSettings] = useState<QuizAiSettings>(
+    DEFAULT_QUIZ_AI_SETTINGS,
+  );
+  const [aiDraft, setAiDraft] = useState<QuizQuestionsDraft | null>(null);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiApplying, setAiApplying] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -274,6 +293,75 @@ export default function QuizBuilder({
     }
   };
 
+  // ------------------------------------------------------------ AI questions
+
+  /** Ask the backend for a draft; nothing is saved by this call.
+   *
+   *  `onScreen` is passed on a regenerate — those questions are unsaved, so the
+   *  server cannot see them and a second run would repeat the first. */
+  const runGenerate = async (onScreen?: string[]) => {
+    const isRegenerate = onScreen !== undefined;
+    setAiGenerating(true);
+    setAiError(null);
+    try {
+      const draft = await generateQuizQuestions({
+        quiz_id: quizId,
+        // The number input is free-typed, so clamp before spending a paid call.
+        question_count: Math.min(
+          15,
+          Math.max(1, Math.round(aiSettings.questionCount) || 5),
+        ),
+        options_per_question: aiSettings.optionsPerQuestion,
+        difficulty: aiSettings.difficulty,
+        avoid_questions: (onScreen ?? [])
+          .map((text) => text.trim())
+          .filter(Boolean)
+          .slice(0, 30),
+        extra_instructions: aiSettings.focus.trim(),
+      });
+
+      if (!draft?.questions?.length) {
+        const message =
+          "The generator returned no new questions — everything it wrote repeated a question this quiz already asks. Try a different focus.";
+        if (isRegenerate) setAiError(message);
+        else notify.error(message);
+        return;
+      }
+      setAiDraft(draft);
+      if (isRegenerate) notify.success("New questions generated.");
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.detail : "Failed to generate questions.";
+      // Keep a failed regenerate inside the modal; surface a first-run failure
+      // as a toast, since there is no modal open to hold it.
+      if (isRegenerate) setAiError(message);
+      else notify.error(message);
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  /** Write the accepted questions. Appends only. */
+  const applyGenerated = async (accepted: BulkQuizQuestionInput[]) => {
+    setAiApplying(true);
+    setAiError(null);
+    try {
+      const { data, message } = await bulkCreateQuizQuestions(quizId, accepted);
+      setQuestions((prev) => [
+        ...prev,
+        ...data.map((q) => ({ ...q, loadingAnswers: false })),
+      ]);
+      setAiDraft(null);
+      notify.success(message ?? `${data.length} question(s) added.`);
+    } catch (err) {
+      setAiError(
+        err instanceof ApiError ? err.detail : "Failed to add the questions.",
+      );
+    } finally {
+      setAiApplying(false);
+    }
+  };
+
   const handleQuestionDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -284,6 +372,7 @@ export default function QuizBuilder({
   };
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl shadow-xl flex flex-col max-h-[94vh]">
         {/* Header */}
@@ -319,6 +408,19 @@ export default function QuizBuilder({
               )}
             </div>
           </div>
+
+          {/* Outside the branch below on purpose — the panel belongs above the
+              question list whether or not the quiz has questions yet. */}
+          <QuizAiPanel
+            settings={aiSettings}
+            onChange={(changes) =>
+              setAiSettings((prev) => ({ ...prev, ...changes }))
+            }
+            generating={aiGenerating}
+            disabled={!quizTitle.trim()}
+            disabledReason="Give the quiz a title first — the questions are written from it."
+            onGenerate={() => runGenerate()}
+          />
 
           {loading ? (
             <div className="flex items-center justify-center py-10 text-(--gray-500)">
@@ -421,5 +523,23 @@ export default function QuizBuilder({
         </div>
       </div>
     </div>
+
+    {aiDraft && (
+      <QuizPreviewModal
+        draft={aiDraft}
+        existingQuestions={questions.map((q) => q.question_text)}
+        generating={aiGenerating}
+        applying={aiApplying}
+        error={aiError}
+        onRegenerate={(onScreen) => runGenerate(onScreen)}
+        onApply={applyGenerated}
+        onClose={() => {
+          if (aiGenerating || aiApplying) return;
+          setAiDraft(null);
+          setAiError(null);
+        }}
+      />
+    )}
+    </>
   );
 }

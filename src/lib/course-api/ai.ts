@@ -187,3 +187,69 @@ export async function generateArticleLecture(
   );
   return res.data as ArticleLectureDraft;
 }
+
+// --------------------------------------------------------------------------
+// Quiz questions
+// --------------------------------------------------------------------------
+
+/** What a generated question asks of the learner — not how obscure the subject
+ *  is. Independent of the course's own `level`. */
+export type QuestionDifficulty = "recall" | "understanding" | "application";
+
+/** One answer option. Exactly one per question has `is_correct` set — a
+ *  two-correct question is rejected upstream, never delivered as a draft. */
+export interface GeneratedOption {
+  answer_text: string;
+  is_correct: boolean;
+}
+
+export interface GeneratedQuestion {
+  question_text: string;
+  options: GeneratedOption[];
+  /** Why the marked option is right. Shown to the instructor while reviewing
+   *  and then discarded — `QuizQuestion` has no column for it. */
+  explanation: string;
+  difficulty: QuestionDifficulty;
+}
+
+export interface QuizQuestionsDraft {
+  questions: GeneratedQuestion[];
+  /** False when the section has no written lecture content, so the questions
+   *  were written from titles alone. The review UI must say so. */
+  grounded: boolean;
+  /** How many were asked for. `questions` can be shorter — anything repeating a
+   *  question the quiz already has is dropped server-side. */
+  requested_count: number;
+}
+
+export interface QuizQuestionsGenerateInput {
+  /** The quiz to write questions for. The grounding material and the questions
+   *  already asked are resolved from this id server-side. */
+  quiz_id: number;
+  /** 1-15; defaults to 5 server-side. */
+  question_count?: number;
+  /** 2-5; defaults to 4. 2 gives true/false. */
+  options_per_question?: number;
+  difficulty?: QuestionDifficulty;
+  topics?: string[];
+  /** Unsaved drafts on screen, so a regenerate does not return them again. The
+   *  quiz's own questions are added by the backend. At most 30. */
+  avoid_questions?: string[];
+  /** Optional free-text steer, e.g. "focus on the maths". */
+  extra_instructions?: string;
+}
+
+/** Draft multiple-choice questions for one quiz.
+ *
+ *  Nothing is saved. The instructor reviews and edits the draft; accepting it
+ *  calls `bulkCreateQuizQuestions`, which is what actually writes.
+ */
+export async function generateQuizQuestions(
+  input: QuizQuestionsGenerateInput,
+): Promise<QuizQuestionsDraft> {
+  const res = await apiPost<QuizQuestionsDraft>(
+    "/courses/ai/quiz-questions-preview/",
+    input,
+  );
+  return res.data as QuizQuestionsDraft;
+}
