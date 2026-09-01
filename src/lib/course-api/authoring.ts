@@ -386,6 +386,35 @@ export async function deleteQuizAnswer(
   return apiDelete(`/courses/quiz-answers/${answerId}/`);
 }
 
+/** A question with its options already attached — what the bulk create returns,
+ *  so the builder can append what it just wrote without a request per question. */
+export interface QuizQuestionWithAnswers extends QuizQuestion {
+  answers: QuizAnswer[];
+}
+
+/** One question in a bulk request. Exactly one option must be `is_correct`. */
+export interface BulkQuizQuestionInput {
+  question_text: string;
+  /** 2-5 options, each with different text. */
+  options: { answer_text: string; is_correct: boolean }[];
+}
+
+/** Create several questions, with their options, in one transactional call.
+ *
+ *  Row at a time this is N + N*M requests and a failure halfway leaves a
+ *  partly-built quiz. Positions append; nothing existing is touched.
+ */
+export async function bulkCreateQuizQuestions(
+  quizId: number,
+  questions: BulkQuizQuestionInput[],
+): Promise<WithMessage<QuizQuestionWithAnswers[]>> {
+  const res = await apiPost<QuizQuestionWithAnswers[]>(
+    `/courses/quizzes/${quizId}/questions/bulk/`,
+    { questions },
+  );
+  return withMessage(res);
+}
+
 // Coding exercises (single-language, script-evaluated)
 
 export interface CodingExercise {
