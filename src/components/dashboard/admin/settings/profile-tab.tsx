@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { User, Mail, Phone, Camera } from "lucide-react";
 import { SectionCard, Field, Input, SaveButton } from "../../settings-shared/ui";
+import { CertificateSignatorySection } from "./certificate-signatory-section";
 
 export function ProfileTab() {
   const [form, setForm] = useState({
@@ -65,6 +66,8 @@ export function ProfileTab() {
           <SaveButton onClick={() => {}} />
         </div>
       </SectionCard>
+
+      <CertificateSignatorySection />
     </div>
   );
 }

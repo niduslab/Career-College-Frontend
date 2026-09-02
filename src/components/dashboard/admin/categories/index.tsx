@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, Pencil, Trash2, Loader2, FolderTree } from "lucide-react";
 import CategoryModal, { type CategoryModalSubmitArgs } from "./category-modal";
 import DeactivateModal from "./deactivate-modal";
+import CategoriesStatsCards from "./stats-cards";
 import { Pagination } from "@/components/common/pagination";
 import {
   useCategoryTree,
@@ -88,9 +89,11 @@ export default function AdminCategoriesContent() {
 
   return (
     <div className="space-y-4">
+      <CategoriesStatsCards />
+
       <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4">
-        <div className="flex items-center justify-between mb-4">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div className="min-w-0">
             <p className="text-[14px] lg:text-[16px] font-semibold text-(--text-title)">
               Category Tree
             </p>
@@ -100,7 +103,7 @@ export default function AdminCategoriesContent() {
           </div>
           <button
             onClick={() => setModal({ mode: "create-top" })}
-            className="flex items-center gap-1.5 h-9 px-3.5 rounded-lg text-[13px] font-medium bg-(--primary-600) text-white hover:bg-(--primary-700) transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-lg text-[13px] font-medium bg-(--primary-600) text-white hover:bg-(--primary-700) transition-colors cursor-pointer shrink-0 whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             Add Category
@@ -122,13 +125,34 @@ export default function AdminCategoriesContent() {
           <div className="space-y-1">
             {tree.map((parent) => (
               <div key={parent.id}>
-                <div className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-(--gray-50) transition-colors">
-                  <p className="text-[13px] font-semibold text-(--text-title)">{parent.name}</p>
-                  <div className="flex items-center gap-1">
+                <div className="flex items-center justify-between gap-2 px-3 py-3 rounded-lg hover:bg-(--gray-50) transition-colors">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="w-8 h-8 rounded-[6px_4px_6px_6px] flex items-center justify-center shrink-0 bg-(--primary-50) text-(--primary-600)">
+                      <FolderTree className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13.5px] font-semibold text-(--text-title) truncate">
+                        {parent.name}
+                      </p>
+                      <div className="mt-1 sm:mt-0">
+                        {parent.children.length > 0 ? (
+                          <span className="inline-block text-[11px] font-semibold text-(--primary-600) bg-(--primary-50) rounded-full px-2.5 py-1">
+                            {parent.children.length} subcategor
+                            {parent.children.length === 1 ? "y" : "ies"}
+                          </span>
+                        ) : (
+                          <span className="inline-block text-[11px] font-medium text-(--gray-500) bg-(--gray-100) rounded-full px-2.5 py-1">
+                            No subcategories
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => setModal({ mode: "create-child", parentId: parent.id })}
                       title="Add subcategory"
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-(--gray-400) hover:bg-(--gray-100) hover:text-(--primary-600) transition-colors cursor-pointer"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-(--gray-500) hover:bg-(--gray-100) hover:text-(--primary-600) transition-colors cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
@@ -137,7 +161,7 @@ export default function AdminCategoriesContent() {
                         setModal({ mode: "edit", id: parent.id, name: parent.name, parentId: null })
                       }
                       title="Edit"
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-(--gray-400) hover:bg-(--gray-100) hover:text-(--gray-600) transition-colors cursor-pointer"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-(--gray-500) hover:bg-(--gray-100) hover:text-(--gray-600) transition-colors cursor-pointer"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
@@ -145,7 +169,7 @@ export default function AdminCategoriesContent() {
                       onClick={() => setDeactivateTarget({ id: parent.id, name: parent.name })}
                       disabled={deactivatingId === parent.id}
                       title="Deactivate"
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-(--gray-400) hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-(--gray-500) hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
                     >
                       {deactivatingId === parent.id ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -156,14 +180,17 @@ export default function AdminCategoriesContent() {
                   </div>
                 </div>
                 {parent.children.length > 0 && (
-                  <div className="pl-6 space-y-0.5">
+                  <div className="ml-4 pl-4 border-l border-(--gray-200) space-y-0.5 py-1">
                     {parent.children.map((child) => (
                       <div
                         key={child.id}
-                        className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-(--gray-50) transition-colors"
+                        className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg hover:bg-(--gray-50) transition-colors"
                       >
-                        <p className="text-[13px] text-(--gray-600)">{child.name}</p>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-1 h-1 rounded-full bg-(--gray-300) shrink-0" />
+                          <p className="text-[13px] text-(--gray-600) truncate">{child.name}</p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
                           <button
                             onClick={() =>
                               setModal({
@@ -174,7 +201,7 @@ export default function AdminCategoriesContent() {
                               })
                             }
                             title="Edit"
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-(--gray-400) hover:bg-(--gray-100) hover:text-(--gray-600) transition-colors cursor-pointer"
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-(--gray-500) hover:bg-(--gray-100) hover:text-(--gray-600) transition-colors cursor-pointer"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
@@ -182,7 +209,7 @@ export default function AdminCategoriesContent() {
                             onClick={() => setDeactivateTarget({ id: child.id, name: child.name })}
                             disabled={deactivatingId === child.id}
                             title="Deactivate"
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-(--gray-400) hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-(--gray-500) hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
                           >
                             {deactivatingId === child.id ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />

@@ -54,7 +54,7 @@ export default function AnalyticsStatsCards() {
         ? `${formatPct(summary.revenue.growth_pct)} vs previous window`
         : "",
       icon: Wallet,
-      href: "/dashboard/admin/revenue",
+      href: undefined,
     },
     {
       label: "Active Courses",

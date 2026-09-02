@@ -1,6 +1,14 @@
-import { apiGet, apiPost, type ApiEnvelope } from "./api";
+import { apiGet, apiPost, apiDelete, type ApiEnvelope } from "./api";
 
 export type AdminUserType = "learner" | "instructor" | "partner_institution" | "admin";
+
+export type InstitutionType =
+  | "university"
+  | "college"
+  | "training_center"
+  | "corporate"
+  | "nonprofit"
+  | "other";
 
 export interface AdminUser {
   id: number;
@@ -15,6 +23,9 @@ export interface AdminUser {
   is_deleted: boolean;
   is_staff: boolean;
   registration_date: string;
+  /** Only set for user_type='partner_institution' accounts; null otherwise. */
+  institution_name: string | null;
+  institution_type: InstitutionType | null;
 }
 
 /** Full account detail — adds soft-delete + timestamp fields over the list row. */
@@ -34,6 +45,7 @@ export interface PaginatedResult<T> {
 export interface ListAdminUsersParams {
   search?: string;
   user_type?: AdminUserType | "";
+  institution_type?: InstitutionType | "";
   is_active?: boolean;
   is_restricted_by_admin?: boolean;
   is_verified?: boolean;
@@ -153,6 +165,37 @@ export interface ListAuditLogParams {
   action?: AdminActionType;
   page?: number;
   page_size?: number;
+}
+
+export interface AdminSession {
+  id: number;
+  ip_address: string;
+  user_agent: string;
+  browser: string;
+  os: string;
+  device: string;
+  created_at: string;
+  last_seen_at: string;
+  is_current: boolean;
+}
+
+export async function listAdminSessions(): Promise<AdminSession[]> {
+  const res = (await apiGet(
+    `/admin-console/sessions/`,
+  )) as ApiEnvelope<PaginatedResult<AdminSession>>;
+  return res.data?.results ?? [];
+}
+
+export async function revokeAdminSession(id: number): Promise<void> {
+  await apiDelete(`/admin-console/sessions/${id}/`);
+}
+
+export async function revokeOtherAdminSessions(): Promise<number> {
+  const res = (await apiPost(
+    `/admin-console/sessions/revoke-others/`,
+    {},
+  )) as ApiEnvelope<{ revoked: number }>;
+  return res.data?.revoked ?? 0;
 }
 
 export async function listAuditLog(
