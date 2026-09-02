@@ -7,9 +7,6 @@ import {
   Loader2,
   Play,
   FlaskConical,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
 } from "lucide-react";
 import {
   getCodingExercise,
@@ -17,15 +14,24 @@ import {
   deleteCodingExercise,
   runInstructorCodingExercise,
   getCodingTaskStatus,
+  generateCodingExercise,
+  type CodingExerciseDraft,
   type CodingLanguage,
   type CodingRunResult,
-  type CodingTestResult,
   type InstructorCodingRunMode,
 } from "@/lib/course-api";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 import { useDebouncedSave } from "@/lib/use-debounced-save";
 import CodeEditor from "@/components/common/code-editor";
+import RunResultPanel from "./coding-run-result-panel";
+import CodingAiPanel, {
+  DEFAULT_CODING_AI_SETTINGS,
+  type CodingAiSettings,
+} from "./coding-ai-panel";
+import CodingPreviewModal, {
+  type AcceptedExercise,
+} from "./coding-preview-modal";
 
 const LANGUAGE_OPTIONS: { value: CodingLanguage; label: string }[] = [
   { value: "python", label: "Python" },
@@ -36,65 +42,6 @@ const LANGUAGE_OPTIONS: { value: CodingLanguage; label: string }[] = [
 
 const POLL_INTERVAL_MS = 750;
 const POLL_MAX_ATTEMPTS = 80; // ~60s
-
-function StatusIcon({ status }: { status: CodingTestResult["status"] }) {
-  if (status === "passed")
-    return <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />;
-  if (status === "failed")
-    return <XCircle className="w-4 h-4 text-red-500 shrink-0" />;
-  return <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />;
-}
-
-function RunResultPanel({ result }: { result: CodingRunResult }) {
-  return (
-    <div className="border border-(--gray-200) rounded-xl overflow-hidden mt-2">
-      <div className="flex items-center justify-between px-4 py-2.5 bg-(--gray-50) border-b border-(--gray-200)">
-        <div className="flex items-center gap-2">
-          <StatusIcon status={result.status} />
-          <span className="text-[13px] font-semibold text-(--text-title) capitalize">
-            {result.status}
-          </span>
-        </div>
-        <span className="text-[12px] text-(--gray-500)">
-          {result.passed_tests}/{result.total_tests} passed ·{" "}
-          {result.runtime_ms} ms
-        </span>
-      </div>
-      {result.error_message && (
-        <pre className="px-4 py-3 text-[12px] font-mono text-red-600 whitespace-pre-wrap border-b border-(--gray-100)">
-          {result.error_message}
-        </pre>
-      )}
-      <div className="divide-y divide-(--gray-100)">
-        {result.test_results.map((t) => (
-          <div key={t.position} className="px-4 py-3 space-y-1.5">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <StatusIcon status={t.status} />
-                <span className="text-[13px] font-mono text-(--text-title) truncate">
-                  {t.test_name}
-                </span>
-              </div>
-              <span className="text-[12px] text-(--gray-500) shrink-0">
-                {t.runtime_ms} ms
-              </span>
-            </div>
-            {t.stdout && (
-              <pre className="text-[12px] font-mono text-(--text-paragraph) bg-(--gray-50) rounded-md px-3 py-2 whitespace-pre-wrap overflow-x-auto">
-                {t.stdout}
-              </pre>
-            )}
-            {t.status !== "passed" && t.stderr && (
-              <pre className="text-[12px] font-mono text-red-600 bg-red-50 rounded-md px-3 py-2 whitespace-pre-wrap overflow-x-auto">
-                {t.stderr}
-              </pre>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export default function CodingExerciseBuilder({
   exerciseId,
@@ -128,6 +75,14 @@ export default function CodingExerciseBuilder({
   const runPanelRef = useRef<HTMLDivElement | null>(null);
 
   const debounceSave = useDebouncedSave();
+
+  const [aiSettings, setAiSettings] = useState<CodingAiSettings>(
+    DEFAULT_CODING_AI_SETTINGS,
+  );
+  const [aiDraft, setAiDraft] = useState<CodingExerciseDraft | null>(null);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiApplying, setAiApplying] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   // Bring the run panel into view when a run starts (spinner) and again
   // when the result lands — the modal body is long and the panel sits at
@@ -291,6 +246,52 @@ export default function CodingExerciseBuilder({
     }
   };
 
+  /** Ask the backend for a draft. Nothing is saved and nothing is run by this
+   *  call — the review modal verifies it and the instructor accepts it. */
+  const runGenerate = async (isRegenerate: boolean) => {
+    setAiGenerating(true);
+    setAiError(null);
+    try {
+      const draft = await generateCodingExercise({
+        exercise_id: exerciseId,
+        difficulty: aiSettings.difficulty,
+        topic_hint: aiSettings.topicHint.trim(),
+        extra_instructions: "",
+      });
+      setAiDraft(draft);
+      if (isRegenerate) notify.success("New exercise generated.");
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.detail : "Failed to generate an exercise.";
+      if (isRegenerate) setAiError(message);
+      else notify.error(message);
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  /** Overwrite this exercise's four content fields with the accepted draft. */
+  const applyGenerated = async (accepted: AcceptedExercise) => {
+    setAiApplying(true);
+    setAiError(null);
+    try {
+      await updateCodingExercise(exerciseId, accepted);
+      setDescription(accepted.description);
+      setStarterCode(accepted.starter_code);
+      setSolutionCode(accepted.solution_code);
+      setEvaluationScript(accepted.evaluation_script);
+      setAiDraft(null);
+      setRunResult(null);
+      notify.success("Exercise saved.");
+    } catch (err) {
+      setAiError(
+        err instanceof ApiError ? err.detail : "Failed to save the exercise.",
+      );
+    } finally {
+      setAiApplying(false);
+    }
+  };
+
   const handleDeleteExercise = async () => {
     setDeletingExercise(true);
     try {
@@ -307,6 +308,7 @@ export default function CodingExerciseBuilder({
   };
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="bg-white rounded-2xl w-full max-w-3xl shadow-xl flex flex-col max-h-[94vh]">
         {/* Header */}
@@ -349,6 +351,18 @@ export default function CodingExerciseBuilder({
                 )}
               </div>
             </div>
+
+            <CodingAiPanel
+              language={language}
+              settings={aiSettings}
+              onChange={(changes) =>
+                setAiSettings((prev) => ({ ...prev, ...changes }))
+              }
+              generating={aiGenerating}
+              disabled={!title.trim()}
+              disabledReason="Give the exercise a title first."
+              onGenerate={() => runGenerate(false)}
+            />
 
             {/* Problem Description */}
             <div className="space-y-1.5">
@@ -544,5 +558,26 @@ export default function CodingExerciseBuilder({
         </div>
       </div>
     </div>
+
+    {aiDraft && (
+      <CodingPreviewModal
+        draft={aiDraft}
+        exerciseId={exerciseId}
+        hasExistingCode={Boolean(
+          starterCode.trim() || solutionCode.trim() || evaluationScript.trim(),
+        )}
+        generating={aiGenerating}
+        applying={aiApplying}
+        error={aiError}
+        onRegenerate={() => runGenerate(true)}
+        onApply={applyGenerated}
+        onClose={() => {
+          if (aiGenerating || aiApplying) return;
+          setAiDraft(null);
+          setAiError(null);
+        }}
+      />
+    )}
+    </>
   );
 }

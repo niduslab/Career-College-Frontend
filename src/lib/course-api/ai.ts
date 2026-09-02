@@ -1,5 +1,5 @@
 import { apiPost } from "../api";
-import { type CourseLevel } from "./shared";
+import { type CodingLanguage, type CourseLevel } from "./shared";
 
 // AI-assisted authoring. Stateless helpers: the backend returns a draft and
 // persists nothing, so the instructor edits it before anything is saved.
@@ -186,4 +186,51 @@ export async function generateArticleLecture(
     },
   );
   return res.data as ArticleLectureDraft;
+}
+
+// --------------------------------------------------------------------------
+// Coding exercises
+// --------------------------------------------------------------------------
+
+/** How much the learner has to work out. */
+export type ExerciseDifficulty = "intro" | "core" | "challenge";
+
+export interface CodingExerciseDraft {
+  description: string;
+  starter_code: string;
+  solution_code: string;
+  evaluation_script: string;
+  /** One plain-English line per test, in the script's order. Preview only. */
+  test_names: string[];
+  language: CodingLanguage;
+  difficulty: ExerciseDifficulty;
+  /** False when the module has no written lecture content. */
+  grounded: boolean;
+}
+
+export interface CodingExerciseGenerateInput {
+  /** The exercise to write. Its language, title and the module's lecture text
+   *  are all resolved from this id server-side. */
+  exercise_id: number;
+  difficulty?: ExerciseDifficulty;
+  /** Optional steer, e.g. "binary search". */
+  topic_hint?: string;
+  /** Other exercises in the module, so a regenerate is a different problem. */
+  avoid_titles?: string[];
+  extra_instructions?: string;
+}
+
+/** Draft one coding exercise.
+ *
+ *  Nothing is saved and nothing is executed by this call. The caller runs the
+ *  draft through `runInstructorCodingExercise` before the instructor accepts it.
+ */
+export async function generateCodingExercise(
+  input: CodingExerciseGenerateInput,
+): Promise<CodingExerciseDraft> {
+  const res = await apiPost<CodingExerciseDraft>(
+    "/courses/ai/coding-exercise-preview/",
+    input,
+  );
+  return res.data as CodingExerciseDraft;
 }
