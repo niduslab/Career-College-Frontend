@@ -2,19 +2,17 @@
 
 import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { User, Shield, Bell, Settings2, ChevronRight } from "lucide-react";
+import { User, Shield, Bell, ChevronRight } from "lucide-react";
 import { ProfileTab } from "./profile-tab";
 import { AccountTab } from "./account-tab";
 import { NotificationsTab } from "./notifications-tab";
-import { PlatformTab } from "./platform-tab";
 
-type Tab = "profile" | "account" | "notifications" | "platform";
+type Tab = "profile" | "account" | "notifications";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "profile", label: "Profile", icon: User },
   { id: "account", label: "Account & Security", icon: Shield },
   { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "platform", label: "Platform", icon: Settings2 },
 ];
 
 function isTab(value: string | null): value is Tab {
@@ -32,7 +30,6 @@ export default function AdminSettingsPage() {
     profile: ProfileTab,
     account: AccountTab,
     notifications: NotificationsTab,
-    platform: PlatformTab,
   }[activeTab];
 
   return (
