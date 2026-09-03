@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { Loader2, PlayCircle, FileText, HelpCircle, ClipboardList, Code2, Check, ChevronRight } from "lucide-react";
 import { useCourseAdminCurriculum } from "@/hooks/use-admin-courses";
-import { hlsAssetUrl } from "@/lib/course-api";
+import { useLectureStreamUrl } from "@/hooks/use-learner-consumption";
 import VideoPlayer from "@/components/dashboard/learner/course-player/VideoPlayer";
 import { RichHtml } from "../../settings-shared/ui";
 import type {
@@ -70,19 +70,31 @@ function LectureBody({ lecture }: { lecture: AdminLecture }) {
           <RichHtml html={lecture.article_content} emptyText="No content." />
         </div>
       )}
-      {lecture.lecture_type === "video" &&
-        (lecture.stream_master_playlist ? (
-          <div className="rounded-lg overflow-hidden max-w-md">
-            <VideoPlayer
-              moduleLabel={lecture.title}
-              src={hlsAssetUrl(lecture.stream_master_playlist)}
-            />
-          </div>
-        ) : (
-          <p className="text-[12px] text-(--gray-400)">
-            Video not ready to play yet ({lecture.active_video_asset?.status ?? "no video uploaded"}).
-          </p>
-        ))}
+      {lecture.lecture_type === "video" && <LectureVideo lecture={lecture} />}
+    </div>
+  );
+}
+
+function LectureVideo({ lecture }: { lecture: AdminLecture }) {
+  // Signed CloudFront URL. `stream_master_playlist` is an unsigned storage key —
+  // requesting it directly is rejected with a 403 that reads as a CORS error.
+  const { data: streamUrl, isLoading, isError } = useLectureStreamUrl(
+    lecture.stream_master_playlist ? lecture.id : undefined,
+  );
+
+  if (!lecture.stream_master_playlist || isError) {
+    return (
+      <p className="text-[12px] text-(--gray-400)">
+        Video not ready to play yet ({lecture.active_video_asset?.status ?? "no video uploaded"}).
+      </p>
+    );
+  }
+  if (isLoading || !streamUrl) {
+    return <p className="text-[12px] text-(--gray-400)">Loading video…</p>;
+  }
+  return (
+    <div className="rounded-lg overflow-hidden max-w-md">
+      <VideoPlayer moduleLabel={lecture.title} src={streamUrl} />
     </div>
   );
 }

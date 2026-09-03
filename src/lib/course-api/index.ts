@@ -5,6 +5,7 @@ export * from "./learner-consumption";
 export * from "./discussion";
 export * from "./reviews";
 export * from "./authoring";
+export * from "./video-upload";
 export * from "./status";
 export * from "./schedules";
 export * from "./invites";

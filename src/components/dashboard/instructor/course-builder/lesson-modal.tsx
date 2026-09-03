@@ -42,6 +42,7 @@ export default function LessonModal({
   initialCodingExerciseId,
   initialAssignmentId,
   saving,
+  uploadProgress,
   deleting,
   onSave,
   onDelete,
@@ -60,6 +61,10 @@ export default function LessonModal({
   initialCodingExerciseId?: number;
   initialAssignmentId?: number;
   saving?: boolean;
+  /** 0–1 while the video is uploading to S3; null/undefined otherwise. The
+   *  file goes straight to S3, so this is the only feedback the instructor
+   *  gets on a large upload. */
+  uploadProgress?: number | null;
   deleting?: boolean;
   onSave: (lesson: LectureSavePayload) => void;
   onDelete?: () => void;
@@ -637,6 +642,27 @@ export default function LessonModal({
           )}
         </div>
 
+        {/* Upload progress — the file goes browser → S3, so without this a
+            large lecture looks like a frozen dialog for several minutes. */}
+        {uploadProgress != null && (
+          <div className="px-6 pt-4">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[12px] font-medium text-(--gray-600)">
+                Uploading video…
+              </span>
+              <span className="text-[12px] tabular-nums text-(--gray-500)">
+                {Math.round(uploadProgress * 100)}%
+              </span>
+            </div>
+            <div className="w-full h-1.5 rounded-full bg-(--gray-200) overflow-hidden">
+              <div
+                className="h-full rounded-full bg-(--primary-700) transition-[width] duration-200"
+                style={{ width: `${Math.round(uploadProgress * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="flex flex-col gap-3 px-6 py-4 border-t border-(--gray-200) bg-(--gray-100) rounded-b-2xl sm:flex-row sm:items-center sm:justify-between">
           {isEdit && onDelete && (
@@ -696,13 +722,17 @@ export default function LessonModal({
                   )}
                   {creatingQuiz || creatingAssignment
                     ? "Creating…"
-                    : saving
-                      ? "Saving…"
-                      : isQuiz || isAssignment
-                        ? "Next"
-                        : isEdit
-                          ? "Update Lesson"
-                          : "Save Lesson"}
+                    : uploadProgress != null
+                      ? `Uploading ${Math.round(uploadProgress * 100)}%`
+                      : saving
+                        ? "Saving…"
+                        : isQuiz || isAssignment
+                          ? "Next"
+                          : contentStep
+                            ? "Save Content"
+                            : isEdit
+                              ? "Update Lesson"
+                              : "Create Lesson"}
                 </button>
               );
             })()}

@@ -19,9 +19,9 @@ import { useMyCourseDetail } from "@/hooks/use-course-catalog";
 import {
   useLearnerCurriculum,
   useLearnerLecture,
+  useLectureStreamUrl,
   useSaveWatchProgress,
 } from "@/hooks/use-learner-consumption";
-import { hlsAssetUrl } from "@/lib/course-api";
 import type { CurriculumItem, LearnerCurriculum } from "@/lib/course-api";
 
 export default function CoursePlayerPage({
@@ -51,6 +51,14 @@ export default function CoursePlayerPage({
     activeItem?.item_type === "lecture" ? activeItem.object_id : undefined;
   const { data: lecture, isLoading: lectureLoading } =
     useLearnerLecture(activeLectureId);
+  // Signed CloudFront URL — only fetched once we know the lecture is a video
+  // with a transcoded playlist, so an article or a still-processing upload
+  // doesn't fire a request that can only 422.
+  const { data: streamUrl } = useLectureStreamUrl(
+    lecture?.lecture_type === "video" && lecture.stream_master_playlist
+      ? activeLectureId
+      : undefined,
+  );
   const saveProgress = useSaveWatchProgress(courseSlug);
   const lastSavedRef = useRef<number>(-1);
 
@@ -437,11 +445,7 @@ export default function CoursePlayerPage({
             ) : (
               <VideoPlayer
                 moduleLabel={activeItem.title}
-                src={
-                  lecture?.stream_master_playlist
-                    ? hlsAssetUrl(lecture.stream_master_playlist)
-                    : undefined
-                }
+                src={streamUrl}
                 startAtSeconds={lecture?.progress?.watched_seconds ?? 0}
                 onProgress={handleVideoProgress}
                 onPrevLesson={hasPrevItem ? goToPrevItem : undefined}
