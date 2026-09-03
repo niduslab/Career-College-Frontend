@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import {
   getLearnerCurriculum,
   getLearnerLecture,
+  getLectureStreamUrl,
   saveWatchProgress,
   getLearnerQuiz,
   submitQuizAttempt,
@@ -37,6 +38,26 @@ export function useLearnerLecture(lectureId: number | undefined) {
     queryKey: ["learner-lecture", lectureId],
     queryFn: () => getLearnerLecture(lectureId as number),
     enabled: !!lectureId,
+  });
+}
+
+/** Signed HLS playback URL for a video lecture.
+ *
+ *  The response also sets the CloudFront cookies that authorize playback, so
+ *  refetching is what keeps a long viewing session alive: the interval sits at
+ *  half the backend's 2 h cookie TTL. The URL itself is stable, so a refetch
+ *  returns the same string and never restarts the video.
+ *
+ *  No retry — 404 (no access) and 422 (still transcoding) are both final, and
+ *  the player renders its "not ready yet" state instead. */
+export function useLectureStreamUrl(lectureId: number | undefined) {
+  return useQuery({
+    queryKey: ["lecture-stream-url", lectureId],
+    queryFn: () => getLectureStreamUrl(lectureId as number),
+    enabled: !!lectureId,
+    retry: false,
+    staleTime: 30 * 60 * 1000,
+    refetchInterval: 60 * 60 * 1000,
   });
 }
 

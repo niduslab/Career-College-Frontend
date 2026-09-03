@@ -7,6 +7,7 @@ import {
   withMessage,
 } from "./shared";
 import { type CodingRunDispatch } from "./learner-consumption";
+import { uploadLectureVideoToS3 } from "./video-upload";
 
 // Sections
 
@@ -110,15 +111,6 @@ export interface CreateArticleLectureInput {
   is_preview?: boolean;
 }
 
-export interface CreateVideoLectureInput {
-  item_type: "lecture";
-  title: string;
-  lecture_type: "video";
-  video_file: File;
-  position?: number;
-  is_preview?: boolean;
-}
-
 export interface CreateLectureInput {
   title: string;
   position?: number;
@@ -153,28 +145,6 @@ export async function createArticleLecture(
   const res = await apiPost<SectionContentItem>(
     `/courses/sections/${sectionId}/contents/`,
     { item_type: "lecture", lecture_type: "article", ...input },
-  );
-  return withMessage(res);
-}
-
-/** Create a video lecture and upload its file in one shot. See the note on
- *  `createArticleLecture` — the builder uses the two-step flow. */
-export async function createVideoLecture(
-  sectionId: number,
-  input: Omit<CreateVideoLectureInput, "item_type" | "lecture_type">,
-): Promise<WithMessage<SectionContentItem>> {
-  const form = new FormData();
-  form.append("item_type", "lecture");
-  form.append("title", input.title);
-  form.append("lecture_type", "video");
-  form.append("video_file", input.video_file);
-  if (input.position !== undefined)
-    form.append("position", String(input.position));
-  if (input.is_preview !== undefined)
-    form.append("is_preview", String(input.is_preview));
-  const res = await apiPost<SectionContentItem>(
-    `/courses/sections/${sectionId}/contents/`,
-    form,
   );
   return withMessage(res);
 }
@@ -216,25 +186,32 @@ export async function updateLecture(
 }
 
 /**
- * Step 2, video branch: attach (or replace) the lecture's video. Multipart
- * PATCH — the backend deactivates any previous asset and enqueues transcoding,
- * so poll `getLecture` until `active_video_asset.status` is "ready".
+ * Step 2, video branch: attach (or replace) the lecture's video.
+ *
+ * Two calls, in this order. The metadata PATCH must land first because the
+ * upload endpoints only accept a lecture that is already `lecture_type=video`
+ * — a lesson being switched over from an article would be rejected otherwise.
+ * The file itself then goes browser → S3, never through Django.
+ *
+ * Resolves once transcoding is queued, not once it finishes: poll `getLecture`
+ * until `active_video_asset.status` is "ready".
  */
 export async function uploadLectureVideo(
   lectureId: number,
   file: File,
-  extra: { title?: string; is_preview?: boolean } = {},
+  extra: {
+    title?: string;
+    is_preview?: boolean;
+    onProgress?: (fraction: number) => void;
+    signal?: AbortSignal;
+  } = {},
 ): Promise<WithMessage<LectureContent>> {
-  const form = new FormData();
-  form.append("lecture_type", "video");
-  form.append("video_file", file);
-  if (extra.title !== undefined) form.append("title", extra.title);
-  if (extra.is_preview !== undefined)
-    form.append("is_preview", String(extra.is_preview));
-  const res = await apiPatch<LectureContent>(
-    `/courses/lectures/${lectureId}/`,
-    form,
-  );
+  const { onProgress, signal, ...meta } = extra;
+  const res = await apiPatch<LectureContent>(`/courses/lectures/${lectureId}/`, {
+    lecture_type: "video",
+    ...meta,
+  });
+  await uploadLectureVideoToS3(lectureId, file, { onProgress, signal });
   return withMessage(res);
 }
 

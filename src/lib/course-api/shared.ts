@@ -74,9 +74,35 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
-export function hlsAssetUrl(path: string): string {
-  const origin = config.apiBaseUrl.replace(/\/api\/v1\/?$/, "");
-  return `${origin}/media/${path}`;
+function apiOrigin(): string {
+  return config.apiBaseUrl.replace(/\/api\/v1\/?$/, "");
+}
+
+/**
+ * Playback URL for a video lecture's HLS master playlist.
+ *
+ * In production this hits CloudFront, and the same response carries the three
+ * `CloudFront-*` signed cookies that authorize every `.m3u8` and `.ts` fetch
+ * (`apiGet` sends `credentials: "include"`, so the browser stores them). The
+ * player must then send those cookies back — see `VideoPlayer`'s `xhrSetup`.
+ *
+ * Never build this URL from `stream_master_playlist` by hand: that value is a
+ * storage-relative key, and an unsigned CloudFront request is rejected with a
+ * 403 that surfaces in the browser as a CORS error.
+ *
+ * Throws when the video isn't transcoded yet (422) or the caller has no access
+ * (404); callers treat that as "no video".
+ */
+export async function getLectureStreamUrl(lectureId: number): Promise<string> {
+  const res = await apiGet<{ streamUrl: string }>(
+    `/courses/lectures/${lectureId}/stream/`,
+  );
+  const url = (res.data as { streamUrl: string }).streamUrl;
+  // Local dev has no CloudFront, so the backend falls back to a root-relative
+  // storage path ("/media/..."). Resolve it against the API host — relative to
+  // the page it would point at the frontend origin. Absolute CloudFront URLs
+  // pass through untouched.
+  return /^https?:\/\//i.test(url) ? url : `${apiOrigin()}${url}`;
 }
 
 export type CodingLanguage = "python" | "javascript" | "cpp" | "java";

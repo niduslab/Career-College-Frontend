@@ -134,7 +134,15 @@ export default function VideoPlayer({
     hlsRef.current = null;
 
     if (Hls.isSupported()) {
-      const hls = new Hls();
+      const hls = new Hls({
+        // Playback is authorized by the CloudFront-* signed cookies the
+        // stream-URL endpoint set. Segment requests are cross-site, so they
+        // only carry those cookies with credentials enabled — without this
+        // CloudFront answers 403 and the browser reports it as a CORS error.
+        xhrSetup: (xhr) => {
+          xhr.withCredentials = true;
+        },
+      });
       hlsRef.current = hls;
       hls.on(Hls.Events.MANIFEST_PARSED, (_evt, data) => {
         setLevels(
@@ -292,6 +300,10 @@ export default function VideoPlayer({
       {/* Video */}
       <video
         ref={videoRef}
+        // Safari's native HLS path loads the playlist itself; it needs the
+        // same credentialed requests hls.js gets via xhrSetup. Ignored on the
+        // hls.js path, where the element's source is a blob: URL.
+        crossOrigin="use-credentials"
         className="absolute inset-0 w-full h-full object-contain"
         onTimeUpdate={() =>
           videoRef.current && setCurrentSec(videoRef.current.currentTime)
