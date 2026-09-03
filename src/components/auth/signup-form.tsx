@@ -4,13 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
-import { FcGoogle } from "react-icons/fc";
-import { FaLinkedin } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
 import type { SignUpFormData, UserType, InstitutionType } from "@/types/auth";
-import { register } from "@/lib/auth-api";
+import { register, googleSignInUrl } from "@/lib/auth-api";
+import { rememberGoogleUserType } from "@/lib/google-auth-intent";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 import {
@@ -97,6 +97,17 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
   const validateOnBlur = (field: keyof SignUpFormData) => {
     const all = validateAll(formData);
     setErrors((prev) => ({ ...prev, [field]: all[field] ?? "" }));
+  };
+
+  // The backend only provisions learners and instructors through Google.
+  const googleBlocked = formData.user_type === "partner_institution";
+
+  const handleGoogle = () => {
+    if (googleBlocked) return;
+    const userType = formData.user_type === "instructor" ? "instructor" : "learner";
+    rememberGoogleUserType(userType);
+    // Full page navigation: this leaves the SPA for Google's consent screen.
+    window.location.href = googleSignInUrl(userType);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -433,53 +444,12 @@ export function SignUpForm({ onUserTypeChange }: SignUpFormProps = {}) {
         </Button>
       </form>
 
-      {/* Divider */}
-      <div className="flex items-center gap-3 my-6">
-        <div className="flex-1 h-px bg-(--gray-200)"></div>
-        <span className="sg-p-small text-(--gray-500)">
-          or continue with social
-        </span>
-        <div className="flex-1 h-px bg-(--gray-200)"></div>
-      </div>
-
-      {/* Social Auth Buttons */}
-      <div className="space-y-3 mb-6">
-        {/* Mobile & Tablet Layout - Stacked */}
-        <div className="md:hidden space-y-3">
-          <button
-            type="button"
-            className="w-full h-12 flex items-center justify-center gap-2 rounded-lg border border-(--gray-300) bg-(--text-white) text-(--text-title) font-medium hover:bg-(--gray-50) transition-colors"
-          >
-            <FcGoogle size={20} />
-            Google
-          </button>
-          <button
-            type="button"
-            className="w-full h-12 cursor-pointer flex items-center justify-center gap-2 rounded-lg border border-(--gray-300) bg-(--text-white) text-(--text-title) font-medium hover:bg-(--gray-50) transition-colors"
-          >
-            <FaLinkedin size={20} className="text-blue-600" />
-            LinkedIn
-          </button>
-        </div>
-
-        {/* Desktop & Large Devices - Inline */}
-        <div className="hidden md:grid md:grid-cols-2 gap-3">
-          <button
-            type="button"
-            className="h-12 cursor-pointer flex items-center justify-center gap-2 rounded-lg border border-(--gray-300) bg-(--text-white) text-(--text-title) font-medium hover:bg-(--gray-50) transition-colors"
-          >
-            <FcGoogle size={20} />
-            Google
-          </button>
-          <button
-            type="button"
-            className="h-12 flex items-center justify-center gap-2 rounded-lg border border-(--gray-300) bg-(--text-white) text-(--text-title) font-medium hover:bg-(--gray-50) transition-colors"
-          >
-            <FaLinkedin size={20} className="text-blue-600" />
-            LinkedIn
-          </button>
-        </div>
-      </div>
+      <SocialAuthButtons
+        size="md"
+        onGoogleClick={handleGoogle}
+        googleDisabled={googleBlocked}
+        googleDisabledNote="Institutions must sign up with an email address."
+      />
 
       <p className="text-left sg-p-default text-(--gray-500)">
         Already have an account?{" "}
