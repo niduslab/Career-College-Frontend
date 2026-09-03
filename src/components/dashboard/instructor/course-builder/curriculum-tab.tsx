@@ -381,9 +381,6 @@ export default function CurriculumTab({
     null,
   );
   const [savingLesson, setSavingLesson] = useState(false);
-  // 0–1 while a video is streaming to S3, null otherwise. Separate from
-  // `savingLesson` because the upload is the slow part and needs its own bar.
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [deletingLesson, setDeletingLesson] = useState(false);
   const [editingLesson, setEditingLesson] = useState<{
     moduleId: number;
@@ -621,49 +618,13 @@ export default function CurriculumTab({
       const position =
         (modules.find((m) => m.id === moduleId)?.contents.length ?? 0) + 1;
 
-      const { message } = await createLecture(moduleId, {
-        title: lesson.title,
-        position,
-        is_preview: lesson.isFreePreview,
-      });
-      notify.success(message ?? "Lesson added. Add its content next.");
-      setModules((prev) =>
-        prev.map((m) => (m.id === moduleId ? { ...m, loadingLessons: true } : m)),
-      );
-      await loadLessonsFor(moduleId);
-      setLessonModalModuleId(null);
-    } catch (err) {
-      notify.error(
-        err instanceof ApiError ? err.message : "Failed to add lesson.",
-      );
-    } finally {
-      setSavingLesson(false);
-    }
-  };
-
-  /**
-   * Step 2: commit the lecture to a kind and attach its payload. Video uploads
-   * straight to S3 and then starts transcoding; article goes as JSON.
-   */
-  const handleSaveLectureContent = async (
-    moduleId: number,
-    lectureId: number,
-    lesson: LectureSavePayload,
-  ) => {
-    setSavingLesson(true);
-    try {
-      if (lesson.chosenLectureType === "Video") {
-        if (!lesson.videoFile) return;
-        setUploadProgress(0);
-        try {
-          await uploadLectureVideo(lectureId, lesson.videoFile, {
-            title: lesson.title,
-            is_preview: lesson.isFreePreview,
-            onProgress: setUploadProgress,
-          });
-        } finally {
-          setUploadProgress(null);
-        }
+      if (lesson.videoFile) {
+        const { data: created } = await createVideoLecture(moduleId, {
+          title: lesson.title,
+          video_file: lesson.videoFile,
+          position,
+          is_preview: lesson.isFreePreview,
+        });
         setModules((prev) =>
           prev.map((m) =>
             m.id === moduleId ? { ...m, loadingLessons: true } : m,
@@ -1130,7 +1091,6 @@ export default function CurriculumTab({
                 : "Article"
             }
             saving={savingLesson}
-            uploadProgress={uploadProgress}
             deleting={deletingLesson}
             onSave={(lesson) =>
               handleEditLecture(
@@ -1150,27 +1110,6 @@ export default function CurriculumTab({
             }
           />
         ))}
-
-      {/* Step 2 — pick the lecture kind and supply its payload. */}
-      {addingContentTo && (
-        <LessonModal
-          contentStep
-          lectureAwaitingContent
-          initialLesson={contentToLesson(addingContentTo.content)}
-          initialLectureType="Video"
-          articleAiContext={articleAiContext(addingContentTo.moduleId)}
-          saving={savingLesson}
-          uploadProgress={uploadProgress}
-          onSave={(lesson) =>
-            handleSaveLectureContent(
-              addingContentTo.moduleId,
-              addingContentTo.content.object_id,
-              lesson,
-            )
-          }
-          onClose={() => !savingLesson && setAddingContentTo(null)}
-        />
-      )}
     </>
   );
 }
