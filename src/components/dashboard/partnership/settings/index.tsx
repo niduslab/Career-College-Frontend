@@ -8,6 +8,7 @@ import {
   Bell,
   ShieldCheck,
   Building2,
+  Wallet,
   ChevronRight,
 } from "lucide-react";
 import { ProfileTab } from "./profile-tab";
@@ -15,12 +16,14 @@ import { AccountTab } from "./account-tab";
 import { NotificationsTab } from "./notifications-tab";
 import { VerificationTab } from "./verification-tab";
 import { DepartmentsTab } from "./departments-tab";
+import { PayoutTab } from "../../settings-shared/payout-tab";
 
 type Tab =
   | "profile"
   | "account"
   | "verification"
   | "departments"
+  | "payout"
   | "notifications";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
@@ -28,6 +31,7 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "account", label: "Account & Security", icon: Shield },
   { id: "verification", label: "Verification", icon: ShieldCheck },
   { id: "departments", label: "Departments", icon: Building2 },
+  { id: "payout", label: "Payout", icon: Wallet },
   { id: "notifications", label: "Notifications", icon: Bell },
 ];
 
@@ -47,6 +51,7 @@ export default function PartnershipSettingsPage() {
     account: AccountTab,
     verification: VerificationTab,
     departments: DepartmentsTab,
+    payout: PayoutTab,
     notifications: NotificationsTab,
   }[activeTab];
 

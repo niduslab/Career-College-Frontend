@@ -4,13 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
-import { FcGoogle } from "react-icons/fc";
-import { FaLinkedin } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
 import type { LoginFormData } from "@/types/auth";
-import { login, dashboardPathFor } from "@/lib/auth-api";
+import { login, dashboardPathFor, googleSignInUrl } from "@/lib/auth-api";
+import { rememberGoogleUserType } from "@/lib/google-auth-intent";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 import { validateEmail, validateRequired } from "@/lib/validation";
@@ -29,6 +29,14 @@ export function LoginForm() {
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Signing in never creates an account here — the role only matters when
+  // Google hands back someone we've never seen, and learner is the safe default.
+  const handleGoogle = () => {
+    rememberGoogleUserType("learner");
+    // Full page navigation: this leaves the SPA for Google's consent screen.
+    window.location.href = googleSignInUrl("learner");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,53 +185,7 @@ export function LoginForm() {
         </Button>
       </form>
 
-      {/* Divider */}
-      <div className="flex items-center gap-3 my-6">
-        <div className="flex-1 h-px bg-(--gray-200)"></div>
-        <span className="sg-p-small text-(--gray-500)">
-          or continue with social
-        </span>
-        <div className="flex-1 h-px bg-(--gray-200)"></div>
-      </div>
-
-      {/* Social Auth Buttons */}
-      <div className="space-y-3 mb-6">
-        {/* Mobile & Tablet Layout - Stacked */}
-        <div className="md:hidden space-y-3">
-          <button
-            type="button"
-            className="w-full h-11 flex items-center justify-center gap-2 rounded-lg border border-(--gray-300) bg-(--text-white) text-(--text-title) font-medium hover:bg-(--gray-50) transition-colors"
-          >
-            <FcGoogle size={20} />
-            Google
-          </button>
-          <button
-            type="button"
-            className="w-full h-11 flex items-center justify-center gap-2 rounded-lg border border-(--gray-300) bg-(--text-white) text-(--text-title) font-medium hover:bg-(--gray-50) transition-colors"
-          >
-            <FaLinkedin size={20} className="text-blue-600" />
-            LinkedIn
-          </button>
-        </div>
-
-        {/* Desktop & Large Devices - Inline */}
-        <div className="hidden md:grid md:grid-cols-2 gap-3">
-          <button
-            type="button"
-            className="h-11 flex items-center justify-center gap-2 rounded-lg border border-(--gray-300) bg-(--text-white) text-(--text-title) font-medium hover:bg-(--gray-50) transition-colors"
-          >
-            <FcGoogle size={20} />
-            Google
-          </button>
-          <button
-            type="button"
-            className="h-11 flex items-center justify-center gap-2 rounded-lg border border-(--gray-300) bg-(--text-white) text-(--text-title) font-medium hover:bg-(--gray-50) transition-colors"
-          >
-            <FaLinkedin size={20} className="text-blue-600" />
-            LinkedIn
-          </button>
-        </div>
-      </div>
+      <SocialAuthButtons onGoogleClick={handleGoogle} />
 
       <p className="text-left sg-p-default text-(--gray-500)">
         Don&lsquo;t have an account?{" "}

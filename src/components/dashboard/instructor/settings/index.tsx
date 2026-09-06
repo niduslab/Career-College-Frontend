@@ -7,19 +7,22 @@ import {
   Shield,
   Bell,
   ShieldCheck,
+  Wallet,
   ChevronRight,
 } from "lucide-react";
 import { ProfileTab } from "./profile-tab";
 import { AccountTab } from "./account-tab";
 import { NotificationsTab } from "./notifications-tab";
 import { VerificationTab } from "./verification-tab";
+import { PayoutTab } from "../../settings-shared/payout-tab";
 
-type Tab = "profile" | "account" | "verification" | "notifications";
+type Tab = "profile" | "account" | "verification" | "payout" | "notifications";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "profile", label: "Profile", icon: User },
   { id: "account", label: "Account & Security", icon: Shield },
   { id: "verification", label: "Verification", icon: ShieldCheck },
+  { id: "payout", label: "Payout", icon: Wallet },
   { id: "notifications", label: "Notifications", icon: Bell },
 ];
 
@@ -38,6 +41,7 @@ export default function SettingsPage() {
     profile: ProfileTab,
     account: AccountTab,
     verification: VerificationTab,
+    payout: PayoutTab,
     notifications: NotificationsTab,
   }[activeTab];
 

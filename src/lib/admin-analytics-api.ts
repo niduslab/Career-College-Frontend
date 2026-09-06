@@ -98,6 +98,22 @@ export async function getEnrollmentTrend(params: TrendParams = {}): Promise<Tren
   return res.data as TrendResponse;
 }
 
+export interface ValueTrendPoint {
+  period: string;
+  value: number;
+}
+
+export interface ValueTrendResponse {
+  granularity: TrendGranularity;
+  periods: number;
+  series: ValueTrendPoint[];
+}
+
+export async function getRevenueTrend(params: TrendParams = {}): Promise<ValueTrendResponse> {
+  const res = await apiGet<ValueTrendResponse>(`/analytics/admin/revenue/trend/${buildQuery({ ...params })}`);
+  return res.data as ValueTrendResponse;
+}
+
 export type TopCoursesSort = "enrollments" | "rating" | "completion";
 
 export interface TopCourse {

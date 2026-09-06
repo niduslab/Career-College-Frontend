@@ -1,4 +1,5 @@
 import { apiPost, apiGet } from "./api";
+import { config } from "./config";
 import { setLoggedIn } from "./session";
 import type { SignUpFormData } from "@/types/auth";
 
@@ -71,6 +72,42 @@ export async function login(
   const res = await apiPost<AuthUser>("/auth/login/", { email, password });
   setLoggedIn(true);
   return res.data as AuthUser;
+}
+
+/**
+ * The only two roles the backend lets sign in with Google — a
+ * `partner_institution` is rejected with a 403.
+ */
+export type GoogleUserType = "learner" | "instructor";
+
+/** Extra fields the Google exchange returns on top of `AuthUser`. */
+export interface GoogleAuthUser extends AuthUser {
+  auth_provider?: string;
+  is_new_user?: boolean;
+}
+
+/**
+ * Where to send the browser to start Google sign-in. This is a full page
+ * navigation, not a fetch — the backend 302s on to Google's consent screen.
+ */
+export function googleSignInUrl(userType: GoogleUserType = "learner"): string {
+  return `${config.apiBaseUrl}/auth/google/?user_type=${userType}`;
+}
+
+/**
+ * Trade the authorization code Google handed back for a session. Sets the same
+ * HttpOnly cookies as `login()`, so everything downstream works identically.
+ */
+export async function googleExchangeToken(
+  code: string,
+  userType: GoogleUserType = "learner",
+): Promise<GoogleAuthUser> {
+  const res = await apiPost<GoogleAuthUser>("/auth/google/exchange-token/", {
+    code,
+    user_type: userType,
+  });
+  setLoggedIn(true);
+  return res.data as GoogleAuthUser;
 }
 
 export async function fetchMe(): Promise<AuthUser | null> {

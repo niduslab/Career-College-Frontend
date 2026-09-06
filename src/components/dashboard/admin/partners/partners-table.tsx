@@ -1,34 +1,57 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import PartnersFilterBar from "./filter-bar";
-import RowActionsMenu from "./row-actions-menu";
+import { Loader2, ShieldCheck, Building2 } from "lucide-react";
+import PartnersFilterBar, { type PartnerStatus } from "./filter-bar";
+import RowActionsMenu from "@/components/dashboard/admin/users/row-actions-menu";
 import { Pagination } from "@/components/common/pagination";
-import { PARTNERS, PartnerStatus, PartnerType } from "./data";
+import { useAdminUsers } from "@/hooks/use-admin-users";
+import { toPlatformUser } from "@/components/dashboard/admin/users/data";
+import type { InstitutionType, ListAdminUsersParams } from "@/lib/admin-console-api";
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 10;
 
 const STATUS_BADGE: Record<PartnerStatus, string> = {
   Active: "bg-emerald-50 text-emerald-600",
-  Pending: "bg-blue-50 text-blue-600",
-  Inactive: "bg-(--gray-100) text-(--gray-500)",
+  Suspended: "bg-red-50 text-red-500",
 };
 
-const TYPE_BADGE: Record<PartnerType, string> = {
-  University: "bg-purple-50 text-purple-600",
-  Corporate: "bg-(--primary-50) text-(--primary-600)",
-  NGO: "bg-orange-50 text-orange-500",
+const TYPE_LABEL: Record<InstitutionType, string> = {
+  university: "University",
+  college: "College",
+  training_center: "Training Center",
+  corporate: "Corporate",
+  nonprofit: "Non-Profit",
+  other: "Other",
 };
+
+function useDebounced<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(timer);
+  }, [value, delayMs]);
+  return debounced;
+}
+
+function institutionInitialsOf(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "?";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+}
 
 export default function PartnersTable() {
   const [search, setSearch] = useState("");
-  const [type, setType] = useState<PartnerType | "All">("All");
   const [status, setStatus] = useState<PartnerStatus | "All">("All");
-  const [typeOpen, setTypeOpen] = useState(false);
+  const [type, setType] = useState<InstitutionType | "All">("All");
   const [statusOpen, setStatusOpen] = useState(false);
+  const [typeOpen, setTypeOpen] = useState(false);
   const [page, setPage] = useState(1);
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const menuRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const menuRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
+
+  const debouncedSearch = useDebounced(search, 350);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -36,34 +59,33 @@ export default function PartnersTable() {
       const target = e.target as Node;
       const el = menuRefs.current.get(openMenuId);
       const insideWrapper = el?.contains(target) ?? false;
-      const insidePortal = !!(target as HTMLElement).closest?.(
-        "[data-action-portal]",
-      );
+      const insidePortal = !!(target as HTMLElement).closest?.("[data-action-portal]");
       if (!insideWrapper && !insidePortal) setOpenMenuId(null);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [openMenuId]);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return PARTNERS.filter((p) => {
-      const matchesSearch =
-        !q ||
-        p.name.toLowerCase().includes(q) ||
-        p.contact.toLowerCase().includes(q);
-      const matchesType = type === "All" || p.type === type;
-      const matchesStatus = status === "All" || p.status === status;
-      return matchesSearch && matchesType && matchesStatus;
-    });
-  }, [search, type, status]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pageRows = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
+  const queryParams: ListAdminUsersParams = useMemo(
+    () => ({
+      search: debouncedSearch.trim() || undefined,
+      user_type: "partner_institution",
+      institution_type: type === "All" ? undefined : type,
+      is_restricted_by_admin: status === "All" ? undefined : status === "Suspended",
+      sort: "-registration_date",
+      page,
+      page_size: PAGE_SIZE,
+    }),
+    [debouncedSearch, status, type, page],
   );
+
+  const { data, isLoading, isError, isFetching } = useAdminUsers(queryParams);
+
+  const rawRows = data?.results ?? [];
+  const rows = rawRows.map(toPlatformUser);
+  const totalCount = data?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
 
   const updateAndResetPage =
     <T,>(setter: (v: T) => void) =>
@@ -101,29 +123,23 @@ export default function PartnersTable() {
 
       <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4">
         <div className="overflow-x-auto -mx-5 px-5">
-          <table className="w-full min-w-190 border-collapse">
+          <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-(--gray-100)">
-                <th className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-left pb-2">
-                  Partner
+                <th className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-left pb-2 pr-8">
+                  Institution
                 </th>
-                <th className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-left pb-2">
-                  Contact
-                </th>
-                <th className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-left pb-2">
+                <th className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-left pb-2 pr-8">
                   Type
                 </th>
-                <th className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-right pb-2">
-                  Programs
+                <th className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-left pb-2 pr-8">
+                  Verification
                 </th>
-                <th className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-right pb-2">
-                  Students
-                </th>
-                <th className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-right pb-2 pr-6">
-                  Revenue
-                </th>
-                <th className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-left pb-2 pl-3">
+                <th className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-left pb-2 pr-8">
                   Status
+                </th>
+                <th className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-left pb-2 pr-8">
+                  Joined
                 </th>
                 <th className="text-[11px] font-semibold tracking-widest text-(--gray-400) uppercase text-right pb-2">
                   Actions
@@ -131,76 +147,89 @@ export default function PartnersTable() {
               </tr>
             </thead>
             <tbody className="divide-y divide-(--gray-50)">
-              {pageRows.map((p) => (
-                <tr
-                  key={p.id}
-                  className="hover:bg-(--gray-50) transition-colors"
-                >
-                  <td className="py-3 pr-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-lg shrink-0 bg-(--primary-50) text-(--primary-600) flex items-center justify-center text-[11px] font-semibold">
-                        {p.initials}
-                      </div>
-                      <p className="text-[13px] font-semibold text-(--text-title) truncate">
-                        {p.name}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="py-3 pr-3 text-[13px] text-(--gray-600) truncate">
-                    {p.contact}
-                  </td>
-                  <td className="py-3 pr-3">
-                    <span
-                      className={`inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full ${TYPE_BADGE[p.type]}`}
-                    >
-                      {p.type}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-3 text-[13px] text-(--gray-600) text-right">
-                    {p.programs > 0 ? p.programs : "—"}
-                  </td>
-                  <td className="py-3 pr-6 text-[13px] text-(--gray-600) text-right">
-                    {p.students > 0 ? p.students.toLocaleString() : "—"}
-                  </td>
-                  <td className="py-3 pr-6 text-[13px] text-(--text-title) text-right font-medium">
-                    {p.revenue}
-                  </td>
-                  <td className="py-3 pl-3 pr-3">
-                    <span
-                      className={`inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full ${STATUS_BADGE[p.status]}`}
-                    >
-                      {p.status}
-                    </span>
-                  </td>
-                  <td className="py-3 text-right">
-                    <RowActionsMenu
-                      partner={p}
-                      open={openMenuId === p.id}
-                      onToggle={() =>
-                        setOpenMenuId(openMenuId === p.id ? null : p.id)
-                      }
-                      setRef={(el) => menuRefs.current.set(p.id, el)}
-                      onView={(partner) => console.log("view", partner.id)}
-                      onApprove={(partner) =>
-                        console.log("approve", partner.id)
-                      }
-                      onToggleSuspend={(partner) =>
-                        console.log("toggle-suspend", partner.id)
-                      }
-                      onDelete={(partner) => console.log("delete", partner.id)}
-                    />
-                  </td>
-                </tr>
-              ))}
-              {pageRows.length === 0 && (
+              {isLoading ? (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="py-8 text-center text-[13px] text-(--gray-400)"
-                  >
-                    No partners match your filters.
+                  <td colSpan={6} className="py-10 text-center text-[13px] text-(--gray-400)">
+                    <Loader2 className="w-5 h-5 animate-spin inline-block mr-2" />
+                    Loading partners…
                   </td>
                 </tr>
+              ) : isError ? (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-[13px] text-red-500">
+                    Failed to load partners. Please try again.
+                  </td>
+                </tr>
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-[13px] text-(--gray-400)">
+                    No partner institutions match your filters.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((u, i) => {
+                  const raw = rawRows[i];
+                  const isVerified = raw?.is_verified ?? false;
+                  const institutionName = raw?.institution_name ?? u.name;
+                  const institutionType = raw?.institution_type ?? null;
+                  return (
+                    <tr key={u.id} className="hover:bg-(--gray-50) transition-colors">
+                      <td className="py-3 pr-8">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-lg shrink-0 bg-(--primary-50) text-(--primary-600) flex items-center justify-center text-[11px] font-semibold">
+                            {institutionInitialsOf(institutionName)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[13px] font-semibold text-(--text-title) truncate">
+                              {institutionName}
+                            </p>
+                            <p className="text-[11px] text-(--gray-400) truncate">{u.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 pr-8">
+                        {institutionType ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full bg-(--gray-100) text-(--gray-600)">
+                            <Building2 className="w-3 h-3" />
+                            {TYPE_LABEL[institutionType]}
+                          </span>
+                        ) : (
+                          <span className="text-[13px] text-(--gray-400)">—</span>
+                        )}
+                      </td>
+                      <td className="py-3 pr-8">
+                        {isVerified ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">
+                            <ShieldCheck className="w-3 h-3" />
+                            Verified
+                          </span>
+                        ) : (
+                          <span className="inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full bg-(--gray-100) text-(--gray-500)">
+                            Unverified
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 pr-8">
+                        <span
+                          className={`inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full ${STATUS_BADGE[u.status]}`}
+                        >
+                          {u.status}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-8 text-[13px] text-(--gray-600) whitespace-nowrap">
+                        {u.joined}
+                      </td>
+                      <td className="py-3 text-right">
+                        <RowActionsMenu
+                          user={u}
+                          open={openMenuId === u.id}
+                          onToggle={() => setOpenMenuId(openMenuId === u.id ? null : u.id)}
+                          setRef={(el) => menuRefs.current.set(u.id, el)}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -208,11 +237,10 @@ export default function PartnersTable() {
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 pt-4 border-t border-(--gray-100)">
           <p className="text-[12px] text-(--gray-400)">
-            Showing{" "}
-            {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}
+            {isFetching && !isLoading && "Refreshing… · "}
+            Showing {totalCount === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}
             {"–"}
-            {Math.min(currentPage * PAGE_SIZE, filtered.length)} of{" "}
-            {filtered.length} partners
+            {Math.min(currentPage * PAGE_SIZE, totalCount)} of {totalCount} partners
           </p>
           <Pagination
             currentPage={currentPage}

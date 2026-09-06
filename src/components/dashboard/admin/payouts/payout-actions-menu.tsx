@@ -2,30 +2,33 @@
 
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MoreVertical, Eye, Archive, ArchiveRestore, Loader2 } from "lucide-react";
-import type { AdminCourse } from "@/lib/admin-courses-api";
+import { MoreVertical, Check, X, CheckCircle2, Loader2 } from "lucide-react";
+import type { PayoutStatus } from "@/lib/admin-payouts-api";
 
-interface RowActionsMenuProps {
-  course: AdminCourse;
+interface PayoutActionsMenuProps {
+  status: PayoutStatus;
   busy: boolean;
-  onView: () => void;
-  onArchive: () => void;
-  onRestore: () => void;
+  onApprove: () => void;
+  onReject: () => void;
+  onMarkPaid: () => void;
 }
 
 const MENU_HEIGHT = 116;
 
-export default function RowActionsMenu({
-  course,
+export default function PayoutActionsMenu({
+  status,
   busy,
-  onView,
-  onArchive,
-  onRestore,
-}: RowActionsMenuProps) {
+  onApprove,
+  onReject,
+  onMarkPaid,
+}: PayoutActionsMenuProps) {
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, right: 0 });
+
+  const canDecide = status === "pending";
+  const canMarkPaid = status === "approved";
 
   const closeOnOutsideClick = (e: MouseEvent) => {
     const target = e.target as Node;
@@ -54,8 +57,9 @@ export default function RowActionsMenu({
     fn();
   };
 
-  const canArchive = course.status === "published";
-  const canRestore = course.status === "archived";
+  if (!canDecide && !canMarkPaid) {
+    return <span className="text-[12px] text-(--gray-400)">—</span>;
+  }
 
   return (
     <div ref={wrapperRef} className="relative inline-block">
@@ -64,7 +68,7 @@ export default function RowActionsMenu({
         onClick={handleToggle}
         disabled={busy}
         className="w-7 h-7 rounded-lg flex items-center justify-center text-(--gray-400) hover:bg-(--gray-100) hover:text-(--gray-600) transition-colors cursor-pointer disabled:opacity-50"
-        aria-label="Course actions"
+        aria-label="Payout actions"
       >
         {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreVertical className="w-4 h-4" />}
       </button>
@@ -75,29 +79,31 @@ export default function RowActionsMenu({
             style={{ position: "fixed", top: coords.top, right: coords.right, zIndex: 9999 }}
             className="bg-white border border-(--gray-200) rounded-xl shadow-lg py-1 min-w-40 text-left"
           >
-            <button
-              onClick={() => runAction(onView)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-(--gray-600) hover:bg-(--gray-50) transition-colors cursor-pointer"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              View details
-            </button>
-            {canArchive && (
-              <button
-                onClick={() => runAction(onArchive)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-orange-600 hover:bg-orange-50 transition-colors cursor-pointer"
-              >
-                <Archive className="w-3.5 h-3.5" />
-                Archive
-              </button>
+            {canDecide && (
+              <>
+                <button
+                  onClick={() => runAction(onApprove)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  Approve
+                </button>
+                <button
+                  onClick={() => runAction(onReject)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Reject
+                </button>
+              </>
             )}
-            {canRestore && (
+            {canMarkPaid && (
               <button
-                onClick={() => runAction(onRestore)}
+                onClick={() => runAction(onMarkPaid)}
                 className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
               >
-                <ArchiveRestore className="w-3.5 h-3.5" />
-                Restore
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Mark Paid
               </button>
             )}
           </div>,

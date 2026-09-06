@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   listPendingReviewCourses,
+  listAdminCourses,
   getCourseReviewDetail,
   getCourseAdminCurriculum,
   reviewCourse,
   archiveCourse,
   restoreCourse,
   type ListPendingReviewParams,
+  type ListAdminCoursesParams,
 } from "@/lib/admin-courses-api";
 
 /** Courses sitting in under_review, oldest-submitted-first. */
@@ -14,6 +16,15 @@ export function usePendingReviewCourses(params: ListPendingReviewParams) {
   return useQuery({
     queryKey: ["admin-pending-review", params],
     queryFn: () => listPendingReviewCourses(params),
+    placeholderData: (previousData) => previousData,
+  });
+}
+
+/** Platform-wide course browser — every status, not just under_review. */
+export function useAdminCourses(params: ListAdminCoursesParams) {
+  return useQuery({
+    queryKey: ["admin-courses", params],
+    queryFn: () => listAdminCourses(params),
     placeholderData: (previousData) => previousData,
   });
 }

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   getAdminAnalyticsSummary,
   getUserSignupTrend,
+  getRevenueTrend,
   getTopCourses,
   getConversionFunnel,
   type TrendParams,
@@ -32,6 +33,15 @@ export function useUserSignupTrend(params: TrendParams) {
   return useQuery({
     queryKey: ["admin-user-signup-trend", params],
     queryFn: () => getUserSignupTrend(params),
+    staleTime: 60 * 1000,
+  });
+}
+
+/** Paid-order gross revenue time series, used by the Platform Revenue chart. */
+export function useRevenueTrend(params: TrendParams) {
+  return useQuery({
+    queryKey: ["admin-revenue-trend", params],
+    queryFn: () => getRevenueTrend(params),
     staleTime: 60 * 1000,
   });
 }
