@@ -24,11 +24,6 @@ import RunResultPanel from "./coding-run-result-panel";
 const POLL_INTERVAL_MS = 750;
 const POLL_MAX_ATTEMPTS = 80;
 
-/** Test names the runner emits when the suite never ran: a load/compile crash
- *  or a script registering no tests (`evaluate (load)`, every harness), and the
- *  result Django synthesises when the container produced nothing (`evaluation`). */
-const NON_RUN_MARKERS = ["evaluate (load)", "evaluation"];
-
 type Tab = "starter" | "solution" | "script";
 
 const TABS: { value: Tab; label: string }[] = [
@@ -70,10 +65,11 @@ async function runAndWait(
  * Review-and-accept gate for a generated coding exercise.
  *
  * The draft is executed before the instructor is asked to keep it: the solution
- * must pass every test, and the starter code must fail at least one. The first
- * proves the exercise is solvable and the script runs at all; the second proves
- * there is something to do. A broken script is non-empty, so nothing downstream
- * would catch it — course submission checks only that the field is filled in.
+ * must pass every test, which proves the exercise is solvable and that the
+ * script runs at all. The starter code is not run — nothing checks that it
+ * fails, or that it compiles. A broken script is non-empty, so nothing
+ * downstream would catch it either: course submission checks only that the
+ * field is filled in.
  */
 export default function CodingPreviewModal({
   draft,
@@ -107,7 +103,6 @@ export default function CodingPreviewModal({
 
   const [verifying, setVerifying] = useState(false);
   const [solutionRun, setSolutionRun] = useState<CodingRunResult | null>(null);
-  const [starterRun, setStarterRun] = useState<CodingRunResult | null>(null);
   /** Set when the sandbox could not be reached — the verdict is unknown, not bad. */
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
@@ -117,22 +112,17 @@ export default function CodingPreviewModal({
   const runGeneration = useRef(0);
 
   const verify = useCallback(
-    async (code: string, starter: string, script: string) => {
+    async (code: string, script: string) => {
       const generation = ++runGeneration.current;
       const isCurrent = () => runGeneration.current === generation;
 
       setVerifying(true);
       setVerifyError(null);
       setSolutionRun(null);
-      setStarterRun(null);
       try {
         const solution = await runAndWait(exerciseId, code, script, isCurrent);
         if (!isCurrent()) return;
         setSolutionRun(solution);
-
-        const starterResult = await runAndWait(exerciseId, starter, script, isCurrent);
-        if (!isCurrent()) return;
-        setStarterRun(starterResult);
         setStale(false);
       } catch (err) {
         if (!isCurrent()) return;
@@ -162,7 +152,7 @@ export default function CodingPreviewModal({
     setStale(false);
     setConfirmAccept(false);
     setConfirmDiscard(false);
-    void verify(draft.solution_code, draft.starter_code, draft.evaluation_script);
+    void verify(draft.solution_code, draft.evaluation_script);
   }, [draft, seenDraft, verify]);
 
   const edit = (setter: (v: string) => void) => (value: string) => {
@@ -172,22 +162,11 @@ export default function CodingPreviewModal({
   };
 
   const busy = generating || applying || verifying;
-  const solutionPassed = solutionRun?.status === "passed";
-  // The starter must fail its tests, not fail to exist. When the solution has
-  // already passed, a run that produced only these markers means the starter
-  // itself does not load or compile — common for a Java or C++ `// TODO` stub,
-  // and a learner would open a file that is already broken.
-  const starterDidNotLoad =
-    starterRun !== null &&
-    starterRun.test_results.length > 0 &&
-    starterRun.test_results.every((t) => NON_RUN_MARKERS.includes(t.test_name));
-  const starterFails =
-    starterRun !== null && starterRun.status !== "passed" && !starterDidNotLoad;
   const verdict: "verified" | "failed" | "unknown" | "pending" = verifyError
     ? "unknown"
-    : solutionRun === null || starterRun === null
+    : solutionRun === null
       ? "pending"
-      : solutionPassed && starterFails
+      : solutionRun.status === "passed"
         ? "verified"
         : "failed";
 
@@ -277,11 +256,7 @@ export default function CodingPreviewModal({
                 verifying={verifying}
                 stale={stale}
                 verifyError={verifyError}
-                solutionPassed={solutionPassed}
-                starterDidNotLoad={starterDidNotLoad}
-                onReverify={() =>
-                  void verify(solutionCode, starterCode, evaluationScript)
-                }
+                onReverify={() => void verify(solutionCode, evaluationScript)}
               />
 
               <div className="space-y-1.5">
@@ -345,14 +320,6 @@ export default function CodingPreviewModal({
                   <RunResultPanel result={solutionRun} />
                 </div>
               )}
-              {starterRun && (
-                <div>
-                  <p className="text-[12px] font-semibold text-(--text-title)">
-                    Starter run — at least one test must fail
-                  </p>
-                  <RunResultPanel result={starterRun} />
-                </div>
-              )}
             </>
           )}
         </div>
@@ -405,16 +372,12 @@ function VerdictBanner({
   verifying,
   stale,
   verifyError,
-  solutionPassed,
-  starterDidNotLoad,
   onReverify,
 }: {
   verdict: "verified" | "failed" | "unknown" | "pending";
   verifying: boolean;
   stale: boolean;
   verifyError: string | null;
-  solutionPassed: boolean;
-  starterDidNotLoad: boolean;
   onReverify: () => void;
 }) {
   if (verifying) {
@@ -464,7 +427,8 @@ function VerdictBanner({
     return (
       <div className="flex items-center gap-2 text-[13px] text-(--text-paragraph) bg-green-50 border border-green-200 rounded-lg px-3 py-2">
         <CheckCircle2 className="w-4 h-4 shrink-0 text-green-600" />
-        Verified — the solution passes every test and the starter code does not.
+        Verified — the reference solution passes every test. The starter code is
+        not run; check it yourself before you keep it.
       </div>
     );
   }
@@ -474,12 +438,8 @@ function VerdictBanner({
       <div className="flex items-start gap-2 text-[13px] text-(--text-paragraph) bg-red-50 border border-red-200 rounded-lg px-3 py-2">
         <XCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-500" />
         <span>
-          {!solutionPassed
-            ? "The reference solution does not pass its own tests — the script or the solution is wrong."
-            : starterDidNotLoad
-              ? "The starter code does not load or compile, so a learner would open a file that is already broken. It should run and fail its tests, not fail to build."
-              : "The starter code already passes every test, so there is nothing for the learner to do."}{" "}
-          Edit below and re-run, or regenerate. {reverify}
+          The reference solution does not pass its own tests — the script or the
+          solution is wrong. Edit below and re-run, or regenerate. {reverify}
         </span>
       </div>
     );
