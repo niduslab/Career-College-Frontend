@@ -55,6 +55,12 @@ function ProgressRing({ percent }: { percent: number }) {
   return (
     <div className="relative shrink-0 flex items-center justify-center w-28 h-28">
       <svg width="112" height="112" className="-rotate-90">
+        <defs>
+          <linearGradient id="progress-ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="var(--primary-500)" />
+            <stop offset="100%" stopColor="var(--primary-700)" />
+          </linearGradient>
+        </defs>
         <circle
           cx="56"
           cy="56"
@@ -69,7 +75,7 @@ function ProgressRing({ percent }: { percent: number }) {
           cy="56"
           r={RADIUS}
           fill="none"
-          stroke="var(--primary-600)"
+          stroke="url(#progress-ring-gradient)"
           strokeWidth="8"
           strokeLinecap="round"
           strokeDasharray={CIRCUMFERENCE}
@@ -89,14 +95,14 @@ function ProgressRing({ percent }: { percent: number }) {
 function statusNode(status: MilestoneStatus, index: number) {
   if (status === "completed") {
     return (
-      <div className="w-12 h-12 rounded-xl flex items-center justify-center z-10 shrink-0 bg-emerald-500">
+      <div className="w-12 h-12 rounded-xl flex items-center justify-center z-10 shrink-0 bg-gradient-to-br from-emerald-400 to-emerald-500 shadow-sm">
         <Check className="w-5 h-5 text-white" strokeWidth={2.5} />
       </div>
     );
   }
   if (status === "in_progress" || status === "available") {
     return (
-      <div className="w-12 h-12 rounded-xl flex items-center justify-center z-10 shrink-0 bg-(--primary-600)">
+      <div className="w-12 h-12 rounded-xl flex items-center justify-center z-10 shrink-0 bg-gradient-to-br from-(--primary-500) to-(--primary-600) shadow-sm">
         <span className="text-[15px] font-bold text-white">{index + 1}</span>
       </div>
     );
@@ -148,22 +154,24 @@ function MilestoneRow({
   const href = `/dashboard/learner/course-player/${milestone.course.slug}`;
 
   return (
-    <li className="flex gap-4">
+    <li className="milestone-row opacity-0 flex gap-4">
       <div className="relative flex flex-col items-center shrink-0 w-12">
         {statusNode(milestone.status, index)}
         {!isLast && (
           <div
-            className={`w-0.5 flex-1 min-h-6 mt-1 ${
-              milestone.status === "completed" ? "bg-emerald-400" : "bg-(--gray-200)"
+            className={`w-1 flex-1 min-h-6 mt-1 rounded-full ${
+              milestone.status === "completed"
+                ? "bg-gradient-to-b from-emerald-400 to-emerald-200"
+                : "bg-(--gray-200)"
             }`}
           />
         )}
       </div>
 
       <div
-        className={`flex-1 min-w-0 mb-4 rounded-2xl border p-4 lg:p-5 flex items-center justify-between gap-4 transition-shadow ${
+        className={`flex-1 min-w-0 mb-4 rounded-2xl border p-4 lg:p-5 flex items-center justify-between gap-4 shadow-sm hover:shadow-md transition-all duration-200 ${
           milestone.status === "in_progress"
-            ? "border-(--primary-300) bg-(--primary-50) shadow-sm"
+            ? "border-(--primary-300) bg-(--primary-50)"
             : milestone.status === "locked"
               ? "border-(--gray-200) bg-white opacity-60"
               : "border-(--gray-200) bg-white"
@@ -189,7 +197,7 @@ function MilestoneRow({
           {canOpen && (
             <Link
               href={href}
-              className="flex items-center gap-2 text-[14px] font-medium text-white bg-(--primary-600) hover:bg-(--primary-700) px-5 py-2 rounded-lg transition-colors"
+              className="flex items-center gap-2 text-[14px] font-medium text-white bg-gradient-to-br from-(--primary-500) to-(--primary-600) hover:from-(--primary-600) hover:to-(--primary-700) px-5 py-2 rounded-lg transition-all shadow-sm"
             >
               <Play className="w-4 h-4 fill-current" />
               {milestone.status === "completed" ? "Review" : "Continue"}
@@ -213,6 +221,35 @@ function PathDetail({
   const { data: path, isLoading } = useLearningPathProgress(slug);
   const enrollMutation = useEnrollInLearningPath();
   const leaveMutation = useLeaveLearningPath();
+  const headerRef = useRef<HTMLDivElement>(null);
+  const roadmapRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        headerRef.current,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
+      );
+    }, headerRef);
+    return () => ctx.revert();
+  }, [path?.slug]);
+
+  useEffect(() => {
+    if (!roadmapRef.current || !path) return;
+    const rows = roadmapRef.current.querySelectorAll(".milestone-row");
+    if (rows.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.killTweensOf(rows);
+      gsap.fromTo(
+        rows,
+        { opacity: 0, x: -20 },
+        { opacity: 1, x: 0, duration: 0.45, stagger: 0.08, ease: "power3.out", delay: 0.15 },
+      );
+    }, roadmapRef);
+    return () => ctx.revert();
+  }, [path]);
 
   if (isLoading) {
     return (
@@ -270,7 +307,10 @@ function PathDetail({
         Back
       </button>
 
-      <div className="bg-white border border-(--gray-200) rounded-2xl p-5 lg:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      <div
+        ref={headerRef}
+        className="opacity-0 bg-gradient-to-br from-(--primary-50) via-white to-white border border-(--gray-200) rounded-2xl p-5 lg:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm"
+      >
         <div className="flex-1 min-w-0">
           <span className="flex items-center gap-1 w-fit text-[12px] font-semibold text-(--primary-600) bg-(--primary-50) px-2.5 py-1 rounded-full mb-3">
             <Target className="w-4 h-4" />
@@ -318,7 +358,7 @@ function PathDetail({
               <button
                 onClick={handleEnroll}
                 disabled={enrollMutation.isPending}
-                className="flex items-center gap-2 text-[14px] font-semibold text-white bg-(--primary-600) hover:bg-(--primary-700) px-5 py-2.5 rounded-lg transition-colors cursor-pointer disabled:opacity-60"
+                className="flex items-center gap-2 text-[14px] font-semibold text-white bg-gradient-to-br from-(--primary-500) to-(--primary-600) hover:from-(--primary-600) hover:to-(--primary-700) px-5 py-2.5 rounded-lg transition-all cursor-pointer disabled:opacity-60 shadow-sm"
               >
                 {enrollMutation.isPending ? "Joining..." : "Join this path"}
               </button>
@@ -340,7 +380,7 @@ function PathDetail({
             : "Join this path to start tracking your progress"}
         </p>
 
-        <ul className="space-y-0">
+        <ul ref={roadmapRef} className="space-y-0">
           {path.milestones.map((m, i) => (
             <MilestoneRow
               key={m.id}
@@ -366,11 +406,11 @@ function PathCard({
   return (
     <button
       onClick={onOpen}
-      className="text-left bg-white border border-(--gray-200) rounded-2xl p-5 hover:shadow-md hover:border-(--primary-300) transition-all cursor-pointer w-full"
+      className="learning-path-card opacity-0 text-left bg-white border border-(--gray-200) rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-(--primary-300) transition-all duration-200 cursor-pointer w-full"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <span className="flex items-center gap-1 w-fit text-[11px] font-semibold text-(--primary-600) bg-(--primary-50) px-2 py-0.5 rounded-full mb-2">
+          <span className="flex items-center gap-1 w-fit text-[11px] font-semibold text-(--primary-700) bg-gradient-to-br from-(--primary-50) to-(--primary-100) px-2 py-0.5 rounded-full mb-2">
             <Target className="w-3.5 h-3.5" />
             Career Goal
           </span>
@@ -403,9 +443,9 @@ function BrowseCard({
   return (
     <button
       onClick={onOpen}
-      className="text-left bg-white border border-(--gray-200) rounded-2xl p-5 hover:shadow-md hover:border-(--primary-300) transition-all cursor-pointer w-full"
+      className="learning-path-card opacity-0 text-left bg-white border border-(--gray-200) rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-(--primary-300) transition-all duration-200 cursor-pointer w-full"
     >
-      <span className="flex items-center gap-1 w-fit text-[11px] font-semibold text-(--primary-600) bg-(--primary-50) px-2 py-0.5 rounded-full mb-2">
+      <span className="flex items-center gap-1 w-fit text-[11px] font-semibold text-(--primary-700) bg-gradient-to-br from-(--primary-50) to-(--primary-100) px-2 py-0.5 rounded-full mb-2">
         <Target className="w-3.5 h-3.5" />
         Career Goal
       </span>
@@ -431,11 +471,27 @@ type Tab = "mine" | "browse";
 export default function LearningPathsPage() {
   const [tab, setTab] = useState<Tab>("mine");
   const [openSlug, setOpenSlug] = useState<string | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const { data: enrollments, isLoading: myLoading } = useMyLearningPaths();
   const { data: browsePage, isLoading: browseLoading } = useLearningPaths({
     page_size: 20,
   });
+
+  useEffect(() => {
+    if (!gridRef.current) return;
+    const cards = gridRef.current.querySelectorAll(".learning-path-card");
+    if (cards.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.killTweensOf(cards);
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.4, stagger: 0.08, ease: "power3.out" },
+      );
+    }, gridRef);
+    return () => ctx.revert();
+  }, [tab, enrollments, browsePage]);
 
   if (openSlug) {
     return (
@@ -505,7 +561,7 @@ export default function LearningPathsPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {enrollments.map((e) => (
               <PathCard
                 key={e.id}
@@ -527,7 +583,7 @@ export default function LearningPathsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {browseResults.map((p) => (
             <BrowseCard key={p.id} path={p} onOpen={() => setOpenSlug(p.slug)} />
           ))}
