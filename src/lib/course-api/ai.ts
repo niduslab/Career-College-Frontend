@@ -1,5 +1,5 @@
 import { apiPost } from "../api";
-import { type CourseLevel } from "./shared";
+import { type CodingLanguage, type CourseLevel } from "./shared";
 
 // AI-assisted authoring. Stateless helpers: the backend returns a draft and
 // persists nothing, so the instructor edits it before anything is saved.
@@ -189,67 +189,48 @@ export async function generateArticleLecture(
 }
 
 // --------------------------------------------------------------------------
-// Quiz questions
+// Coding exercises
 // --------------------------------------------------------------------------
 
-/** What a generated question asks of the learner — not how obscure the subject
- *  is. Independent of the course's own `level`. */
-export type QuestionDifficulty = "recall" | "understanding" | "application";
+/** How much the learner has to work out. */
+export type ExerciseDifficulty = "intro" | "core" | "challenge";
 
-/** One answer option. Exactly one per question has `is_correct` set — a
- *  two-correct question is rejected upstream, never delivered as a draft. */
-export interface GeneratedOption {
-  answer_text: string;
-  is_correct: boolean;
-}
-
-export interface GeneratedQuestion {
-  question_text: string;
-  options: GeneratedOption[];
-  /** Why the marked option is right. Shown to the instructor while reviewing
-   *  and then discarded — `QuizQuestion` has no column for it. */
-  explanation: string;
-  difficulty: QuestionDifficulty;
-}
-
-export interface QuizQuestionsDraft {
-  questions: GeneratedQuestion[];
-  /** False when the section has no written lecture content, so the questions
-   *  were written from titles alone. The review UI must say so. */
+export interface CodingExerciseDraft {
+  description: string;
+  starter_code: string;
+  solution_code: string;
+  evaluation_script: string;
+  /** One plain-English line per test, in the script's order. Preview only. */
+  test_names: string[];
+  language: CodingLanguage;
+  difficulty: ExerciseDifficulty;
+  /** False when the module has no written lecture content. */
   grounded: boolean;
-  /** How many were asked for. `questions` can be shorter — anything repeating a
-   *  question the quiz already has is dropped server-side. */
-  requested_count: number;
 }
 
-export interface QuizQuestionsGenerateInput {
-  /** The quiz to write questions for. The grounding material and the questions
-   *  already asked are resolved from this id server-side. */
-  quiz_id: number;
-  /** 1-15; defaults to 5 server-side. */
-  question_count?: number;
-  /** 2-5; defaults to 4. 2 gives true/false. */
-  options_per_question?: number;
-  difficulty?: QuestionDifficulty;
-  topics?: string[];
-  /** Unsaved drafts on screen, so a regenerate does not return them again. The
-   *  quiz's own questions are added by the backend. At most 30. */
-  avoid_questions?: string[];
-  /** Optional free-text steer, e.g. "focus on the maths". */
+export interface CodingExerciseGenerateInput {
+  /** The exercise to write. Its language, title and the module's lecture text
+   *  are all resolved from this id server-side. */
+  exercise_id: number;
+  difficulty?: ExerciseDifficulty;
+  /** Optional steer, e.g. "binary search". */
+  topic_hint?: string;
+  /** Other exercises in the module, so a regenerate is a different problem. */
+  avoid_titles?: string[];
   extra_instructions?: string;
 }
 
-/** Draft multiple-choice questions for one quiz.
+/** Draft one coding exercise.
  *
- *  Nothing is saved. The instructor reviews and edits the draft; accepting it
- *  calls `bulkCreateQuizQuestions`, which is what actually writes.
+ *  Nothing is saved and nothing is executed by this call. The caller runs the
+ *  draft through `runInstructorCodingExercise` before the instructor accepts it.
  */
-export async function generateQuizQuestions(
-  input: QuizQuestionsGenerateInput,
-): Promise<QuizQuestionsDraft> {
-  const res = await apiPost<QuizQuestionsDraft>(
-    "/courses/ai/quiz-questions-preview/",
+export async function generateCodingExercise(
+  input: CodingExerciseGenerateInput,
+): Promise<CodingExerciseDraft> {
+  const res = await apiPost<CodingExerciseDraft>(
+    "/courses/ai/coding-exercise-preview/",
     input,
   );
-  return res.data as QuizQuestionsDraft;
+  return res.data as CodingExerciseDraft;
 }
