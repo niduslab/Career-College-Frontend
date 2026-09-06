@@ -19,20 +19,22 @@ export default function LearnerDashboardPage() {
   const streak = summary?.day_streak;
 
   useEffect(() => {
-    if (headerRef.current) {
+    if (!headerRef.current) return;
+    const ctx = gsap.context(() => {
       gsap.fromTo(
         headerRef.current,
         { opacity: 0, y: -16 },
         { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
       );
-    }
+    }, headerRef);
+    return () => ctx.revert();
   }, []);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div ref={headerRef} className="opacity-0">
-        <h1 className="text-[20px] lg:text-[24px] font-semibold text-(--text-title)">
+        <h1 className="text-[22px] lg:text-[28px] font-bold text-(--text-title) tracking-tight">
           Welcome back{firstName ? `, ${firstName}` : ""}.
         </h1>
         <p className=" text-[14px] text-(--text-paragraph) mt-0.5">

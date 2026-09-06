@@ -10,10 +10,12 @@ import {
   Sparkles,
   ChevronDown,
   Search,
+  ImageOff,
 } from "lucide-react";
 import gsap from "gsap";
 import { useRouter } from "next/navigation";
 import { Pagination } from "@/components/common/pagination";
+import { SearchableDropdown } from "@/components/dashboard/common/searchable-dropdown";
 import {
   useCourseCatalog,
   useCourseCategories,
@@ -40,7 +42,7 @@ const SORT_OPTIONS: { label: string; value: CatalogSort }[] = [
   { label: "Price: Low to High", value: "price_asc" },
 ];
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 8;
 
 const LEVEL_COLOR: Record<string, string> = {
   beginner: "text-emerald-600 bg-emerald-50",
@@ -155,7 +157,7 @@ function CourseCard({
   };
 
   return (
-    <div className="course-card opacity-0 bg-white rounded-2xl border border-(--gray-200) overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col">
+    <div className="course-card opacity-0 bg-white rounded-2xl border border-(--gray-200) overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex flex-col">
       {/* Thumbnail */}
       <div className="relative h-44 overflow-hidden shrink-0 bg-(--gray-50)">
         {thumbnail ? (
@@ -169,8 +171,9 @@ function CourseCard({
             priority={isPriority}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-(--gray-300) text-[12px]">
-            No image
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 bg-linear-to-br from-(--gray-100) to-(--gray-50) text-(--gray-400)">
+            <ImageOff className="w-6 h-6" />
+            <span className="text-[11px] font-medium">No image</span>
           </div>
         )}
         {/* Wishlist */}
@@ -180,7 +183,7 @@ function CourseCard({
           title={
             course.is_wishlisted ? "Remove from wishlist" : "Save for later"
           }
-          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors cursor-pointer shadow-sm disabled:cursor-not-allowed"
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white hover:scale-110 transition-all cursor-pointer shadow-sm disabled:cursor-not-allowed"
         >
           <Heart
             className={`w-4 h-4 transition-colors ${course.is_wishlisted ? "fill-rose-500 text-rose-500" : "text-(--gray-500)"}`}
@@ -264,7 +267,6 @@ function CourseCard({
 export default function CourseCatalogPage() {
   const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<string>("All");
-  const [categoryOpen, setCategoryOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [sort, setSort] = useState<CatalogSort>("popularity");
   const [search, setSearch] = useState("");
@@ -274,7 +276,6 @@ export default function CourseCatalogPage() {
   const headerRef = useRef<HTMLDivElement>(null);
   const bannerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
-  const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
 
   // Debounce free-text search before it hits the API.
@@ -283,16 +284,11 @@ export default function CourseCatalogPage() {
     return () => clearTimeout(id);
   }, [searchInput]);
 
-  // Close either dropdown on an outside click.
+  // Close the sort dropdown on an outside click. The category dropdown
+  // manages its own open/close via SearchableDropdown.
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       const target = e.target as Node;
-      if (
-        categoryDropdownRef.current &&
-        !categoryDropdownRef.current.contains(target)
-      ) {
-        setCategoryOpen(false);
-      }
       if (
         sortDropdownRef.current &&
         !sortDropdownRef.current.contains(target)
@@ -396,10 +392,10 @@ export default function CourseCatalogPage() {
       {/* AI banner */}
       <div
         ref={bannerRef}
-        className="opacity-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-(--primary-50) border border-(--primary-100) rounded-2xl px-5 py-4"
+        className="opacity-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-linear-to-br from-(--primary-50) to-white border border-(--primary-100) rounded-2xl px-5 py-4 shadow-sm"
       >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-(--primary-600) flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-linear-to-br from-(--primary-500) to-(--primary-700) flex items-center justify-center shrink-0 shadow-sm">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -425,44 +421,25 @@ export default function CourseCatalogPage() {
 
       <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
         {/* Category dropdown */}
-        <div ref={categoryDropdownRef} className="relative shrink-0">
-          <button
-            onClick={() => setCategoryOpen((v) => !v)}
-            className="flex items-center gap-1.5 h-11 px-3.5 rounded-md border border-(--gray-200) bg-white text-[12px] md:text-[14px] lg:text-[14px] text-(--gray-500) font-normal hover:border-(--primary-300) transition-colors cursor-pointer whitespace-nowrap"
-          >
-            Category: {activeCategoryLabel}
-            <ChevronDown
-              className={`w-4 h-4 transition-transform ${categoryOpen ? "rotate-180" : ""}`}
-            />
-          </button>
-          {categoryOpen && (
-            <div className="absolute left-0 top-12 z-20 bg-white border border-(--gray-200) rounded-xl shadow-lg py-1.5 w-56 max-h-80 overflow-y-auto">
-              <button
-                onClick={() => {
-                  setActiveCategory("All");
-                  setCategoryOpen(false);
-                  setCurrentPage(1);
-                }}
-                className={`w-full text-left px-4 py-2 text-[12px] md:text-[14px] lg:text-[14px] hover:bg-(--gray-50) transition-colors cursor-pointer ${activeCategory === "All" ? "font-semibold text-(--primary-600)" : "text-(--text-title)"}`}
-              >
-                All
-              </button>
-              {categoryOptions.map((cat) => (
-                <button
-                  key={cat.slug}
-                  onClick={() => {
-                    setActiveCategory(cat.slug);
-                    setCategoryOpen(false);
-                    setCurrentPage(1);
-                  }}
-                  style={{ paddingLeft: `${16 + cat.depth * 16}px` }}
-                  className={`w-full text-left py-2 pr-4 text-[12px] md:text-[14px] lg:text-[14px] hover:bg-(--gray-50) transition-colors cursor-pointer ${activeCategory === cat.slug ? "font-semibold text-(--primary-600)" : "text-(--text-title)"}`}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-          )}
+        <div className="shrink-0 w-56">
+          <SearchableDropdown
+            value={activeCategory}
+            onChange={(v) => {
+              setActiveCategory(v);
+              setCurrentPage(1);
+            }}
+            options={[
+              { value: "All", label: "All" },
+              ...categoryOptions.map((cat) => ({
+                value: cat.slug,
+                label: `${"— ".repeat(cat.depth)}${cat.label}`,
+              })),
+            ]}
+            searchable
+            searchPlaceholder="Search categories..."
+            minWidth="w-56"
+            triggerClassName="flex items-center gap-1.5 h-11 px-3.5 rounded-md border border-(--gray-200) bg-white text-[12px] md:text-[14px] lg:text-[14px] text-(--gray-500) font-normal hover:border-(--primary-300) transition-colors cursor-pointer whitespace-nowrap w-56"
+          />
         </div>
 
         {/* Search + sort — own row on <xl, inline on xl+ */}

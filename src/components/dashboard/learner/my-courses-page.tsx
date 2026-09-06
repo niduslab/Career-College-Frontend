@@ -1,14 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Plus,
-  Search,
-  LayoutGrid,
-  List,
-  Clock,
-  ChevronDown,
-} from "lucide-react";
+import { Plus, Search, LayoutGrid, List, Clock, ImageOff } from "lucide-react";
 import Image from "next/image";
 import gsap from "gsap";
 import { useRouter } from "next/navigation";
@@ -58,8 +51,7 @@ export default function MyCoursesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  const activeStatus =
-    TABS.find((t) => t.label === activeTab)?.status ?? "all";
+  const activeStatus = TABS.find((t) => t.label === activeTab)?.status ?? "all";
 
   // Filtering and pagination are server-side. They used to run client-side
   // over an unpaginated fetch, which silently capped the page at the server's
@@ -143,9 +135,9 @@ export default function MyCoursesPage() {
                 setActiveTab(t.label);
                 resetPage();
               }}
-              className={`flex items-center gap-1.5 cursor-pointer px-3.5 h-11 rounded-md text-[12px] md:text-[14px] transition-colors border whitespace-nowrap shrink-0 ${
+              className={`flex items-center gap-1.5 cursor-pointer px-3.5 h-11 rounded-md text-[12px] md:text-[14px] transition-all border whitespace-nowrap shrink-0 ${
                 activeTab === t.label
-                  ? "bg-(--primary-600) text-white border-(--primary-600) font-medium"
+                  ? "bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white border-(--primary-600) font-medium shadow-sm"
                   : "bg-white text-(--gray-500) font-normal border-(--gray-200) hover:border-(--primary-300)"
               }`}
             >
@@ -260,9 +252,9 @@ export default function MyCoursesPage() {
 
 function ProgressBar({ percent }: { percent: number }) {
   return (
-    <div className="h-2 rounded-full bg-(--gray-100)">
+    <div className="h-2 rounded-full bg-(--gray-100) overflow-hidden">
       <div
-        className="h-2 rounded-full bg-(--primary-700) transition-all duration-700"
+        className="h-2 rounded-full bg-linear-to-r from-(--primary-500) to-(--primary-700) transition-all duration-700"
         style={{ width: `${percent}%` }}
       />
     </div>
@@ -301,7 +293,7 @@ function GridCard({
   return (
     <div
       onClick={() => router.push(cardHref(enrollment))}
-      className="course-card bg-white rounded-2xl border border-(--gray-200) overflow-hidden hover:shadow-md transition-shadow cursor-pointer group"
+      className="course-card bg-white rounded-2xl border border-(--gray-200) overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group"
     >
       <div className="relative h-40 overflow-hidden bg-(--gray-50)">
         {thumbnail ? (
@@ -315,8 +307,9 @@ function GridCard({
             priority={isPriority}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-(--gray-300) text-[12px]">
-            No image
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 bg-linear-to-br from-(--gray-100) to-(--gray-50) text-(--gray-400)">
+            <ImageOff className="w-6 h-6" />
+            <span className="text-[11px] font-medium">No image</span>
           </div>
         )}
         <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent" />
@@ -386,7 +379,7 @@ function ListCard({
   return (
     <div
       onClick={() => router.push(cardHref(enrollment))}
-      className="course-card bg-white rounded-2xl border border-(--gray-200) p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer group"
+      className="course-card bg-white rounded-2xl border border-(--gray-200) p-4 flex items-center gap-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group"
     >
       <div className="relative w-16 h-16 rounded-xl shrink-0 overflow-hidden bg-(--gray-50)">
         {thumbnail ? (
@@ -400,8 +393,8 @@ function ListCard({
             priority={isPriority}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-(--gray-300) text-[10px]">
-            No image
+          <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-(--gray-100) to-(--gray-50) text-(--gray-400)">
+            <ImageOff className="w-5 h-5" />
           </div>
         )}
       </div>

@@ -34,19 +34,22 @@ export default function AiRecommended() {
 
   useEffect(() => {
     if (!sectionRef.current) return;
-    const cards = sectionRef.current.querySelectorAll(".rec-card");
-    gsap.fromTo(
-      cards,
-      { opacity: 0, y: 36 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.55,
-        stagger: 0.1,
-        ease: "power3.out",
-        delay: 0.2,
-      },
-    );
+    const ctx = gsap.context(() => {
+      const cards = sectionRef.current!.querySelectorAll(".rec-card");
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 36 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.55,
+          stagger: 0.1,
+          ease: "power3.out",
+          delay: 0.2,
+        },
+      );
+    }, sectionRef);
+    return () => ctx.revert();
   }, []);
 
   return (
@@ -54,7 +57,9 @@ export default function AiRecommended() {
       <div className="flex items-start justify-between mb-5">
         <div>
           <h2 className="text-[14px] md:text-[20px] lg:text-[20px]  font-semibold text-(--text-title) flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-(--primary-700)" />
+            <span className="w-7 h-7 rounded-[6px_4px_6px_6px] bg-gradient-to-br from-(--primary-500) to-(--primary-700) flex items-center justify-center shrink-0">
+              <Sparkles className="w-4 h-4 text-white" />
+            </span>
             AI Recommended for You
           </h2>
           <p className="text-[12px] md:text-[14px] lg:text-[14px] text-(--gray-500) mt-0.5">
@@ -71,7 +76,7 @@ export default function AiRecommended() {
         {courses.map((course) => (
           <div
             key={course.title}
-            className="rec-card bg-white rounded-2xl border border-(--gray-200) overflow-hidden cursor-pointer group hover:shadow-md transition-shadow"
+            className="rec-card bg-white rounded-2xl border border-(--gray-200) overflow-hidden cursor-pointer group shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
           >
             {/* Thumbnail */}
             <div className="relative h-44 overflow-hidden">

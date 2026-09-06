@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Flame, CheckSquare, Award, Clock } from "lucide-react";
+import { Flame, GraduationCap, Award, Clock } from "lucide-react";
 import gsap from "gsap";
 
 import { StatsSkeleton } from "@/components/common/query-states";
@@ -23,6 +23,8 @@ interface StatTile {
   suffix: string;
   label: string;
   badge: string;
+  tint: string;
+  iconColor: string;
 }
 
 function buildTiles(summary: LearnerSummary): StatTile[] {
@@ -38,14 +40,18 @@ function buildTiles(summary: LearnerSummary): StatTile[] {
       badge: summary.day_streak_is_approximate
         ? `approx. · ${summary.day_streak_timezone}`
         : "consecutive days",
+      tint: "from-orange-50 to-white",
+      iconColor: "bg-gradient-to-br from-orange-400 to-orange-500",
     },
     {
-      icon: CheckSquare,
+      icon: GraduationCap,
       iconFill: false,
       value: summary.courses_completed,
       suffix: "",
-      label: "Courses Done",
+      label: "Courses Completed",
       badge: `${summary.courses_in_progress} in progress`,
+      tint: "from-indigo-50 to-white",
+      iconColor: "bg-gradient-to-br from-indigo-400 to-indigo-500",
     },
     {
       icon: Award,
@@ -54,6 +60,8 @@ function buildTiles(summary: LearnerSummary): StatTile[] {
       suffix: "",
       label: "Certificates",
       badge: "earned",
+      tint: "from-blue-50 to-white",
+      iconColor: "bg-gradient-to-br from-blue-400 to-blue-500",
     },
     {
       icon: Clock,
@@ -62,6 +70,8 @@ function buildTiles(summary: LearnerSummary): StatTile[] {
       suffix: "h",
       label: "Hours Learned",
       badge: `${summary.lectures_completed} lectures completed`,
+      tint: "from-emerald-50 to-white",
+      iconColor: "bg-gradient-to-br from-emerald-400 to-emerald-500",
     },
   ];
 }
@@ -76,28 +86,32 @@ export default function LearnerStatsCards() {
   useEffect(() => {
     if (!cardsRef.current || tiles.length === 0) return;
 
-    const cards = cardsRef.current.querySelectorAll(".stat-card");
-    gsap.fromTo(
-      cards,
-      { opacity: 0, y: 28 },
-      { opacity: 1, y: 0, duration: 0.55, stagger: 0.08, ease: "power3.out" },
-    );
+    const ctx = gsap.context(() => {
+      const cards = cardsRef.current!.querySelectorAll(".stat-card");
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 28 },
+        { opacity: 1, y: 0, duration: 0.55, stagger: 0.08, ease: "power3.out" },
+      );
 
-    countersRef.current.forEach((el, i) => {
-      if (!el || !tiles[i]) return;
-      const { value, suffix } = tiles[i];
-      const obj = { val: 0 };
-      gsap.to(obj, {
-        val: value,
-        duration: 1.4,
-        ease: "power2.out",
-        delay: i * 0.08,
-        onUpdate: () => {
-          if (el)
-            el.textContent = Math.round(obj.val).toLocaleString() + suffix;
-        },
+      countersRef.current.forEach((el, i) => {
+        if (!el || !tiles[i]) return;
+        const { value, suffix } = tiles[i];
+        const obj = { val: 0 };
+        gsap.to(obj, {
+          val: value,
+          duration: 1.4,
+          ease: "power2.out",
+          delay: i * 0.08,
+          onUpdate: () => {
+            if (el)
+              el.textContent = Math.round(obj.val).toLocaleString() + suffix;
+          },
+        });
       });
-    });
+    }, cardsRef);
+
+    return () => ctx.revert();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [summary]);
 
@@ -117,14 +131,14 @@ export default function LearnerStatsCards() {
         return (
           <div
             key={stat.label}
-            className="stat-card bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3 opacity-0"
+            className={`stat-card group bg-linear-to-b ${stat.tint} rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3 opacity-0 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:rotate-1 transition-all duration-300 ease-out`}
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[12px] text-(--gray-500) font-normal mb-2">
+                <p className="text-[12px] text-(--gray-500) font-medium mb-2">
                   {stat.label}
                 </p>
-                <p className="lg:text-[24px] text-[20px] font-semibold text-(--text-title) leading-none">
+                <p className="lg:text-[28px] text-[22px] font-bold text-(--text-title) leading-none tracking-tight">
                   <span
                     ref={(el) => {
                       countersRef.current[i] = el;
@@ -134,9 +148,11 @@ export default function LearnerStatsCards() {
                   </span>
                 </p>
               </div>
-              <div className="w-10 h-10 rounded-[6px_4px_6px_6px] bg-(--primary-50) flex items-center justify-center shrink-0">
+              <div
+                className={`w-10 h-10 rounded-[6px_4px_6px_6px] ${stat.iconColor} flex items-center justify-center shrink-0 shadow-sm`}
+              >
                 <Icon
-                  className="w-6 h-6 text-(--primary-600)"
+                  className="w-5 h-5 text-white"
                   fill={stat.iconFill ? "currentColor" : "none"}
                 />
               </div>
@@ -144,7 +160,7 @@ export default function LearnerStatsCards() {
 
             <div className="border border-dashed border-gray-200 my-1" />
 
-            <p className="text-[12px] font-medium text-(--success-500)">
+            <p className="text-[12px] font-medium text-(--gray-500)">
               {stat.badge}
             </p>
           </div>
