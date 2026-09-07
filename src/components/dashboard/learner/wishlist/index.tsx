@@ -11,6 +11,7 @@ import {
   Trash2,
   Search,
   BookOpen,
+  ImageOff,
 } from "lucide-react";
 import gsap from "gsap";
 import { Pagination } from "@/components/common/pagination";
@@ -68,7 +69,9 @@ function WishlistCard({ entry }: { entry: WishlistEntry }) {
       {
         onError: (err) =>
           notify.error(
-            err instanceof ApiError ? err.message : "Couldn't remove the course.",
+            err instanceof ApiError
+              ? err.message
+              : "Couldn't remove the course.",
           ),
       },
     );
@@ -91,7 +94,8 @@ function WishlistCard({ entry }: { entry: WishlistEntry }) {
 
   const handleEnroll = () => {
     enrollMutation.mutate(course.slug, {
-      onSuccess: (res) => notify.success(res.message ?? "Enrolled successfully."),
+      onSuccess: (res) =>
+        notify.success(res.message ?? "Enrolled successfully."),
       onError: (err) => {
         // A paid course rejects the free-enroll path with 422 — that is the
         // signal to open checkout, matching the catalog's behaviour.
@@ -99,7 +103,9 @@ function WishlistCard({ entry }: { entry: WishlistEntry }) {
           startCheckout();
           return;
         }
-        notify.error(err instanceof ApiError ? err.message : "Failed to enroll.");
+        notify.error(
+          err instanceof ApiError ? err.message : "Failed to enroll.",
+        );
       },
     });
   };
@@ -107,7 +113,7 @@ function WishlistCard({ entry }: { entry: WishlistEntry }) {
   const busy = enrollMutation.isPending || checkoutMutation.isPending;
 
   return (
-    <div className="wishlist-card opacity-0 bg-white rounded-2xl border border-(--gray-200) overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col sm:flex-row">
+    <div className="wishlist-card opacity-0 bg-white rounded-2xl border border-(--gray-200) overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex flex-col sm:flex-row">
       <div className="relative h-44 sm:h-auto sm:w-52 sm:shrink-0 overflow-hidden bg-(--gray-50)">
         {thumbnail ? (
           <Image
@@ -118,8 +124,9 @@ function WishlistCard({ entry }: { entry: WishlistEntry }) {
             className="object-cover transition-transform duration-300 hover:scale-105"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-(--gray-300) text-[12px]">
-            No image
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 bg-linear-to-br from-(--gray-100) to-(--gray-50) text-(--gray-400)">
+            <ImageOff className="w-6 h-6" />
+            <span className="text-[11px] font-medium">No image</span>
           </div>
         )}
       </div>
@@ -183,7 +190,7 @@ function WishlistCard({ entry }: { entry: WishlistEntry }) {
             <button
               onClick={handleEnroll}
               disabled={busy}
-              className="flex items-center gap-1.5 h-9 px-4 rounded-md border border-(--primary-200) bg-(--primary-50) hover:bg-(--primary-100) text-(--primary-600) text-[12px] font-semibold transition-colors cursor-pointer whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex items-center gap-1.5 h-9 px-4 rounded-md bg-linear-to-br from-(--primary-500) to-(--primary-600) hover:from-(--primary-600) hover:to-(--primary-700) text-white text-[12px] font-semibold transition-all cursor-pointer whitespace-nowrap shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
             >
               <ShoppingCart className="w-4 h-4" />
               {busy ? "Working…" : isFree ? "Enroll Now" : "Buy Now"}
@@ -226,27 +233,38 @@ export default function WishlistPage() {
   }, [entries, search]);
 
   useEffect(() => {
-    gsap.fromTo(
-      headerRef.current,
-      { opacity: 0, y: 16 },
-      { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" },
-    );
+    if (!headerRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        headerRef.current,
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" },
+      );
+    }, headerRef);
+    return () => ctx.revert();
   }, []);
 
   useEffect(() => {
     if (!listRef.current) return;
-    const cards = Array.from(listRef.current.querySelectorAll(".wishlist-card"));
-    gsap.fromTo(
-      cards,
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.35, stagger: 0.07, ease: "power3.out" },
+    const cards = Array.from(
+      listRef.current.querySelectorAll(".wishlist-card"),
     );
+    if (cards.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.killTweensOf(cards);
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.35, stagger: 0.07, ease: "power3.out" },
+      );
+    }, listRef);
+    return () => ctx.revert();
   }, [filtered.length, search, currentPage]);
 
   return (
     <div className="space-y-6">
       <div ref={headerRef} className="opacity-0">
-        <h1 className="text-[20px] md:text-[24px] font-semibold text-(--text-title)">
+        <h1 className="text-[22px] md:text-[28px] font-bold text-(--text-title) tracking-tight">
           Wishlist
         </h1>
         <p className="text-[12px] md:text-[14px] lg:text-[14px] font-normal text-(--gray-500) mt-1">
@@ -260,9 +278,9 @@ export default function WishlistPage() {
 
       {!isLoading && !isError && total > 0 && (
         <>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-(--primary-50) border border-(--primary-100) rounded-2xl px-5 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-linear-to-br from-(--primary-50) to-white border border-(--primary-100) rounded-2xl px-5 py-4 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-(--primary-600) flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-br from-(--primary-500) to-(--primary-700) flex items-center justify-center shrink-0 shadow-sm">
                 <Heart className="w-5 h-5 text-white" />
               </div>
               <div>

@@ -13,7 +13,7 @@ export function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white border border-(--gray-200) rounded-2xl px-6 py-5 space-y-4">
+    <div className="bg-white border border-(--gray-200) rounded-2xl px-6 py-5 space-y-4 shadow-sm hover:shadow-md transition-shadow duration-200">
       <div>
         <p className="text-[16px] font-semibold text-(--text-title)">{title}</p>
         {description && (
@@ -133,7 +133,7 @@ export function SaveButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={handle}
-      className="flex items-center gap-1.5 h-10 px-5 rounded-md bg-(--primary-700) text-white text-[14px] font-medium hover:bg-(--primary-600) transition-colors cursor-pointer"
+      className="flex items-center gap-1.5 h-10 px-5 rounded-md bg-gradient-to-br from-(--primary-600) to-(--primary-700) text-white text-[14px] font-medium hover:from-(--primary-500) hover:to-(--primary-600) transition-all shadow-sm cursor-pointer"
     >
       {saved ? <Check className="w-4 h-4" /> : null}
       {saved ? "Saved!" : "Save Changes"}
@@ -156,7 +156,11 @@ export function AsyncSaveButton({
       type="button"
       onClick={onClick}
       disabled={saving}
-      className="flex items-center gap-1.5 h-10 px-5 rounded-md bg-(--primary-700) text-white text-[14px] font-medium hover:bg-(--primary-600) transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+      className={`flex items-center gap-1.5 h-10 px-5 rounded-md text-white text-[14px] font-medium transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
+        saving
+          ? "bg-(--primary-600)"
+          : "bg-gradient-to-br from-(--primary-600) to-(--primary-700) hover:from-(--primary-500) hover:to-(--primary-600) shadow-sm"
+      }`}
     >
       {saving ? (
         <Loader2 className="w-4 h-4 animate-spin" />

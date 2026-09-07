@@ -7,15 +7,6 @@ import gsap from "gsap";
 import { StatsSkeleton } from "@/components/common/query-states";
 import { useLearnerSummary } from "@/hooks/use-learner-dashboard";
 import type { LearnerSummary } from "@/lib/learner-dashboard-api";
-
-/**
- * Four tiles, not five.
- *
- * The XP tile is gone: there is no XP ledger behind it, so any number shown
- * would be invented. The per-tile "+340 this week" style deltas are gone for
- * the same reason — the summary endpoint carries totals, not week-over-week
- * change. Each tile's sub-line now says something the data actually supports.
- */
 interface StatTile {
   icon: typeof Flame;
   iconFill: boolean;
@@ -35,8 +26,6 @@ function buildTiles(summary: LearnerSummary): StatTile[] {
       value: summary.day_streak,
       suffix: "",
       label: "Day Streak",
-      // The streak is derived from activity dates, not an event log — the
-      // endpoint flags it approximate and the UI says so rather than hiding it.
       badge: summary.day_streak_is_approximate
         ? `approx. · ${summary.day_streak_timezone}`
         : "consecutive days",
@@ -124,7 +113,7 @@ export default function LearnerStatsCards() {
   return (
     <div
       ref={cardsRef}
-      className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4"
+      className="grid md:grid-cols-2 grid-cols-1 xl:grid-cols-4 gap-4"
     >
       {tiles.map((stat, i) => {
         const Icon = stat.icon;

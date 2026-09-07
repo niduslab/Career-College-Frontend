@@ -2,23 +2,20 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { Flame, Award, BookOpen, KeyRound, Loader2, ArrowRight } from "lucide-react";
+import {
+  Flame,
+  Award,
+  BookOpen,
+  KeyRound,
+  Loader2,
+  ArrowRight,
+} from "lucide-react";
 import gsap from "gsap";
 
 import { useLearnerSummary } from "@/hooks/use-learner-dashboard";
 import { useMyLearningPaths } from "@/hooks/use-learning-paths";
 import { useMyCertificates } from "@/hooks/use-certificates";
 import { CertificateCard } from "@/components/dashboard/learner/certificates";
-
-// Page component
-//
-// The original mock here had an XP/Level ring, 9 fake badges, a global rank,
-// and a leaderboard — none of that is backed by any real data. The backend
-// deliberately has no XP/points ledger or badge model (see
-// docs/architecture/27-learner-dashboard.md §10 "Not built" and
-// 28-learning-paths.md — same honesty rule: don't invent numbers that would
-// need a new ledger model to be real). This page only shows counters that
-// already exist and are already correct elsewhere in the dashboard.
 
 export default function AchievementsPage() {
   const headerRef = useRef<HTMLDivElement>(null);
@@ -60,6 +57,8 @@ export default function AchievementsPage() {
       badge: summary?.day_streak_is_approximate
         ? `approx. · ${summary.day_streak_timezone}`
         : "consecutive days",
+      tint: "from-orange-50 to-white",
+      iconColor: "bg-gradient-to-br from-orange-400 to-orange-500",
     },
     {
       icon: BookOpen,
@@ -67,6 +66,8 @@ export default function AchievementsPage() {
       label: "Courses Completed",
       value: summary?.courses_completed ?? 0,
       badge: `${summary?.courses_in_progress ?? 0} in progress`,
+      tint: "from-indigo-50 to-white",
+      iconColor: "bg-gradient-to-br from-indigo-400 to-indigo-500",
     },
     {
       icon: Award,
@@ -74,6 +75,8 @@ export default function AchievementsPage() {
       label: "Certificates",
       value: summary?.certificates_earned ?? 0,
       badge: "earned",
+      tint: "from-blue-50 to-white",
+      iconColor: "bg-gradient-to-br from-blue-400 to-blue-500",
     },
     {
       icon: KeyRound,
@@ -81,6 +84,8 @@ export default function AchievementsPage() {
       label: "Learning Paths",
       value: pathsCompleted,
       badge: "completed",
+      tint: "from-emerald-50 to-white",
+      iconColor: "bg-gradient-to-br from-emerald-400 to-emerald-500",
     },
   ];
 
@@ -99,7 +104,7 @@ export default function AchievementsPage() {
       {/* Stats */}
       <div
         ref={cardsRef}
-        className="opacity-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+        className="opacity-0 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"
       >
         {isLoading ? (
           <div className="col-span-full flex items-center justify-center py-16 text-(--gray-400)">
@@ -112,20 +117,22 @@ export default function AchievementsPage() {
             return (
               <div
                 key={s.label}
-                className="bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3"
+                className={`bg-linear-to-b ${s.tint} rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`}
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-[12px] text-(--gray-500) font-normal mb-2">
+                    <p className="text-[12px] text-(--gray-500) font-medium mb-2">
                       {s.label}
                     </p>
-                    <p className="lg:text-[24px] text-[20px] font-semibold text-(--text-title) leading-none">
+                    <p className="lg:text-[28px] text-[22px] font-bold text-(--text-title) leading-none tracking-tight">
                       {s.value.toLocaleString()}
                     </p>
                   </div>
-                  <div className="w-10 h-10 rounded-[6px_4px_6px_6px] bg-(--primary-50) flex items-center justify-center shrink-0">
+                  <div
+                    className={`w-10 h-10 rounded-[6px_4px_6px_6px] ${s.iconColor} flex items-center justify-center shrink-0 shadow-sm`}
+                  >
                     <Icon
-                      className="w-6 h-6 text-(--primary-600)"
+                      className="w-5 h-5 text-white"
                       fill={s.iconFill ? "currentColor" : "none"}
                     />
                   </div>
@@ -133,7 +140,7 @@ export default function AchievementsPage() {
 
                 <div className="border border-dashed border-gray-200 my-1" />
 
-                <p className="text-[12px] font-medium text-(--success-500)">
+                <p className="text-[12px] font-medium text-(--gray-500)">
                   {s.badge}
                 </p>
               </div>
@@ -143,10 +150,12 @@ export default function AchievementsPage() {
       </div>
 
       {/* Certificates preview */}
-      <div className="bg-white rounded-2xl border border-(--gray-200) p-5 sm:p-6">
+      <div className="bg-white rounded-2xl border border-(--gray-200) p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
         <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2">
-            <Award className="w-5 h-5 text-(--primary-600)" />
+          <div className="flex items-center gap-2.5">
+            <span className="w-8 h-8 rounded-[6px_4px_6px_6px] bg-linear-to-b from-(--primary-500) to-(--primary-700) flex items-center justify-center shrink-0 shadow-sm">
+              <Award className="w-4 h-4 text-white" />
+            </span>
             <h2 className="text-[18px] md:text-[20px] font-semibold text-(--text-title)">
               Certificates
             </h2>
@@ -170,7 +179,7 @@ export default function AchievementsPage() {
             No certificates yet. Finish a course to earn your first one.
           </p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
             {certificates.map((cert) => (
               <CertificateCard key={cert.certificate_uid} cert={cert} />
             ))}
