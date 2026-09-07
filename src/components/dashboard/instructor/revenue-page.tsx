@@ -81,19 +81,40 @@ function GrowthBadge({ pct }: { pct: number | null }) {
   );
 }
 
+const STAT_TINTS = {
+  primary: {
+    bg: "from-(--primary-50) to-white",
+    icon: "from-(--primary-500) to-(--primary-600)",
+  },
+  indigo: {
+    bg: "from-indigo-50 to-white",
+    icon: "from-indigo-400 to-indigo-500",
+  },
+  amber: { bg: "from-amber-50 to-white", icon: "from-amber-400 to-amber-500" },
+  emerald: {
+    bg: "from-emerald-50 to-white",
+    icon: "from-emerald-400 to-emerald-500",
+  },
+} as const;
+
 function StatCard({
   label,
   value,
   icon: Icon,
+  tint = "primary",
   children,
 }: {
   label: string;
   value: string;
   icon: typeof Wallet;
+  tint?: keyof typeof STAT_TINTS;
   children?: React.ReactNode;
 }) {
+  const { bg, icon } = STAT_TINTS[tint];
   return (
-    <div className="bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3">
+    <div
+      className={`bg-linear-to-b ${bg} rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200`}
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-[12px] text-(--gray-500) font-normal mb-2">
@@ -103,8 +124,10 @@ function StatCard({
             {value}
           </p>
         </div>
-        <div className="w-10 h-10 xl:w-8 xl:h-8 rounded-[6px_4px_6px_6px] bg-(--primary-50) flex items-center justify-center shrink-0">
-          <Icon className="w-6 h-6 xl:w-5 xl:h-5 text-(--primary-600)" />
+        <div
+          className={`w-10 h-10 xl:w-8 xl:h-8 rounded-[6px_4px_6px_6px] bg-linear-to-br ${icon} flex items-center justify-center shrink-0 shadow-sm`}
+        >
+          <Icon className="w-6 h-6 xl:w-5 xl:h-5 text-white" />
         </div>
       </div>
       <div className="border border-dashed border-(--gray-200)" />
@@ -196,11 +219,11 @@ function RevenueChart({
   const allZero = points.every((p) => p.value === 0);
 
   return (
-    <div className="relative">
+    <div className="relative h-full min-h-60">
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
-        className="w-full h-auto cursor-crosshair"
+        className="w-full h-full cursor-crosshair"
         preserveAspectRatio="none"
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHovered(null)}
@@ -434,11 +457,12 @@ export default function RevenuePage() {
     <div className="flex flex-col gap-5">
       {/* Stat cards — gross-only. No payout/balance/commission: none of
           those have a backing model on the backend yet. */}
-      <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard
           label="Total Revenue"
           value={formatMoney(summary.gross, summary.currency)}
           icon={CircleDollarSign}
+          tint="primary"
         >
           <p className="text-[12px] text-(--gray-500)">
             {summary.paid_orders} paid order
@@ -450,6 +474,7 @@ export default function RevenuePage() {
           label={`Revenue (${summary.window_days}d)`}
           value={formatMoney(summary.window_gross, summary.currency)}
           icon={CalendarDays}
+          tint="indigo"
         >
           <GrowthBadge pct={summary.growth_pct} />
         </StatCard>
@@ -458,6 +483,7 @@ export default function RevenuePage() {
           label="Avg. Order Value"
           value={formatMoney(summary.avg_order_value, summary.currency)}
           icon={Wallet}
+          tint="amber"
         >
           <p className="text-[12px] text-(--gray-500)">per paid order</p>
         </StatCard>
@@ -466,6 +492,7 @@ export default function RevenuePage() {
           label="Courses Earning"
           value={String(summary.by_course.length)}
           icon={BookOpen}
+          tint="emerald"
         >
           <p className="text-[12px] text-(--gray-500)">
             of {summary.courses.length} course
@@ -474,78 +501,81 @@ export default function RevenuePage() {
         </StatCard>
       </div>
 
-      {/* Revenue trend */}
-      <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-(--primary-700)" />
-            <p className="text-[14px] lg:text-[16px] font-semibold text-(--text-title)">
-              Revenue Trend
-            </p>
+      {/* Revenue trend + Revenue by course — side by side on large screens */}
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-5 items-stretch">
+        <div className="xl:col-span-3 bg-white border border-(--gray-200) rounded-2xl px-5 py-4 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-(--primary-700)" />
+              <p className="text-[14px] lg:text-[16px] font-semibold text-(--text-title)">
+                Revenue Trend
+              </p>
+            </div>
+            <div className="flex gap-1">
+              {(["monthly", "weekly"] as const).map((g) => (
+                <button
+                  key={g}
+                  onClick={() => setGranularity(g)}
+                  className={`h-7 px-3 text-[12px] font-medium rounded-md transition-all cursor-pointer capitalize ${
+                    granularity === g
+                      ? "bg-linear-to-br from-(--primary-600) to-(--primary-700) text-white shadow-sm"
+                      : "text-(--gray-500) hover:bg-(--gray-100)"
+                  }`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-1">
-            {(["monthly", "weekly"] as const).map((g) => (
-              <button
-                key={g}
-                onClick={() => setGranularity(g)}
-                className={`h-7 px-3 text-[12px] font-medium rounded-md transition-colors cursor-pointer capitalize ${
-                  granularity === g
-                    ? "bg-(--primary-700) text-white"
-                    : "text-(--gray-500) hover:bg-(--gray-100)"
-                }`}
-              >
-                {g}
-              </button>
-            ))}
+          <div className="flex-1">
+            <RevenueChart
+              points={summary.trend.series}
+              granularity={summary.trend.granularity}
+              currency={summary.currency}
+            />
           </div>
         </div>
-        <RevenueChart
-          points={summary.trend.series}
-          granularity={summary.trend.granularity}
-          currency={summary.currency}
-        />
-      </div>
 
-      {/* Revenue by course */}
-      <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-3">
-        <p className="text-[14px] lg:text-[16px] font-semibold text-(--text-title)">
-          Revenue by Course
-        </p>
-        {summary.by_course.length === 0 ? (
-          <p className="text-[13px] text-(--gray-400) py-4 text-center">
-            No paid orders yet.
+        <div className="xl:col-span-2 bg-white border border-(--gray-200) rounded-2xl px-5 py-4">
+          <p className="text-[14px] lg:text-[16px] font-semibold text-(--text-title) mb-3">
+            Revenue by Course
           </p>
-        ) : (
-          <div className="space-y-3">
-            {summary.by_course.map((c) => (
-              <div key={c.id} className="flex items-center gap-3">
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-[13px] font-medium text-(--text-title) truncate">
-                      {c.title}
-                    </p>
-                    <span className="text-[13px] font-semibold text-(--text-title) shrink-0">
-                      {formatMoney(c.gross, summary.currency)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-2 bg-(--gray-100) rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-(--primary-600) transition-all duration-700"
-                        style={{
-                          width: `${Math.round((parseFloat(c.gross) / maxByCourse) * 100)}%`,
-                        }}
-                      />
+          {summary.by_course.length === 0 ? (
+            <p className="text-[13px] text-(--gray-400) py-4 text-center">
+              No paid orders yet.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {summary.by_course.map((c) => (
+                <div key={c.id} className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[13px] font-medium text-(--text-title) truncate">
+                        {c.title}
+                      </p>
+                      <span className="text-[13px] font-semibold text-(--text-title) shrink-0">
+                        {formatMoney(c.gross, summary.currency)}
+                      </span>
                     </div>
-                    <span className="text-[11px] text-(--gray-400) shrink-0">
-                      {c.paid_orders} order{c.paid_orders === 1 ? "" : "s"}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2 bg-(--gray-100) rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-(--primary-600) transition-all duration-700"
+                          style={{
+                            width: `${Math.round((parseFloat(c.gross) / maxByCourse) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-[11px] text-(--gray-400) shrink-0">
+                        {c.paid_orders} order{c.paid_orders === 1 ? "" : "s"}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Order history */}
@@ -557,7 +587,7 @@ export default function RevenuePage() {
               ({orders?.count ?? 0})
             </span>
           </p>
-          <div className="flex items-center gap-2 sm:ml-auto">
+          <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
             <SearchableDropdown
               value={courseId}
               options={courseOptions}

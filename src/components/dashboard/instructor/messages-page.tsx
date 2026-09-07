@@ -338,7 +338,11 @@ function NewConversationModal({
           <button
             onClick={handleSubmit}
             disabled={!courseId || !peerInstructorId || !body.trim() || submitting}
-            className="h-9 px-4 text-[13px] font-medium bg-(--primary-700) text-white rounded-lg hover:bg-(--primary-900) transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className={`h-9 px-4 text-[13px] font-medium rounded-lg transition-all cursor-pointer ${
+              !courseId || !peerInstructorId || !body.trim() || submitting
+                ? "bg-(--gray-200) text-(--gray-400) cursor-not-allowed"
+                : "bg-linear-to-br from-(--primary-600) to-(--primary-700) hover:from-(--primary-700) hover:to-(--primary-900) text-white shadow-sm"
+            }`}
           >
             {submitting ? "Starting…" : "Start Conversation"}
           </button>
@@ -411,20 +415,26 @@ export default function MessagesPage() {
   }, [inboxMenuOpen]);
 
   useEffect(() => {
-    listRef.current.forEach((el, i) => {
-      if (!el) return;
+    const els = listRef.current.filter(
+      (el): el is HTMLDivElement => el != null,
+    );
+    if (els.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.killTweensOf(els);
       gsap.fromTo(
-        el,
+        els,
         { opacity: 0, x: -16 },
         {
           opacity: 1,
           x: 0,
           duration: 0.35,
-          delay: 0.05 + i * 0.06,
+          stagger: 0.06,
+          delay: 0.05,
           ease: "power2.out",
         },
       );
     });
+    return () => ctx.revert();
   }, [filter, search, conversations.length]);
 
   useEffect(() => {
@@ -473,7 +483,7 @@ export default function MessagesPage() {
             <h2 className="text-[16px] font-semibold text-(--text-title)">
               Inbox
               {totalUnread > 0 && (
-                <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 bg-(--primary-700) text-white text-[12px] font-semibold rounded-full">
+                <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 bg-linear-to-br from-(--primary-600) to-(--primary-700) text-white text-[12px] font-semibold rounded-full shadow-sm">
                   {totalUnread}
                 </span>
               )}
@@ -526,9 +536,9 @@ export default function MessagesPage() {
               <button
                 key={tab}
                 onClick={() => setFilter(tab)}
-                className={`flex-1 h-8 text-[12px] font-medium rounded-md cursor-pointer transition-colors ${
+                className={`flex-1 h-8 text-[12px] font-medium rounded-md cursor-pointer transition-all ${
                   filter === tab
-                    ? "bg-(--primary-700) text-white"
+                    ? "bg-linear-to-br from-(--primary-600) to-(--primary-700) text-white shadow-sm"
                     : "text-(--gray-500) hover:bg-(--gray-100)"
                 }`}
               >
@@ -650,7 +660,11 @@ export default function MessagesPage() {
                 <button
                   onClick={handleSend}
                   disabled={!input.trim()}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-(--primary-700) hover:bg-(--primary-900) text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 mb-0.5"
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all shrink-0 mb-0.5 ${
+                    input.trim()
+                      ? "bg-linear-to-br from-(--primary-600) to-(--primary-700) hover:from-(--primary-700) hover:to-(--primary-900) text-white shadow-sm cursor-pointer"
+                      : "bg-(--gray-200) text-(--gray-400) cursor-not-allowed"
+                  }`}
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -662,7 +676,7 @@ export default function MessagesPage() {
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-8">
-            <div className="w-16 h-16 rounded-2xl bg-(--primary-50) flex items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-(--primary-50) to-(--primary-100) flex items-center justify-center shadow-sm">
               <MessageSquareDashed className="w-7 h-7 text-(--primary-700)" />
             </div>
             <div>

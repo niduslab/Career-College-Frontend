@@ -305,3 +305,26 @@ body {
     animation: none;
   }
 }
+
+/* Staggered mount fade-in for dashboard cards — pair with an inline
+   animation-delay per card for a cascading entrance. */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-fade-in {
+  animation: fadeInUp 0.5s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-fade-in {
+    animation: none;
+  }
+}

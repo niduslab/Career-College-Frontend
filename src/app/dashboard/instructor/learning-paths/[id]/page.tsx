@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use as usePromise } from "react";
+import { useEffect, useRef, useState, use as usePromise } from "react";
 import { useRouter } from "next/navigation";
 import {
   Loader2,
@@ -8,10 +8,14 @@ import {
   Plus,
   Trash2,
   GripVertical,
+  ArrowUp,
+  ArrowDown,
   X,
 } from "lucide-react";
+import gsap from "gsap";
 import PageHeader from "@/components/dashboard/common/page-header";
 import ConfirmModal from "@/components/common/confirm-modal";
+import RichTextEditor from "@/components/common/rich-text-editor";
 import {
   getLearningPathManageDetail,
   updateLearningPath,
@@ -130,6 +134,9 @@ export default function EditLearningPathPage({
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<LearningPathAuthoringStatus>("draft");
 
+  const panelsRef = useRef<HTMLDivElement>(null);
+  const milestonesRef = useRef<HTMLUListElement>(null);
+
   const load = () => {
     setLoading(true);
     getLearningPathManageDetail(pathId)
@@ -234,6 +241,31 @@ export default function EditLearningPathPage({
       );
   };
 
+  useEffect(() => {
+    if (loading || !path) return;
+    const ctx = gsap.context(() => {
+      if (panelsRef.current) {
+        gsap.fromTo(
+          panelsRef.current.querySelectorAll(".editor-panel"),
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: 0.4, stagger: 0.1, ease: "power3.out" },
+        );
+      }
+      if (milestonesRef.current) {
+        const rows = milestonesRef.current.querySelectorAll(".milestone-item");
+        if (rows.length > 0) {
+          gsap.fromTo(
+            rows,
+            { opacity: 0, x: -12 },
+            { opacity: 1, x: 0, duration: 0.35, stagger: 0.06, ease: "power3.out", delay: 0.15 },
+          );
+        }
+      }
+    });
+    return () => ctx.revert();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, path?.id]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20 text-(--gray-500)">
@@ -263,7 +295,8 @@ export default function EditLearningPathPage({
 
       <PageHeader title="Edit Learning Path" subtitle={`/learning-paths/${path.slug}`} />
 
-      <div className="bg-white border border-(--gray-200) rounded-2xl p-5 lg:p-6 space-y-4">
+      <div ref={panelsRef} className="space-y-5">
+        <div className="editor-panel opacity-0 bg-white border border-(--gray-200) rounded-2xl p-5 lg:p-6 space-y-4 shadow-sm">
         <div>
           <label className="text-[13px] font-medium text-(--text-title) mb-1.5 block">
             Title
@@ -290,12 +323,11 @@ export default function EditLearningPathPage({
           <label className="text-[13px] font-medium text-(--text-title) mb-1.5 block">
             Description
           </label>
-          <textarea
+          <RichTextEditor
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={setDescription}
             placeholder="A short overview of what this path covers and who it's for..."
-            rows={3}
-            className="w-full px-3 py-2 rounded-md border border-(--gray-200) text-[14px] outline-none focus:border-(--primary-600) resize-none"
+            minHeight="120px"
           />
         </div>
         <div>
@@ -307,9 +339,9 @@ export default function EditLearningPathPage({
               <button
                 key={opt.value}
                 onClick={() => setStatus(opt.value)}
-                className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors cursor-pointer border ${
+                className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-all cursor-pointer border ${
                   status === opt.value
-                    ? "bg-(--primary-600) text-white border-(--primary-600)"
+                    ? "bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white border-(--primary-600) shadow-sm"
                     : "bg-white text-(--gray-500) border-(--gray-200) hover:border-(--primary-300)"
                 }`}
               >
@@ -336,7 +368,7 @@ export default function EditLearningPathPage({
         </div>
       </div>
 
-      <div className="bg-white border border-(--gray-200) rounded-2xl p-5 lg:p-6">
+      <div className="editor-panel opacity-0 bg-white border border-(--gray-200) rounded-2xl p-5 lg:p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-[16px] font-semibold text-(--text-title)">
             Milestones
@@ -355,11 +387,11 @@ export default function EditLearningPathPage({
             No milestones yet. Add a published course to get started.
           </p>
         ) : (
-          <ul className="space-y-2">
+          <ul ref={milestonesRef} className="space-y-2">
             {path.milestones.map((m, i) => (
               <li
                 key={m.id}
-                className="flex items-center gap-3 p-3 rounded-lg border border-(--gray-200)"
+                className="milestone-item flex items-center gap-3 p-3 rounded-lg border border-(--gray-200) hover:shadow-sm hover:border-(--primary-200) transition-all duration-200"
               >
                 <GripVertical className="w-4 h-4 text-(--gray-300) shrink-0" />
                 <span className="w-6 h-6 shrink-0 rounded-full bg-(--primary-50) text-(--primary-600) text-[12px] font-bold flex items-center justify-center">
@@ -376,14 +408,14 @@ export default function EditLearningPathPage({
                     disabled={i === 0}
                     className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-(--gray-100) cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-(--gray-500)"
                   >
-                    ↑
+                    <ArrowUp className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => moveMilestone(i, 1)}
                     disabled={i === path.milestones.length - 1}
                     className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-(--gray-100) cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed text-(--gray-500)"
                   >
-                    ↓
+                    <ArrowDown className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleRemoveMilestone(m.id)}
@@ -396,6 +428,7 @@ export default function EditLearningPathPage({
             ))}
           </ul>
         )}
+      </div>
       </div>
 
       {pickerOpen && (
