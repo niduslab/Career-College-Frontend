@@ -35,7 +35,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-5">
       {/* Tab bar */}
-      <div className="bg-white border border-(--gray-200) rounded-lg px-4 py-3">
+      <div className="bg-white border border-(--gray-200) rounded-lg px-4 py-3 shadow-sm">
         <div className="flex items-center gap-1 overflow-x-auto">
           {TABS.map(({ id, label, icon: Icon }, i) => {
             const active = activeTab === id;
@@ -47,9 +47,9 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setActiveTab(id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-[14px] font-normal transition-colors cursor-pointer whitespace-nowrap ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-[14px] font-normal transition-all cursor-pointer whitespace-nowrap ${
                     active
-                      ? "bg-(--primary-600) text-white"
+                      ? "bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white shadow-sm"
                       : "text-(--gray-500) hover:text-(--text-title)"
                   }`}
                 >

@@ -24,7 +24,11 @@ import {
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { dayLabel } from "@/lib/date-groups";
 import { createConversation, type Conversation } from "@/lib/messaging-api";
-import { getMyCourses, type Enrollment, type CourseBrief } from "@/lib/course-api";
+import {
+  getMyCourses,
+  type Enrollment,
+  type CourseBrief,
+} from "@/lib/course-api";
 import { fetchMe } from "@/lib/auth-api";
 import { notify } from "@/lib/toast";
 import { SelectDropdown } from "@/components/common/select-dropdown";
@@ -195,13 +199,13 @@ function ChatBubble({
           {isMe && msg.send_status === "failed" && (
             <AlertCircle className="w-3 h-3 text-red-500" />
           )}
-          {isMe && (!msg.send_status || msg.send_status === "sent") && (
-            isRead ? (
+          {isMe &&
+            (!msg.send_status || msg.send_status === "sent") &&
+            (isRead ? (
               <CheckCheck className="w-3.5 h-3.5 text-(--primary-600)" />
             ) : (
               <Check className="w-3.5 h-3.5 text-(--gray-400)" />
-            )
-          )}
+            ))}
         </div>
       </div>
     </div>
@@ -236,7 +240,9 @@ function NewConversationModal({
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const selectedCourse = enrollments.find((e) => e.course.id === courseId)?.course;
+  const selectedCourse = enrollments.find(
+    (e) => e.course.id === courseId,
+  )?.course;
   const instructors: CourseBrief[] = selectedCourse?.instructors ?? [];
 
   async function handleSubmit() {
@@ -252,7 +258,9 @@ function NewConversationModal({
       onCreated(conv);
       onClose();
     } catch (err) {
-      notify.error(err instanceof Error ? err.message : "Failed to start conversation.");
+      notify.error(
+        err instanceof Error ? err.message : "Failed to start conversation.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -289,6 +297,8 @@ function NewConversationModal({
                 value: String(e.course.id),
                 label: e.course.title,
               }))}
+              searchable={enrollments.length > 5}
+              searchPlaceholder="Search courses…"
             />
           </div>
 
@@ -332,7 +342,11 @@ function NewConversationModal({
           <button
             onClick={handleSubmit}
             disabled={!courseId || !instructorId || !body.trim() || submitting}
-            className="h-9 px-4 text-[13px] font-medium bg-(--primary-700) text-white rounded-lg hover:bg-(--primary-900) transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className={`h-9 px-4 text-[13px] font-medium rounded-lg transition-all cursor-pointer ${
+              !courseId || !instructorId || !body.trim() || submitting
+                ? "bg-(--gray-200) text-(--gray-400) cursor-not-allowed"
+                : "bg-linear-to-br from-(--primary-600) to-(--primary-700) hover:from-(--primary-700) hover:to-(--primary-900) text-white shadow-sm"
+            }`}
           >
             {submitting ? "Starting…" : "Start Conversation"}
           </button>
@@ -368,7 +382,8 @@ export default function LearnerMessagesPage() {
     void getMyCourses().then((res) => setEnrollments(res.results));
   }, []);
 
-  const { conversations, refresh, markLocallyRead } = useConversationList(currentUserId);
+  const { conversations, refresh, markLocallyRead } =
+    useConversationList(currentUserId);
   const { messages, sendMessage, retrySend } = useConversationThread(
     selectedId,
     currentUserId,
@@ -385,24 +400,32 @@ export default function LearnerMessagesPage() {
   });
 
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
-  const selectedOther = selected ? otherParticipant(selected, currentUserId) : null;
+  const selectedOther = selected
+    ? otherParticipant(selected, currentUserId)
+    : null;
   const selectedColorIdx = conversations.findIndex((c) => c.id === selectedId);
 
   useEffect(() => {
-    listRef.current.forEach((el, i) => {
-      if (!el) return;
+    const els = listRef.current.filter(
+      (el): el is HTMLDivElement => el != null,
+    );
+    if (els.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.killTweensOf(els);
       gsap.fromTo(
-        el,
+        els,
         { opacity: 0, x: -16 },
         {
           opacity: 1,
           x: 0,
           duration: 0.35,
-          delay: 0.05 + i * 0.06,
+          stagger: 0.06,
+          delay: 0.05,
           ease: "power2.out",
         },
       );
     });
+    return () => ctx.revert();
   }, [filter, search, conversations.length]);
 
   useEffect(() => {
@@ -448,7 +471,7 @@ export default function LearnerMessagesPage() {
             <h2 className="text-[16px] font-semibold text-(--text-title)">
               Inbox
               {totalUnread > 0 && (
-                <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 bg-(--primary-700) text-white text-[12px] font-semibold rounded-full">
+                <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 bg-linear-to-br from-(--primary-600) to-(--primary-700) text-white text-[12px] font-semibold rounded-full shadow-sm">
                   {totalUnread}
                 </span>
               )}
@@ -477,9 +500,9 @@ export default function LearnerMessagesPage() {
               <button
                 key={tab}
                 onClick={() => setFilter(tab)}
-                className={`flex-1 h-8 text-[12px] font-medium rounded-md cursor-pointer transition-colors ${
+                className={`flex-1 h-8 text-[12px] font-medium rounded-md cursor-pointer transition-all ${
                   filter === tab
-                    ? "bg-(--primary-700) text-white"
+                    ? "bg-linear-to-br from-(--primary-600) to-(--primary-700) text-white shadow-sm"
                     : "text-(--gray-500) hover:bg-(--gray-100)"
                 }`}
               >
@@ -605,7 +628,11 @@ export default function LearnerMessagesPage() {
                 <button
                   onClick={handleSend}
                   disabled={!input.trim()}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-(--primary-700) hover:bg-(--primary-900) text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 mb-0.5"
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg transition-all shrink-0 mb-0.5 ${
+                    input.trim()
+                      ? "bg-linear-to-br from-(--primary-600) to-(--primary-700) hover:from-(--primary-700) hover:to-(--primary-900) text-white shadow-sm cursor-pointer"
+                      : "bg-(--gray-200) text-(--gray-400) cursor-not-allowed"
+                  }`}
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -617,7 +644,7 @@ export default function LearnerMessagesPage() {
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-8">
-            <div className="w-16 h-16 rounded-2xl bg-(--primary-50) flex items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-(--primary-50) to-(--primary-100) flex items-center justify-center shadow-sm">
               <MessageSquareDashed className="w-7 h-7 text-(--primary-700)" />
             </div>
             <div>
@@ -630,7 +657,7 @@ export default function LearnerMessagesPage() {
             </div>
             <button
               onClick={() => setShowNewModal(true)}
-              className="h-9 px-4 text-[13px] font-medium bg-(--primary-700) text-white rounded-lg hover:bg-(--primary-900) transition-colors cursor-pointer"
+              className="h-9 px-4 text-[13px] font-medium bg-linear-to-br from-(--primary-600) to-(--primary-700) hover:from-(--primary-700) hover:to-(--primary-900) text-white rounded-lg transition-all shadow-sm cursor-pointer"
             >
               New Conversation
             </button>

@@ -159,26 +159,36 @@ export default function CertificatesPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   useEffect(() => {
-    gsap.fromTo(
-      headerRef.current,
-      { opacity: 0, y: 16 },
-      { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" },
-    );
+    if (!headerRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        headerRef.current,
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" },
+      );
+    }, headerRef);
+    return () => ctx.revert();
   }, []);
 
   useEffect(() => {
     if (!gridRef.current) return;
-    gsap.fromTo(
-      Array.from(gridRef.current.children),
-      { opacity: 0, y: 24 },
-      { opacity: 1, y: 0, duration: 0.4, stagger: 0.07, ease: "power3.out" },
-    );
+    const cards = Array.from(gridRef.current.children);
+    if (cards.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.killTweensOf(cards);
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.4, stagger: 0.07, ease: "power3.out" },
+      );
+    }, gridRef);
+    return () => ctx.revert();
   }, [certificates.length, currentPage]);
 
   return (
     <div>
       <div ref={headerRef} className="opacity-0 mb-6 sm:mb-8">
-        <h1 className="text-[20px] md:text-[24px] lg:text-[24px] font-semibold text-(--text-title)">
+        <h1 className="text-[22px] md:text-[28px] lg:text-[28px] font-bold text-(--text-title) tracking-tight">
           Certificates
         </h1>
         <p className="text-[14px] text-(--gray-500) mt-1">
@@ -205,7 +215,7 @@ export default function CertificatesPage() {
         <>
           <div
             ref={gridRef}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
+            className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4"
           >
             {certificates.map((cert) => (
               <CertificateCard key={cert.certificate_uid} cert={cert} />

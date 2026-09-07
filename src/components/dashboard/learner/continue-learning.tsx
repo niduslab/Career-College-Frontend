@@ -96,38 +96,47 @@ export default function ContinueLearning() {
   const progress = resume?.enrollment.progress_percent ?? 0;
 
   useEffect(() => {
-    if (heroRef.current) {
+    if (!heroRef.current) return;
+    const ctx = gsap.context(() => {
       gsap.fromTo(
         heroRef.current,
         { opacity: 0, x: -32 },
         { opacity: 1, x: 0, duration: 0.6, ease: "power3.out", delay: 0.35 },
       );
-    }
+    }, heroRef);
+    return () => ctx.revert();
   }, []);
 
   useEffect(() => {
     if (!progressBarRef.current) return;
-    gsap.fromTo(
-      progressBarRef.current,
-      { width: "0%" },
-      {
-        width: `${progress}%`,
-        duration: 1.4,
-        ease: "power2.out",
-        delay: 0.4,
-      },
-    );
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        progressBarRef.current,
+        { width: "0%" },
+        {
+          width: `${progress}%`,
+          duration: 1.4,
+          ease: "power2.out",
+          delay: 0.4,
+        },
+      );
+    });
+    return () => ctx.revert();
   }, [progress]);
 
   useEffect(() => {
     if (!upcomingRef.current) return;
     const rows = upcomingRef.current.querySelectorAll(".upcoming-row");
     if (rows.length === 0) return;
-    gsap.fromTo(
-      rows,
-      { opacity: 0, x: 24 },
-      { opacity: 1, x: 0, duration: 0.5, stagger: 0.09, ease: "power3.out" },
-    );
+    const ctx = gsap.context(() => {
+      gsap.killTweensOf(rows);
+      gsap.fromTo(
+        rows,
+        { opacity: 0, x: 24 },
+        { opacity: 1, x: 0, duration: 0.5, stagger: 0.09, ease: "power3.out" },
+      );
+    }, upcomingRef);
+    return () => ctx.revert();
   }, [items.length]);
 
   const nextLectureLength = formatLectureLength(
@@ -138,11 +147,12 @@ export default function ContinueLearning() {
     <div className="flex flex-col lg:flex-row gap-4">
       <div
         ref={heroRef}
-        className="opacity-0 relative flex-3 bg-white rounded-2xl border border-(--gray-200) p-6 lg:p-8 flex flex-col justify-between min-h-55"
+        className="opacity-0 relative flex-3 bg-gradient-to-br from-(--primary-50) via-white to-white rounded-2xl border border-(--gray-200) p-6 lg:p-8 flex flex-col justify-between min-h-55 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
       >
-        <div>
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-(--primary-100) opacity-40 blur-2xl pointer-events-none" />
+        <div className="relative">
           <div className="flex items-center gap-2 mb-4">
-            {/* <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> */}
+            <span className="w-2 h-2 rounded-full bg-(--primary-600) animate-pulse" />
             <span className="text-[12px] font-semibold text-(--primary-600) tracking-widest uppercase">
               Continue Learning
             </span>
@@ -154,7 +164,7 @@ export default function ContinueLearning() {
           </h2>
         </div>
 
-        <div className="mt-6">
+        <div className="relative mt-6">
           {resume ? (
             <>
               <div className="flex items-center justify-between mb-1.5 gap-3">
@@ -171,10 +181,10 @@ export default function ContinueLearning() {
                   {progress}% complete
                 </span>
               </div>
-              <div className="h-2.5 rounded-full bg-(--primary-50)">
+              <div className="h-3 rounded-full bg-(--primary-50) overflow-hidden">
                 <div
                   ref={progressBarRef}
-                  className="h-2.5 rounded-full bg-(--primary-600)"
+                  className="h-3 rounded-full bg-gradient-to-r from-(--primary-500) to-(--primary-700)"
                   style={{ width: "0%" }}
                 />
               </div>
@@ -238,7 +248,7 @@ export default function ContinueLearning() {
 
       <div
         ref={upcomingRef}
-        className="flex-2 bg-white rounded-2xl border border-(--gray-200) p-6"
+        className="flex-2 bg-white rounded-2xl border border-(--gray-200) p-6 shadow-sm hover:shadow-md transition-shadow duration-200"
       >
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-[16px] font-semibold text-(--text-title)">
@@ -261,7 +271,7 @@ export default function ContinueLearning() {
               return (
                 <li
                   key={`${item.type}-${item.occurs_at}-${item.title}`}
-                  className="upcoming-row opacity-0 flex bg-gray-100 p-3 rounded-xl items-center gap-3"
+                  className="upcoming-row opacity-0 flex bg-(--gray-50) hover:bg-(--gray-100) p-3 rounded-xl items-center gap-3 transition-colors"
                 >
                   <div
                     className={`w-9 h-9 rounded-lg ${cfg.iconBg} flex items-center justify-center shrink-0`}

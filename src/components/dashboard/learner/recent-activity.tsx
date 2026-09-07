@@ -27,33 +27,38 @@ export default function RecentActivity() {
   useEffect(() => {
     if (!listRef.current || activities.length === 0) return;
 
-    const rows = listRef.current.querySelectorAll(".activity-row");
-    const lines = listRef.current.querySelectorAll(".timeline-line");
+    const ctx = gsap.context(() => {
+      const rows = listRef.current!.querySelectorAll(".activity-row");
+      const lines = listRef.current!.querySelectorAll(".timeline-line");
 
-    gsap.fromTo(
-      rows,
-      { opacity: 0, x: -20 },
-      { opacity: 1, x: 0, duration: 0.45, stagger: 0.1, ease: "power3.out" },
-    );
+      gsap.fromTo(
+        rows,
+        { opacity: 0, x: -20 },
+        { opacity: 1, x: 0, duration: 0.45, stagger: 0.1, ease: "power3.out" },
+      );
 
-    gsap.fromTo(
-      lines,
-      { opacity: 0 },
-      {
-        opacity: 1,
-        duration: 0.35,
-        stagger: 0.1,
-        ease: "power2.out",
-        delay: 0.18,
-      },
-    );
+      gsap.fromTo(
+        lines,
+        { opacity: 0 },
+        {
+          opacity: 1,
+          duration: 0.35,
+          stagger: 0.1,
+          ease: "power2.out",
+          delay: 0.18,
+        },
+      );
+    }, listRef);
+    return () => ctx.revert();
   }, [activities.length]);
 
   return (
-    <div className="bg-white rounded-2xl border border-(--gray-200) p-5 lg:p-6">
+    <div className="bg-white rounded-2xl border border-(--gray-200) p-5 lg:p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="text-[16px] lg:text-[20px] font-semibold text-(--text-title) flex items-center gap-2">
-          <Clock className="w-5 h-5 text-(--primary-600)" />
+        <h3 className="text-[16px] lg:text-[20px] font-semibold text-(--text-title) flex items-center gap-2.5">
+          <span className="w-8 h-8 rounded-[6px_4px_6px_6px] bg-gradient-to-br from-(--primary-500) to-(--primary-700) flex items-center justify-center shrink-0 shadow-sm">
+            <Clock className="w-4 h-4 text-white" />
+          </span>
           Recent Activity
         </h3>
         <Link
@@ -82,7 +87,7 @@ export default function RecentActivity() {
             return (
               <li
                 key={item.id}
-                className="activity-row opacity-0 flex gap-4 py-2.5 first:pt-0 last:pb-0"
+                className="activity-row opacity-0 flex gap-4 py-2.5 px-2 -mx-2 rounded-xl first:pt-0 last:pb-0 hover:bg-(--gray-50) transition-colors"
               >
                 <div className="relative flex flex-col items-center shrink-0 w-9">
                   <div
@@ -91,7 +96,7 @@ export default function RecentActivity() {
                     <Icon className={`w-4 h-4 ${cfg.iconColor}`} />
                   </div>
                   {i < activities.length - 1 && (
-                    <div className="timeline-line absolute top-9 -bottom-6.5 left-1/2 -translate-x-1/2 w-px bg-(--gray-200)" />
+                    <div className="timeline-line absolute top-9 -bottom-6.5 left-1/2 -translate-x-1/2 w-0.5 bg-gradient-to-b from-(--gray-200) to-(--gray-100)" />
                   )}
                 </div>
 

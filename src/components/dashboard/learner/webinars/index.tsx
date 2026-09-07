@@ -2,7 +2,14 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
-import { Calendar, Clock, Users, Video, ExternalLink } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  Users,
+  Video,
+  ExternalLink,
+  ImageOff,
+} from "lucide-react";
 import gsap from "gsap";
 import { Pagination } from "@/components/common/pagination";
 import {
@@ -73,7 +80,7 @@ function WebinarCard({
   };
 
   return (
-    <div className="webinar-card opacity-0 bg-white rounded-2xl border border-(--gray-200) overflow-hidden hover:shadow-md transition-shadow duration-200 flex flex-col">
+    <div className="webinar-card opacity-0 bg-white rounded-2xl border border-(--gray-200) overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 flex flex-col">
       <button
         type="button"
         onClick={() => onOpenDetail(webinar.slug)}
@@ -85,11 +92,12 @@ function WebinarCard({
             alt={webinar.title}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover"
+            className="object-cover transition-transform duration-500 hover:scale-105"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-(--gray-300)">
-            <Video className="w-8 h-8" />
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 bg-linear-to-br from-(--gray-100) to-(--gray-50) text-(--gray-400)">
+            <ImageOff className="w-6 h-6" />
+            <span className="text-[11px] font-medium">No image</span>
           </div>
         )}
       </button>
@@ -147,8 +155,10 @@ function WebinarCard({
           ) : (
             <button
               onClick={handleRegister}
-              disabled={registerMutation.isPending || checkoutMutation.isPending}
-              className="px-4 py-1.5 rounded-md bg-(--primary-50) hover:bg-(--primary-100) text-(--primary-600) text-[14px] font-semibold transition-colors cursor-pointer border border-(--primary-100) disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={
+                registerMutation.isPending || checkoutMutation.isPending
+              }
+              className="px-4 py-1.5 rounded-md bg-linear-to-br from-(--primary-500) to-(--primary-600) hover:from-(--primary-600) hover:to-(--primary-700) text-white text-[14px] font-semibold transition-all cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {checkoutMutation.isPending
                 ? "Redirecting..."
@@ -204,11 +214,15 @@ export default function WebinarsPageContent() {
   const totalPages = Math.max(1, Math.ceil((data?.count ?? 0) / PAGE_SIZE));
 
   useEffect(() => {
-    gsap.fromTo(
-      headerRef.current,
-      { opacity: 0, y: 16 },
-      { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" },
-    );
+    if (!headerRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        headerRef.current,
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" },
+      );
+    }, headerRef);
+    return () => ctx.revert();
   }, []);
 
   useEffect(() => {
@@ -229,11 +243,12 @@ export default function WebinarsPageContent() {
   return (
     <div className="space-y-6">
       <div ref={headerRef} className="opacity-0">
-        <h1 className="text-[20px] md:text-[24px] lg:text-[24px] font-semibold text-(--text-title)">
+        <h1 className="text-[22px] md:text-[28px] lg:text-[28px] font-bold text-(--text-title) tracking-tight">
           Webinars
         </h1>
         <p className="text-[12px] md:text-[14px] lg:text-[14px] text-(--gray-500) mt-1">
-          Live sessions hosted by partner institutions — register to get the join link.
+          Live sessions hosted by partner institutions — register to get the
+          join link.
         </p>
       </div>
 
@@ -243,9 +258,9 @@ export default function WebinarsPageContent() {
             setUpcomingOnly(true);
             setCurrentPage(1);
           }}
-          className={`h-10 px-4 rounded-md text-[13px] font-medium transition-colors cursor-pointer ${
+          className={`h-10 px-4 rounded-md text-[13px] font-medium transition-all cursor-pointer ${
             upcomingOnly
-              ? "bg-(--primary-600) text-white"
+              ? "bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white shadow-sm"
               : "bg-white border border-(--gray-200) text-(--gray-600) hover:bg-(--gray-50)"
           }`}
         >
@@ -256,9 +271,9 @@ export default function WebinarsPageContent() {
             setUpcomingOnly(false);
             setCurrentPage(1);
           }}
-          className={`h-10 px-4 rounded-md text-[13px] font-medium transition-colors cursor-pointer ${
+          className={`h-10 px-4 rounded-md text-[13px] font-medium transition-all cursor-pointer ${
             !upcomingOnly
-              ? "bg-(--primary-600) text-white"
+              ? "bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white shadow-sm"
               : "bg-white border border-(--gray-200) text-(--gray-600) hover:bg-(--gray-50)"
           }`}
         >
@@ -268,7 +283,9 @@ export default function WebinarsPageContent() {
 
       <p className="text-[12px] md:text-[14px] lg:text-[14px] text-(--gray-500)">
         Showing{" "}
-        <span className="font-semibold text-(--text-title)">{data?.count ?? 0}</span>{" "}
+        <span className="font-semibold text-(--text-title)">
+          {data?.count ?? 0}
+        </span>{" "}
         webinars
       </p>
 
@@ -325,7 +342,9 @@ export default function WebinarsPageContent() {
         slug={detailSlug}
         onClose={() => setDetailSlug(null)}
         isRegistered={detailSlug ? registeredSlugs.has(detailSlug) : false}
-        meetingUrl={detailSlug ? registeredMeetingUrls.get(detailSlug) : undefined}
+        meetingUrl={
+          detailSlug ? registeredMeetingUrls.get(detailSlug) : undefined
+        }
         onRegisterChange={handleRegisterChange}
       />
     </div>

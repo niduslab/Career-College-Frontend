@@ -60,16 +60,19 @@ const STATUS_CONFIG: Record<
   },
 };
 
-const FILTER_STATUSES: FilterStatus[] = ["All", "completed", "pending", "failed"];
+const FILTER_STATUSES: FilterStatus[] = [
+  "All",
+  "completed",
+  "pending",
+  "failed",
+];
 const PAGE_SIZE = 6;
 /** Server cap. A learner's order history is small; one page covers it and
  *  lets the stat tiles count across every status. */
 const FETCH_SIZE = 100;
 
 function orderTitle(order: Order): string {
-  return (
-    order.course_title ?? order.webinar_title ?? `Order ${order.tran_id}`
-  );
+  return order.course_title ?? order.webinar_title ?? `Order ${order.tran_id}`;
 }
 
 function formatDate(iso: string): string {
@@ -94,10 +97,10 @@ function PaymentRow({ order }: { order: Order }) {
   const ItemIcon = order.item_type === "webinar" ? Video : BookOpen;
 
   return (
-    <div className="payment-row opacity-0 bg-white rounded-xl border border-(--gray-200) p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:shadow-sm transition-shadow">
+    <div className="payment-row opacity-0 bg-white rounded-xl border border-(--gray-200) p-4 flex flex-col sm:flex-row sm:items-center gap-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
       {/* The order carries no thumbnail — the item type stands in for it. */}
-      <div className="w-13 h-13 rounded-xl shrink-0 bg-(--primary-100) flex items-center justify-center">
-        <ItemIcon className="w-5 h-5 text-(--primary-600)" />
+      <div className="w-13 h-13 rounded-xl shrink-0 bg-linear-to-br from-(--primary-500) to-(--primary-600) flex items-center justify-center shadow-sm">
+        <ItemIcon className="w-5 h-5 text-white" />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -205,53 +208,62 @@ export default function PaymentHistoryPage() {
   );
 
   useEffect(() => {
-    gsap.fromTo(
-      headerRef.current,
-      { opacity: 0, y: 16 },
-      { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" },
-    );
+    if (!headerRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        headerRef.current,
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" },
+      );
+    }, headerRef);
+    return () => ctx.revert();
   }, []);
 
   useEffect(() => {
     if (!listRef.current) return;
     const rows = Array.from(listRef.current.querySelectorAll(".payment-row"));
-    gsap.fromTo(
-      rows,
-      { opacity: 0, y: 16 },
-      { opacity: 1, y: 0, duration: 0.3, stagger: 0.06, ease: "power3.out" },
-    );
+    if (rows.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.killTweensOf(rows);
+      gsap.fromTo(
+        rows,
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.3, stagger: 0.06, ease: "power3.out" },
+      );
+    }, listRef);
+    return () => ctx.revert();
   }, [filterStatus, search, sortBy, currentPage, paginated.length]);
 
   const stats = [
     {
       label: "Total Spent",
       value: `${totalSpent.toFixed(2)} ${currency}`,
-      iconBg: "bg-(--primary-100)",
-      color: "text-(--primary-600)",
+      tint: "from-(--primary-50) to-white",
+      iconColor: "bg-gradient-to-br from-(--primary-500) to-(--primary-600)",
       Icon: DollarSign,
       badge: "on courses and webinars",
     },
     {
       label: "Purchases",
       value: countByStatus.completed,
-      iconBg: "bg-emerald-100",
-      color: "text-emerald-600",
+      tint: "from-emerald-50 to-white",
+      iconColor: "bg-gradient-to-br from-emerald-400 to-emerald-500",
       Icon: ShoppingCart,
       badge: "completed",
     },
     {
       label: "Pending",
       value: countByStatus.pending,
-      iconBg: "bg-amber-100",
-      color: "text-amber-600",
+      tint: "from-amber-50 to-white",
+      iconColor: "bg-gradient-to-br from-amber-400 to-amber-500",
       Icon: Clock,
       badge: "awaiting payment",
     },
     {
       label: "Failed",
       value: countByStatus.failed,
-      iconBg: "bg-rose-100",
-      color: "text-rose-600",
+      tint: "from-rose-50 to-white",
+      iconColor: "bg-gradient-to-br from-rose-400 to-rose-500",
       Icon: XCircle,
       badge: "not charged",
     },
@@ -264,7 +276,7 @@ export default function PaymentHistoryPage() {
         className="opacity-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div>
-          <h1 className="text-[20px] md:text-[24px] lg:text-[24px] font-semibold text-(--text-title)">
+          <h1 className="text-[22px] md:text-[28px] lg:text-[28px] font-bold text-(--text-title) tracking-tight">
             Payment History
           </h1>
           <p className="text-[12px] md:text-[14px] lg:text-[14px] text-(--gray-500) mt-1">
@@ -277,21 +289,21 @@ export default function PaymentHistoryPage() {
         {stats.map((s) => (
           <div
             key={s.label}
-            className="bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3"
+            className={`bg-linear-to-b ${s.tint} rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`}
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[12px] text-(--gray-500) font-normal mb-2">
+                <p className="text-[12px] text-(--gray-500) font-medium mb-2">
                   {s.label}
                 </p>
-                <p className="text-[18px] md:text-[20px] lg:text-[24px] font-semibold text-(--text-title) leading-none">
+                <p className="text-[18px] md:text-[20px] lg:text-[24px] font-bold text-(--text-title) leading-none tracking-tight">
                   {isLoading ? "—" : s.value}
                 </p>
               </div>
               <div
-                className={`w-10 h-10 rounded-[6px_4px_6px_6px] ${s.iconBg} flex items-center justify-center shrink-0`}
+                className={`w-10 h-10 rounded-[6px_4px_6px_6px] ${s.iconColor} flex items-center justify-center shrink-0 shadow-sm`}
               >
-                <s.Icon className={`w-5 h-5 ${s.color}`} />
+                <s.Icon className="w-5 h-5 text-white" />
               </div>
             </div>
             <div className="border border-dashed border-(--gray-200)" />
@@ -311,7 +323,7 @@ export default function PaymentHistoryPage() {
                 setFilterStatus(s);
                 setCurrentPage(1);
               }}
-              className={`px-3.5 py-1.5 h-11 rounded-md text-[14px] border transition-colors cursor-pointer whitespace-nowrap shrink-0 capitalize ${filterStatus === s ? "bg-(--primary-600) text-white border-(--primary-600) font-medium" : "bg-white text-(--gray-600) font-normal border-(--gray-200) hover:border-(--primary-300)"}`}
+              className={`px-3.5 py-1.5 h-11 rounded-md text-[14px] border transition-all cursor-pointer whitespace-nowrap shrink-0 capitalize ${filterStatus === s ? "bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white border-(--primary-600) font-medium shadow-sm" : "bg-white text-(--gray-600) font-normal border-(--gray-200) hover:border-(--primary-300)"}`}
             >
               {s === "All" ? "All" : STATUS_CONFIG[s].label}
               {s !== "All" && (
