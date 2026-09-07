@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import {
   Users,
@@ -11,9 +11,9 @@ import {
   Search,
   ChevronDown,
   BookOpen,
-  Loader2,
   Award,
 } from "lucide-react";
+import gsap from "gsap";
 import {
   STUDENT_STATUSES,
   STUDENT_STATUS_LABELS,
@@ -28,6 +28,7 @@ import {
 import { mediaUrl } from "@/components/dashboard/settings-shared/helpers";
 import { Pagination } from "@/components/common/pagination";
 import { SearchableDropdown } from "@/components/dashboard/common/searchable-dropdown";
+import { StatsSkeleton } from "@/components/common/query-states";
 
 const PAGE_SIZE = 10;
 
@@ -135,7 +136,10 @@ function GrowthBadge({ pct }: { pct: number | null }) {
       <p className="text-[12px] text-(--gray-400)">No prior data to compare</p>
     );
   }
-  const up = pct >= 0;
+  if (pct === 0) {
+    return null;
+  }
+  const up = pct > 0;
   const Icon = up ? TrendingUp : TrendingDown;
   return (
     <p
@@ -148,19 +152,43 @@ function GrowthBadge({ pct }: { pct: number | null }) {
   );
 }
 
+const STAT_TINTS = {
+  primary: {
+    bg: "from-(--primary-50) to-white",
+    icon: "from-(--primary-500) to-(--primary-600)",
+  },
+  indigo: {
+    bg: "from-indigo-50 to-white",
+    icon: "from-indigo-400 to-indigo-500",
+  },
+  amber: { bg: "from-amber-50 to-white", icon: "from-amber-400 to-amber-500" },
+  emerald: {
+    bg: "from-emerald-50 to-white",
+    icon: "from-emerald-400 to-emerald-500",
+  },
+} as const;
+
 function StatCard({
   label,
   value,
   icon: Icon,
+  tint = "primary",
+  delay = 0,
   children,
 }: {
   label: string;
   value: string;
   icon: typeof Users;
+  tint?: keyof typeof STAT_TINTS;
+  delay?: number;
   children?: React.ReactNode;
 }) {
+  const { bg, icon } = STAT_TINTS[tint];
   return (
-    <div className="bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3">
+    <div
+      className={`stat-card opacity-0 bg-linear-to-b ${bg} rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200`}
+      style={{ animationDelay: `${delay}ms` }}
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-[12px] text-(--gray-500) font-normal mb-2">
@@ -170,8 +198,10 @@ function StatCard({
             {value}
           </p>
         </div>
-        <div className="w-10 h-10 xl:w-8 xl:h-8 rounded-[6px_4px_6px_6px] bg-(--primary-50) flex items-center justify-center shrink-0">
-          <Icon className="w-6 h-6 xl:w-5 xl:h-5 text-(--primary-600)" />
+        <div
+          className={`w-10 h-10 xl:w-8 xl:h-8 rounded-[6px_4px_6px_6px] bg-linear-to-br ${icon} flex items-center justify-center shrink-0 shadow-sm`}
+        >
+          <Icon className="w-6 h-6 xl:w-5 xl:h-5 text-white" />
         </div>
       </div>
       <div className="border border-dashed border-(--gray-200)" />
@@ -185,7 +215,7 @@ function StudentTableRow({ row }: { row: StudentRow }) {
 
   return (
     <div
-      className={`${ROW_GRID} items-center px-3 py-3 rounded-xl hover:bg-(--gray-50) transition-colors`}
+      className={`student-row ${ROW_GRID} items-center px-3 py-3 rounded-xl hover:bg-(--gray-50) hover:shadow-sm transition-all duration-200`}
     >
       {/* Student */}
       <div className="flex items-center gap-3 min-w-0">
@@ -257,6 +287,8 @@ export default function StudentsPage() {
   const [status, setStatus] = useState<StudentStatus | "">("");
   const [sort, setSort] = useState<StudentSort>("-last_active");
   const [page, setPage] = useState(1);
+  const statsRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   // The backend rejects a 1-character term with a 400, so only send a term
   // once it is long enough to be valid.
@@ -314,10 +346,44 @@ export default function StudentsPage() {
     ? Math.max(...summary.top_courses.map((c) => c.students))
     : 1;
 
+  useEffect(() => {
+    if (!summary || !statsRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        statsRef.current!.querySelectorAll(".stat-card"),
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.45, stagger: 0.08, ease: "power3.out" },
+      );
+    });
+    return () => ctx.revert();
+  }, [summary]);
+
+  useEffect(() => {
+    if (!list || !tableRef.current) return;
+    const rows = tableRef.current.querySelectorAll(".student-row");
+    if (rows.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.killTweensOf(rows);
+      gsap.fromTo(
+        rows,
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.35, stagger: 0.04, ease: "power3.out" },
+      );
+    });
+    return () => ctx.revert();
+  }, [list]);
+
   if (summaryQuery.isLoading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-6 h-6 animate-spin text-(--primary-600)" />
+      <div className="flex flex-col 2xl:flex-row gap-5">
+        <div className="flex-1 min-w-0 space-y-5">
+          <StatsSkeleton count={4} />
+          <div className="h-96 rounded-2xl border border-(--gray-200) bg-(--gray-50) animate-pulse" />
+        </div>
+        <div className="w-full 2xl:w-72 shrink-0 grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-1 gap-4">
+          <div className="h-48 rounded-2xl border border-(--gray-200) bg-(--gray-50) animate-pulse" />
+          <div className="h-48 rounded-2xl border border-(--gray-200) bg-(--gray-50) animate-pulse" />
+        </div>
       </div>
     );
   }
@@ -342,7 +408,10 @@ export default function StudentsPage() {
         {/* Stat cards */}
         {/* 2-up until lg — at 768px four cards squeeze the growth line onto
             two lines. */}
-        <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-4  gap-3">
+        <div
+          ref={statsRef}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4  gap-3"
+        >
           {/* Labels name the unit they count. "Students" = distinct people,
               "Enrollments" = rows — the two differ whenever a learner takes
               more than one of your courses, so the label must say which. */}
@@ -350,6 +419,8 @@ export default function StudentsPage() {
             label="Total Students"
             value={String(summary.total_students)}
             icon={Users}
+            tint="primary"
+            delay={0}
           >
             <p className="text-[12px] text-(--gray-500)">
               unique learners in {summary.courses.length} course
@@ -361,6 +432,8 @@ export default function StudentsPage() {
             label="Currently Active"
             value={String(summary.active_students)}
             icon={Activity}
+            tint="indigo"
+            delay={60}
           >
             <p className="text-[12px] text-(--gray-500)">
               studied in the last {summary.inactive_after_days} days
@@ -371,6 +444,8 @@ export default function StudentsPage() {
             label="Avg. Course Progress"
             value={`${summary.avg_progress}%`}
             icon={TrendingUp}
+            tint="amber"
+            delay={120}
           >
             <p className="text-[12px] text-(--gray-500)">
               average across all enrollments
@@ -381,6 +456,8 @@ export default function StudentsPage() {
             label="New Enrollments"
             value={String(summary.new_this_period)}
             icon={UserPlus}
+            tint="emerald"
+            delay={180}
           >
             <p className="text-[12px] text-(--gray-500)">
               in the last {summary.window_days} days
@@ -463,8 +540,13 @@ export default function StudentsPage() {
               </div>
 
               {listQuery.isLoading ? (
-                <div className="py-12 flex justify-center">
-                  <Loader2 className="w-5 h-5 animate-spin text-(--primary-600)" />
+                <div className="space-y-1 pt-1">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-14.5 rounded-xl bg-(--gray-50) animate-pulse"
+                    />
+                  ))}
                 </div>
               ) : listQuery.isError ? (
                 <div className="py-12 text-center">
@@ -483,6 +565,7 @@ export default function StudentsPage() {
                 </div>
               ) : (
                 <div
+                  ref={tableRef}
                   className={`space-y-1 pt-1 transition-opacity ${listQuery.isFetching ? "opacity-60" : ""}`}
                 >
                   {list.results.map((row) => (
@@ -516,7 +599,7 @@ export default function StudentsPage() {
           At 2xl it becomes a real 288px column and they stack. */}
       <div className="w-full 2xl:w-72 shrink-0 grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-1 gap-4 items-start content-start">
         {/* Top enrolled courses */}
-        <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-3">
+        <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-3 shadow-sm hover:shadow-lg transition-shadow duration-200">
           <p className="text-[12px] font-semibold tracking-widest text-(--gray-500) uppercase">
             Top Enrolled Courses
           </p>
@@ -554,7 +637,7 @@ export default function StudentsPage() {
         </div>
 
         {/* Status breakdown */}
-        <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-3">
+        <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-3 shadow-sm hover:shadow-lg transition-shadow duration-200">
           <p className="text-[12px] font-semibold tracking-widest text-(--gray-500) uppercase">
             Status Breakdown
           </p>

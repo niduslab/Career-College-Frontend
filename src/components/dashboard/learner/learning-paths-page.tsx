@@ -24,6 +24,7 @@ import {
 } from "@/hooks/use-learning-paths";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
+import { RichText } from "@/components/common/rich-text";
 import type {
   MyLearningPath,
   LearningPathListItem,
@@ -33,6 +34,11 @@ import type {
 
 const RADIUS = 40;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+/** Description is stored as HTML — strip tags for line-clamped card previews. */
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, "").trim();
+}
 
 function ProgressRing({ percent }: { percent: number }) {
   const circleRef = useRef<SVGCircleElement>(null);
@@ -320,7 +326,10 @@ function PathDetail({
             {path.career_goal || path.title}
           </h2>
           {path.description && (
-            <p className="text-[14px] text-(--gray-500) mt-2">{path.description}</p>
+            <RichText
+              html={path.description}
+              className="text-[14px] text-(--gray-500) mt-2 [&_p]:mb-1 last:[&_p]:mb-0"
+            />
           )}
 
           <div className="flex flex-wrap items-center gap-4 mt-3 text-[12px] text-(--gray-500)">
@@ -454,7 +463,7 @@ function BrowseCard({
       </h3>
       {path.description && (
         <p className="text-[13px] text-(--gray-500) mt-1.5 line-clamp-2">
-          {path.description}
+          {stripHtml(path.description)}
         </p>
       )}
       <p className="text-[12px] text-(--gray-400) mt-3 flex items-center gap-1">
