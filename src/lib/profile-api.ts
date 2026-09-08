@@ -137,6 +137,24 @@ export interface PartnerProfileUpdate {
   is_profile_public?: boolean;
 }
 
+/** Admin profile — intentionally minimal, admins have no public-facing profile. */
+export interface AdminProfile {
+  id: number;
+  profile_photo: string | null;
+  phone: string;
+}
+
+/** Same endpoint as `MyProfileResponse` but typed for an admin. */
+export interface MyAdminProfileResponse {
+  user: ProfileUser;
+  profile: AdminProfile;
+}
+
+/** Fields an admin may update. */
+export interface AdminProfileUpdate {
+  phone?: string;
+}
+
 /** `institution_type` options. */
 export const INSTITUTION_TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: "university", label: "University" },
@@ -301,6 +319,36 @@ export async function updatePartnerSignature(
   form.append("authorized_signature", file ?? "");
   const res = await apiPatch("/auth/profile/me/", form);
   return extractPartnerProfile(res.data);
+}
+
+// Admin profile (same endpoint, admin-shaped fields)
+
+export async function getMyAdminProfile(): Promise<MyAdminProfileResponse> {
+  const res = await apiGet<MyAdminProfileResponse>("/auth/profile/me/");
+  return res.data as MyAdminProfileResponse;
+}
+
+/** PATCH response returns the profile directly; GET nests it under `profile`. */
+function extractAdminProfile(data: unknown): AdminProfile {
+  const obj = data as { profile?: AdminProfile } & Partial<AdminProfile>;
+  return (obj?.profile ?? obj) as AdminProfile;
+}
+
+export async function updateAdminProfile(
+  patch: AdminProfileUpdate,
+): Promise<AdminProfile> {
+  const res = await apiPatch("/auth/profile/me/", patch);
+  return extractAdminProfile(res.data);
+}
+
+/** Upload/replace the admin photo; returns the admin profile shape. */
+export async function updateAdminPhoto(
+  file: File | null,
+): Promise<AdminProfile> {
+  const form = new FormData();
+  form.append("profile_photo", file ?? "");
+  const res = await apiPatch("/auth/profile/me/", form);
+  return extractAdminProfile(res.data);
 }
 
 // Education

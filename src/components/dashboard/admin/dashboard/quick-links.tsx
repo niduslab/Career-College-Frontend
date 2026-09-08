@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Users,
@@ -10,6 +11,7 @@ import {
   ArrowUpRight,
   Loader2,
 } from "lucide-react";
+import gsap from "gsap";
 import { useAdminAnalyticsSummary } from "@/hooks/use-admin-analytics";
 
 function formatCount(n: number | undefined): string {
@@ -19,6 +21,19 @@ function formatCount(n: number | undefined): string {
 
 export default function AdminQuickLinks() {
   const { data: summary, isLoading } = useAdminAnalyticsSummary();
+  const linksRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!linksRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        linksRef.current!.querySelectorAll(".quick-link"),
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.4, stagger: 0.06, ease: "power3.out" },
+      );
+    });
+    return () => ctx.revert();
+  }, []);
 
   const links = [
     {
@@ -59,16 +74,16 @@ export default function AdminQuickLinks() {
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4">
+    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 shadow-sm hover:shadow-lg transition-shadow duration-200">
       <p className="text-[14px] lg:text-[16px] font-semibold text-(--text-title) mb-4">
         Quick Access
       </p>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div ref={linksRef} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         {links.map(({ label, href, icon: Icon, count, color }) => (
           <Link
             key={label}
             href={href}
-            className="group flex flex-col items-center gap-2 p-3 rounded-xl border border-(--gray-200) hover:border-(--primary-200) hover:shadow-sm transition-all"
+            className="quick-link opacity-0 group flex flex-col items-center gap-2 p-3 rounded-xl border border-(--gray-200) hover:border-(--primary-200) hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
           >
             <div
               className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}

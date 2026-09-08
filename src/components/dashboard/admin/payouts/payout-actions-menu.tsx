@@ -67,7 +67,11 @@ export default function PayoutActionsMenu({
         ref={btnRef}
         onClick={handleToggle}
         disabled={busy}
-        className="w-7 h-7 rounded-lg flex items-center justify-center text-(--gray-400) hover:bg-(--gray-100) hover:text-(--gray-600) transition-colors cursor-pointer disabled:opacity-50"
+        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer disabled:opacity-50 ${
+          open
+            ? "bg-(--primary-50) text-(--primary-600) shadow-sm"
+            : "text-(--gray-400) hover:bg-(--gray-100) hover:text-(--gray-600)"
+        }`}
         aria-label="Payout actions"
       >
         {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreVertical className="w-4 h-4" />}
@@ -77,22 +81,26 @@ export default function PayoutActionsMenu({
           <div
             data-action-portal
             style={{ position: "fixed", top: coords.top, right: coords.right, zIndex: 9999 }}
-            className="bg-white border border-(--gray-200) rounded-xl shadow-lg py-1 min-w-40 text-left"
+            className="animate-menu-in origin-top-right bg-white border border-(--gray-200) rounded-xl shadow-xl py-1.5 min-w-44 text-left overflow-hidden"
           >
             {canDecide && (
               <>
                 <button
                   onClick={() => runAction(onApprove)}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
+                  className="group w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
                 >
-                  <Check className="w-3.5 h-3.5" />
+                  <span className="w-6 h-6 rounded-md flex items-center justify-center bg-emerald-50 text-emerald-600 shrink-0 group-hover:scale-105 transition-transform">
+                    <Check className="w-3.5 h-3.5" />
+                  </span>
                   Approve
                 </button>
                 <button
                   onClick={() => runAction(onReject)}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                  className="group w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <span className="w-6 h-6 rounded-md flex items-center justify-center bg-red-50 text-red-500 shrink-0 group-hover:scale-105 transition-transform">
+                    <X className="w-3.5 h-3.5" />
+                  </span>
                   Reject
                 </button>
               </>
@@ -100,9 +108,11 @@ export default function PayoutActionsMenu({
             {canMarkPaid && (
               <button
                 onClick={() => runAction(onMarkPaid)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
+                className="group w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
               >
-                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span className="w-6 h-6 rounded-md flex items-center justify-center bg-emerald-50 text-emerald-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                </span>
                 Mark Paid
               </button>
             )}

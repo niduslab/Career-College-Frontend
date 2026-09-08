@@ -7,7 +7,7 @@ export default function TopCourses() {
   const { data: courses, isLoading } = useTopCourses("enrollments", 5);
 
   return (
-    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 space-y-4">
+    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 space-y-4 shadow-sm hover:shadow-lg transition-shadow duration-200">
       <p className="text-[14px] lg:text-[16px] font-semibold text-(--text-title)">
         Top Courses
       </p>
@@ -38,7 +38,7 @@ export default function TopCourses() {
             </thead>
             <tbody className="divide-y divide-(--gray-50)">
               {courses.map((c) => (
-                <tr key={c.id}>
+                <tr key={c.id} className="hover:bg-(--gray-50) transition-colors">
                   <td className="py-3 pr-3">
                     <p className="text-[13px] font-semibold text-(--text-title)">
                       {c.title}
@@ -51,7 +51,13 @@ export default function TopCourses() {
                     {c.enrollments.toLocaleString()}
                   </td>
                   <td className="py-3 text-center">
-                    <span className="text-[12px] font-semibold text-emerald-600 bg-emerald-50 rounded-full px-2.5 py-1">
+                    <span
+                      className={`text-[12px] font-semibold rounded-full px-2.5 py-1 ${
+                        c.completion_rate > 0
+                          ? "text-emerald-600 bg-emerald-50"
+                          : "text-(--gray-500) bg-(--gray-100)"
+                      }`}
+                    >
                       {c.completion_rate}%
                     </span>
                   </td>

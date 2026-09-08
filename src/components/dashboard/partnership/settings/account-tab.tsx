@@ -2,12 +2,7 @@
 
 import { useState } from "react";
 import { Lock, Eye, EyeOff } from "lucide-react";
-import {
-  SectionCard,
-  Field,
-  Toggle,
-  AsyncSaveButton,
-} from "../../settings-shared/ui";
+import { SectionCard, Field, AsyncSaveButton } from "../../settings-shared/ui";
 import { ApiError } from "@/lib/api";
 import { notify } from "@/lib/toast";
 import { validatePassword } from "@/lib/validation";
@@ -17,8 +12,6 @@ export function AccountTab() {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [twoFactor, setTwoFactor] = useState(false);
-  const [sessionAlerts, setSessionAlerts] = useState(true);
 
   // Change Password
   const [pw, setPw] = useState({
@@ -77,27 +70,6 @@ export function AccountTab() {
       setPwSaving(false);
     }
   };
-
-  const sessions = [
-    {
-      device: "Chrome on macOS",
-      location: "Dhaka, BD",
-      time: "Now",
-      current: true,
-    },
-    {
-      device: "Safari on iPhone",
-      location: "Dhaka, BD",
-      time: "1h ago",
-      current: false,
-    },
-    {
-      device: "Firefox on Windows",
-      location: "London, UK",
-      time: "2d ago",
-      current: false,
-    },
-  ];
 
   return (
     <div className="space-y-4">
@@ -190,102 +162,6 @@ export function AccountTab() {
             saving={pwSaving}
             saved={pwSaved}
           />
-        </div>
-      </SectionCard>
-
-      {/* 2FA */}
-      <SectionCard
-        title="Two-Factor Authentication"
-        description="Add an extra layer of security to your account."
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[13px] font-medium text-(--text-title)">
-              Authenticator app
-            </p>
-            <p className="text-[12px] text-(--gray-400) mt-0.5">
-              {twoFactor
-                ? "Enabled — using Google Authenticator"
-                : "Not enabled"}
-            </p>
-          </div>
-          <Toggle
-            checked={twoFactor}
-            onChange={() => setTwoFactor((v) => !v)}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[13px] font-medium text-(--text-title)">
-              Login alerts
-            </p>
-            <p className="text-[12px] text-(--gray-400) mt-0.5">
-              Get an email when a new session is started
-            </p>
-          </div>
-          <Toggle
-            checked={sessionAlerts}
-            onChange={() => setSessionAlerts((v) => !v)}
-          />
-        </div>
-      </SectionCard>
-
-      {/* Active sessions */}
-      <SectionCard
-        title="Active Sessions"
-        description="Devices currently signed in to your account."
-      >
-        <div className="space-y-3">
-          {sessions.map((s) => (
-            <div
-              key={s.device}
-              className="flex items-center justify-between py-2 border-b border-(--gray-100) last:border-0"
-            >
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-[14px] font-medium text-(--text-title)">
-                    {s.device}
-                  </p>
-                  {s.current && (
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-200">
-                      Current
-                    </span>
-                  )}
-                </div>
-                <p className="text-[12px] text-(--gray-400) mt-0.5">
-                  {s.location} · {s.time}
-                </p>
-              </div>
-              {!s.current && (
-                <button
-                  type="button"
-                  className="text-[12px] font-medium text-red-500 hover:underline cursor-pointer"
-                >
-                  Revoke
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </SectionCard>
-
-      {/* Danger zone */}
-      <SectionCard title="Danger Zone">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[14px] font-medium text-(--text-title)">
-              Delete account
-            </p>
-            <p className="text-[12px] text-(--gray-500) mt-0.5">
-              Permanently delete your account and all partnership data.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="h-11 px-4 rounded-md border border-red-200 text-red-500 text-[12px] md:text-[14px] lg:text-[14px] font-medium hover:bg-red-50 transition-colors cursor-pointer whitespace-nowrap"
-          >
-            Delete Account
-          </button>
         </div>
       </SectionCard>
     </div>

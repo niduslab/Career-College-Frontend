@@ -32,7 +32,7 @@ export default function RevenueByItem({ summary }: RevenueByItemProps) {
   }, [items]);
 
   return (
-    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 h-full flex flex-col">
+    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 h-full flex flex-col shadow-sm hover:shadow-lg transition-shadow duration-200">
       <div className="mb-4">
         <p className="text-[14px] lg:text-[16px] font-semibold text-(--text-title)">
           Top Earning Content

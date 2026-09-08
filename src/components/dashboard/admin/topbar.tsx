@@ -1,16 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Menu, ChevronDown, Settings, LogOut, Loader2 } from "lucide-react";
-import { fetchAdminSession, type AuthUser } from "@/lib/auth-api";
+import { getMyAdminProfile } from "@/lib/profile-api";
 import { useAuth } from "@/lib/use-auth";
-import { initialsOf } from "../settings-shared/helpers";
+import { onProfileUpdated } from "@/lib/profile-events";
+import { mediaUrl, initialsOf } from "../settings-shared/helpers";
 import { NotificationBell } from "../common/notification-bell";
 
 export default function AdminTopbar() {
   const { logout } = useAuth();
-  const [admin, setAdmin] = useState<AuthUser | null>(null);
+  const [name, setName] = useState("");
+  const [isStaff, setIsStaff] = useState(false);
+  const [photo, setPhoto] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -19,13 +23,26 @@ export default function AdminTopbar() {
     window.dispatchEvent(new Event("toggleAdminSidebar"));
   };
 
+  // re-load whenever the settings page reports a profile change.
   useEffect(() => {
     let active = true;
-    fetchAdminSession().then((data) => {
-      if (active) setAdmin(data);
-    });
+    const load = () => {
+      getMyAdminProfile()
+        .then((data) => {
+          if (!active) return;
+          setName(data.user.full_name);
+          setIsStaff(data.user.user_type === "admin");
+          setPhoto(data.profile.profile_photo);
+        })
+        .catch(() => {
+          /* header just falls back to initials/empty */
+        });
+    };
+    load();
+    const unsubscribe = onProfileUpdated(load);
     return () => {
       active = false;
+      unsubscribe();
     };
   }, []);
 
@@ -46,8 +63,8 @@ export default function AdminTopbar() {
     await logout();
   };
 
-  const name = admin?.full_name ?? "";
-  const roleLabel = admin?.is_staff ? "Administrator" : "Member";
+  const roleLabel = isStaff ? "Administrator" : "Member";
+  const photoUrl = mediaUrl(photo);
 
   return (
     <header className="sticky top-0 z-20 h-14 lg:h-16 bg-white border-b border-(--gray-200) px-4 lg:px-6 flex items-center justify-between gap-4 shrink-0">
@@ -77,7 +94,19 @@ export default function AdminTopbar() {
             className="flex items-center gap-2.5 rounded-full pl-1 pr-2 py-1 hover:bg-(--gray-100) transition-colors cursor-pointer"
           >
             <div className="w-8 h-8 lg:w-9 lg:h-9 rounded-full overflow-hidden shrink-0 bg-(--primary-100) text-(--primary-700) text-[13px] font-semibold flex items-center justify-center">
-              {initialsOf(name)}
+              {photoUrl ? (
+                <Image
+                  src={photoUrl}
+                  alt={name || "User"}
+                  width={36}
+                  height={36}
+                  unoptimized
+                  priority
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                initialsOf(name)
+              )}
             </div>
             <div className="hidden sm:flex flex-col leading-tight text-left">
               <span className="text-[13px] font-semibold text-(--text-title)">

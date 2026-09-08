@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { ArrowUpRight, Loader2, History } from "lucide-react";
 import Link from "next/link";
+import gsap from "gsap";
 import { useAuditLog } from "@/hooks/use-admin-audit-log";
 import type { AdminActionType } from "@/lib/admin-console-api";
 
@@ -31,9 +33,23 @@ function formatTime(iso: string): string {
 export default function AdminActivityFeed() {
   const { data, isLoading, isError } = useAuditLog({ page: 1, page_size: 6 });
   const entries = data?.results ?? [];
+  const listRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    if (!listRef.current || entries.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        listRef.current!.querySelectorAll(".activity-item"),
+        { opacity: 0, x: -12 },
+        { opacity: 1, x: 0, duration: 0.35, stagger: 0.06, ease: "power3.out" },
+      );
+    });
+    return () => ctx.revert();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   return (
-    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 flex flex-col h-full">
+    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 flex flex-col h-full shadow-sm hover:shadow-lg transition-shadow duration-200">
       <div className="flex items-center justify-between mb-4">
         <p className="text-[14px] lg:text-[16px] font-semibold text-(--text-title)">
           Recent Activity
@@ -58,9 +74,9 @@ export default function AdminActivityFeed() {
           <p className="text-[13px]">No recent admin actions.</p>
         </div>
       ) : (
-        <ul className="space-y-4 flex-1">
+        <ul ref={listRef} className="space-y-4 flex-1">
           {entries.map((entry) => (
-            <li key={entry.id} className="flex items-start gap-3">
+            <li key={entry.id} className="activity-item opacity-0 flex items-start gap-3">
               <span
                 className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${TYPE_DOT[entry.action]}`}
               />

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, ShieldCheck, Landmark, Smartphone } from "lucide-react";
+import gsap from "gsap";
 import { Pagination } from "@/components/common/pagination";
 import { usePayoutAccounts, useVerifyPayoutAccount } from "@/hooks/use-admin-payouts";
 import { notify } from "@/lib/toast";
@@ -50,6 +51,20 @@ export default function PayoutAccountsTable() {
   const totalCount = data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
+
+  useEffect(() => {
+    if (!tbodyRef.current || rows.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        tbodyRef.current!.querySelectorAll(".payout-account-row"),
+        { opacity: 0, x: -12 },
+        { opacity: 1, x: 0, duration: 0.3, stagger: 0.04, ease: "power3.out" },
+      );
+    });
+    return () => ctx.revert();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const handleVerify = (account: PayoutAccount) => {
     verify.mutate(account.id, {
@@ -61,15 +76,15 @@ export default function PayoutAccountsTable() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 flex items-center gap-3">
+      <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 flex items-center gap-3 shadow-sm hover:shadow-lg transition-shadow duration-200">
         <button
           onClick={() => {
             setOnlyUnverified((v) => !v);
             setPage(1);
           }}
-          className={`text-[12px] cursor-pointer font-medium rounded-lg px-3 py-2 border transition-colors ${
+          className={`text-[12px] cursor-pointer font-medium rounded-lg px-3 py-2 border transition-all ${
             onlyUnverified
-              ? "bg-(--primary-50) text-(--primary-600) border-(--primary-200)"
+              ? "bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white border-(--primary-600) shadow-sm"
               : "text-(--gray-600) border-(--gray-200) hover:bg-(--gray-50)"
           }`}
         >
@@ -77,7 +92,7 @@ export default function PayoutAccountsTable() {
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4">
+      <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 shadow-sm hover:shadow-lg transition-shadow duration-200">
         <div className="overflow-x-auto -mx-5 px-5">
           <table className="min-w-full border-collapse">
             <thead>
@@ -99,7 +114,7 @@ export default function PayoutAccountsTable() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-(--gray-50)">
+            <tbody ref={tbodyRef} className="divide-y divide-(--gray-50)">
               {isLoading ? (
                 <tr>
                   <td colSpan={5} className="py-10 text-center text-[13px] text-(--gray-400)">
@@ -127,7 +142,7 @@ export default function PayoutAccountsTable() {
                   const email = ownerEmail(a);
                   const MethodIcon = a.payout_method === "bank_transfer" ? Landmark : Smartphone;
                   return (
-                    <tr key={a.id} className="hover:bg-(--gray-50) transition-colors">
+                    <tr key={a.id} className="payout-account-row opacity-0 hover:bg-(--gray-50) transition-colors">
                       <td className="py-3 pr-8">
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="w-8 h-8 rounded-full shrink-0 bg-(--primary-50) text-(--primary-600) flex items-center justify-center text-[11px] font-semibold">
@@ -169,7 +184,7 @@ export default function PayoutAccountsTable() {
                           <button
                             onClick={() => handleVerify(a)}
                             disabled={verify.isPending && verify.variables === a.id}
-                            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium bg-(--primary-600) text-white hover:bg-(--primary-700) transition-colors cursor-pointer disabled:opacity-60"
+                            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-medium bg-linear-to-br from-(--primary-600) to-(--primary-700) hover:from-(--primary-700) hover:to-(--primary-900) text-white transition-all cursor-pointer disabled:opacity-60 shadow-sm"
                           >
                             {verify.isPending && verify.variables === a.id ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />

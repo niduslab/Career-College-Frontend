@@ -30,7 +30,7 @@ export default function EnrollmentFunnel() {
   }, [isLoading]);
 
   return (
-    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 space-y-4 h-full">
+    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 space-y-4 h-full shadow-sm hover:shadow-lg transition-shadow duration-200">
       <p className="text-[14px] lg:text-[16px] font-semibold text-(--text-title)">
         Conversion Funnel
       </p>

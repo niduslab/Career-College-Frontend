@@ -123,7 +123,7 @@ export default function CoursesPageContent() {
       {/* Right sidebar */}
       <div className="w-full xl:w-60 2xl:w-72 shrink-0 space-y-4">
         {/* Published courses */}
-        <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-3">
+        <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-3 shadow-sm hover:shadow-lg transition-shadow duration-200">
           <p className="text-[12px] font-semibold tracking-widest text-(--gray-500) uppercase">
             Published Courses
           </p>
@@ -162,7 +162,7 @@ export default function CoursesPageContent() {
         </div>
 
         {/* Status Breakdown */}
-        <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-3">
+        <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-3 shadow-sm hover:shadow-lg transition-shadow duration-200">
           <p className="text-[12px] font-semibold tracking-widest text-(--gray-500) uppercase">
             Status Breakdown
           </p>
@@ -192,7 +192,7 @@ export default function CoursesPageContent() {
         </div>
 
         {/* Tips */}
-        <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-3">
+        <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-3 shadow-sm hover:shadow-lg transition-shadow duration-200">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-(--primary-600)" />
             <p className="text-[12px] font-semibold tracking-widest text-(--gray-500) uppercase">

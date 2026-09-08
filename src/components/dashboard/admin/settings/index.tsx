@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { User, Shield, Bell, ChevronRight } from "lucide-react";
+import { User, Shield, Bell } from "lucide-react";
 import { ProfileTab } from "./profile-tab";
 import { AccountTab } from "./account-tab";
 import { NotificationsTab } from "./notifications-tab";
@@ -34,31 +34,28 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="space-y-5">
-      {/* Tab bar */}
-      <div className="bg-white border border-(--gray-200) rounded-lg px-4 py-3">
+      {/* Tab bar — flat, independently-navigable sections (not a wizard),
+          so tabs sit side by side with no sequence arrows between them. */}
+      <div className="bg-white border border-(--gray-200) rounded-lg px-2 py-2">
         <div className="flex items-center gap-1 overflow-x-auto">
-          {TABS.map(({ id, label, icon: Icon }, i) => {
+          {TABS.map(({ id, label, icon: Icon }) => {
             const active = activeTab === id;
             return (
-              <React.Fragment key={id}>
-                {i > 0 && (
-                  <ChevronRight className="w-4 h-4 text-(--gray-500) shrink-0" />
-                )}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab(id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-[14px] font-normal transition-colors cursor-pointer whitespace-nowrap ${
-                    active
-                      ? "bg-(--primary-600) text-white"
-                      : "text-(--gray-500) hover:text-(--text-title)"
-                  }`}
-                >
-                  <Icon
-                    className={`w-4 h-4 shrink-0 ${active ? "text-white" : "text-(--gray-400)"}`}
-                  />
-                  {label}
-                </button>
-              </React.Fragment>
+              <button
+                key={id}
+                type="button"
+                onClick={() => setActiveTab(id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md text-[14px] font-medium transition-all cursor-pointer whitespace-nowrap ${
+                  active
+                    ? "bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white shadow-sm"
+                    : "text-(--gray-500) hover:bg-(--gray-50) hover:text-(--text-title)"
+                }`}
+              >
+                <Icon
+                  className={`w-4 h-4 shrink-0 ${active ? "text-white" : "text-(--gray-400)"}`}
+                />
+                {label}
+              </button>
             );
           })}
         </div>

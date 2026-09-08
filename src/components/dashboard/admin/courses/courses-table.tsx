@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
+import gsap from "gsap";
 import CoursesFilterBar from "./filter-bar";
 import RowActionsMenu from "./row-actions-menu";
 import CourseDetailModal from "../approvals/course-detail-modal";
@@ -89,6 +90,20 @@ export default function CoursesTable() {
   const totalCount = data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
+
+  useEffect(() => {
+    if (!tbodyRef.current || rows.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        tbodyRef.current!.querySelectorAll(".course-row"),
+        { opacity: 0, x: -12 },
+        { opacity: 1, x: 0, duration: 0.3, stagger: 0.04, ease: "power3.out" },
+      );
+    });
+    return () => ctx.revert();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const updateAndResetPage =
     <T,>(setter: (v: T) => void) =>
@@ -140,7 +155,7 @@ export default function CoursesTable() {
         }}
       />
 
-      <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4">
+      <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 shadow-sm hover:shadow-lg transition-shadow duration-200">
         <div className="overflow-x-auto -mx-5 px-5">
           <table className="min-w-full border-collapse">
             <thead>
@@ -168,7 +183,7 @@ export default function CoursesTable() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-(--gray-50)">
+            <tbody ref={tbodyRef} className="divide-y divide-(--gray-50)">
               {isLoading ? (
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-[13px] text-(--gray-400)">
@@ -194,7 +209,7 @@ export default function CoursesTable() {
                     (archive.isPending && archive.variables === c.id) ||
                     (restore.isPending && restore.variables === c.id);
                   return (
-                    <tr key={c.id} className="hover:bg-(--gray-50) transition-colors">
+                    <tr key={c.id} className="course-row opacity-0 hover:bg-(--gray-50) transition-colors">
                       <td className="py-3 pr-8">
                         <button
                           type="button"

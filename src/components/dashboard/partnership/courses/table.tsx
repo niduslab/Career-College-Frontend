@@ -114,7 +114,7 @@ export default function CoursesTable({
   };
 
   return (
-    <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-4">
+    <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-4 shadow-sm hover:shadow-lg transition-shadow duration-200">
       <p className="text-[14px] lg:text-[16px] font-medium text-(--text-title)">
         All Courses
         <span className="ml-2 text-[12px] font-normal text-(--gray-500)">({filtered.length})</span>
@@ -198,7 +198,7 @@ export default function CoursesTable({
                 <div
                   key={c.id}
                   ref={(el) => { rowsRef.current[i] = el; }}
-                  className={`opacity-0 grid ${COLS} items-center px-3 py-4 hover:bg-(--gray-50) transition-colors cursor-pointer`}
+                  className={`opacity-0 grid ${COLS} items-center px-3 py-4 rounded-xl hover:bg-(--gray-50) hover:shadow-sm transition-all duration-200 cursor-pointer`}
                   onClick={() => router.push(`/dashboard/partnership/courses/${c.id}`)}
                 >
                   {/* Course title + thumbnail + level */}

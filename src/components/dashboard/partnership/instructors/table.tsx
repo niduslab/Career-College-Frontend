@@ -115,7 +115,7 @@ export default function InstructorsTable({
   };
 
   return (
-    <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-4">
+    <div className="bg-white border border-(--gray-200) rounded-2xl px-5 py-4 space-y-4 shadow-sm hover:shadow-lg transition-shadow duration-200">
       {/* Header row */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <p className="text-[14px] lg:text-[16px] font-medium text-(--text-title)">
@@ -132,7 +132,7 @@ export default function InstructorsTable({
               setEditingExpert(null);
               setDrawerOpen(true);
             }}
-            className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-(--primary-700) text-white text-[13px] font-medium hover:bg-(--primary-600) cursor-pointer transition-colors"
+            className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-linear-to-br from-(--primary-600) to-(--primary-700) hover:from-(--primary-700) hover:to-(--primary-900) text-white text-[13px] font-medium cursor-pointer transition-all shadow-sm"
           >
             Onboard Expert
           </button>
@@ -218,7 +218,7 @@ export default function InstructorsTable({
                   ref={(el) => {
                     rowsRef.current[i] = el;
                   }}
-                  className={`opacity-0 grid ${COLS} items-center px-3 py-3 rounded-xl hover:bg-(--gray-50) transition-colors`}
+                  className={`opacity-0 grid ${COLS} items-center px-3 py-3 rounded-xl hover:bg-(--gray-50) hover:shadow-sm transition-all duration-200`}
                 >
                   {/* Expert */}
                   <div className="flex items-center gap-3 min-w-0">

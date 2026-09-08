@@ -20,9 +20,9 @@ export default function AdminPayoutsContent() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors cursor-pointer ${
+            className={`px-4 py-1.5 rounded-full text-[13px] font-medium transition-all cursor-pointer ${
               tab === t
-                ? "bg-(--primary-600) text-white shadow-sm"
+                ? "bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white shadow-sm"
                 : "text-(--gray-500) hover:bg-(--gray-100)"
             }`}
           >

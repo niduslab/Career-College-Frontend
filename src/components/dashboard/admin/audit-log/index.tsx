@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, History } from "lucide-react";
+import gsap from "gsap";
 import ActionBadge from "./action-badge";
 import AuditLogFilterBar from "./filter-bar";
 import { Pagination } from "@/components/common/pagination";
@@ -52,6 +53,20 @@ export default function AdminAuditLogContent() {
     setPage(1);
   };
 
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
+
+  useEffect(() => {
+    if (!tbodyRef.current || filtered.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        tbodyRef.current!.querySelectorAll(".audit-row"),
+        { opacity: 0, x: -12 },
+        { opacity: 1, x: 0, duration: 0.3, stagger: 0.04, ease: "power3.out" },
+      );
+    });
+    return () => ctx.revert();
+  }, [filtered]);
+
   return (
     <div className="space-y-4">
       <AuditLogFilterBar
@@ -63,7 +78,7 @@ export default function AdminAuditLogContent() {
         onActionToggle={() => setActionOpen((v) => !v)}
       />
 
-      <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4">
+      <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 shadow-sm hover:shadow-lg transition-shadow duration-200">
         {isLoading ? (
           <div className="flex items-center justify-center py-10 text-(--gray-400)">
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -99,11 +114,11 @@ export default function AdminAuditLogContent() {
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody ref={tbodyRef}>
                 {filtered.map((entry) => (
                   <tr
                     key={entry.id}
-                    className="border-b border-(--gray-50) last:border-0"
+                    className="audit-row opacity-0 border-b border-(--gray-50) last:border-0 hover:bg-(--gray-50) transition-colors"
                   >
                     <td className="py-3 pr-8">
                       {entry.actor ? (

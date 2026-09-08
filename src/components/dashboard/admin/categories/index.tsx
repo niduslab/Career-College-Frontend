@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Plus, Pencil, Trash2, Loader2, FolderTree } from "lucide-react";
+import gsap from "gsap";
 import CategoryModal, { type CategoryModalSubmitArgs } from "./category-modal";
 import DeactivateModal from "./deactivate-modal";
 import CategoriesStatsCards from "./stats-cards";
@@ -40,6 +41,27 @@ export default function AdminCategoriesContent() {
   const totalCount = data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!gridRef.current || tree.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        gridRef.current!.querySelectorAll(".category-card"),
+        { opacity: 0, y: 16, scale: 0.97 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.35,
+          stagger: 0.05,
+          ease: "power3.out",
+        },
+      );
+    });
+    return () => ctx.revert();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const busy = create.isPending || update.isPending;
 
@@ -103,7 +125,7 @@ export default function AdminCategoriesContent() {
           </div>
           <button
             onClick={() => setModal({ mode: "create-top" })}
-            className="flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-lg text-[13px] font-medium bg-(--primary-600) text-white hover:bg-(--primary-700) transition-colors cursor-pointer shrink-0 whitespace-nowrap"
+            className="flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-lg text-[13px] font-medium bg-linear-to-br from-(--primary-600) to-(--primary-700) hover:from-(--primary-700) hover:to-(--primary-900) text-white transition-all cursor-pointer shrink-0 whitespace-nowrap shadow-sm"
           >
             <Plus className="w-4 h-4" />
             Add Category
@@ -111,8 +133,13 @@ export default function AdminCategoriesContent() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-10 text-(--gray-400)">
-            <Loader2 className="w-5 h-5 animate-spin" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-32 rounded-xl border border-(--gray-200) bg-(--gray-50) animate-pulse"
+              />
+            ))}
           </div>
         ) : isError ? (
           <p className="text-[13px] text-red-500 text-center py-8">Failed to load categories.</p>
@@ -122,37 +149,38 @@ export default function AdminCategoriesContent() {
             <p className="text-[13px]">No categories yet.</p>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
             {tree.map((parent) => (
-              <div key={parent.id}>
-                <div className="flex items-center justify-between gap-2 px-3 py-3 rounded-lg hover:bg-(--gray-50) transition-colors">
+              <div
+                key={parent.id}
+                className="category-card opacity-0 group rounded-xl border border-(--gray-200) bg-linear-to-b from-(--primary-50)/40 to-white p-4 flex flex-col gap-3 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-(--primary-200) transition-all duration-200"
+              >
+                <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className="w-8 h-8 rounded-[6px_4px_6px_6px] flex items-center justify-center shrink-0 bg-(--primary-50) text-(--primary-600)">
-                      <FolderTree className="w-4 h-4" />
+                    <div className="w-9 h-9 rounded-[6px_4px_6px_6px] flex items-center justify-center shrink-0 bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white shadow-sm">
+                      <FolderTree className="w-4.5 h-4.5" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[13.5px] font-semibold text-(--text-title) truncate">
                         {parent.name}
                       </p>
-                      <div className="mt-1 sm:mt-0">
-                        {parent.children.length > 0 ? (
-                          <span className="inline-block text-[11px] font-semibold text-(--primary-600) bg-(--primary-50) rounded-full px-2.5 py-1">
-                            {parent.children.length} subcategor
-                            {parent.children.length === 1 ? "y" : "ies"}
-                          </span>
-                        ) : (
-                          <span className="inline-block text-[11px] font-medium text-(--gray-500) bg-(--gray-100) rounded-full px-2.5 py-1">
-                            No subcategories
-                          </span>
-                        )}
-                      </div>
+                      {parent.children.length > 0 ? (
+                        <span className="inline-block text-[11px] font-semibold text-(--primary-600) bg-(--primary-100) rounded-full px-2 py-0.5 mt-1">
+                          {parent.children.length} subcategor
+                          {parent.children.length === 1 ? "y" : "ies"}
+                        </span>
+                      ) : (
+                        <span className="inline-block text-[11px] font-medium text-(--gray-500) bg-(--gray-100) rounded-full px-2 py-0.5 mt-1">
+                          No subcategories
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => setModal({ mode: "create-child", parentId: parent.id })}
                       title="Add subcategory"
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-(--gray-500) hover:bg-(--gray-100) hover:text-(--primary-600) transition-colors cursor-pointer"
+                      className="w-7 h-7 rounded-md flex items-center justify-center text-(--gray-500) hover:bg-(--gray-100) hover:text-(--primary-600) transition-colors cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
@@ -161,7 +189,7 @@ export default function AdminCategoriesContent() {
                         setModal({ mode: "edit", id: parent.id, name: parent.name, parentId: null })
                       }
                       title="Edit"
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-(--gray-500) hover:bg-(--gray-100) hover:text-(--gray-600) transition-colors cursor-pointer"
+                      className="w-7 h-7 rounded-md flex items-center justify-center text-(--gray-500) hover:bg-(--gray-100) hover:text-(--gray-600) transition-colors cursor-pointer"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
@@ -169,7 +197,7 @@ export default function AdminCategoriesContent() {
                       onClick={() => setDeactivateTarget({ id: parent.id, name: parent.name })}
                       disabled={deactivatingId === parent.id}
                       title="Deactivate"
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-(--gray-500) hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
+                      className="w-7 h-7 rounded-md flex items-center justify-center text-(--gray-500) hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
                     >
                       {deactivatingId === parent.id ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -179,45 +207,40 @@ export default function AdminCategoriesContent() {
                     </button>
                   </div>
                 </div>
+
                 {parent.children.length > 0 && (
-                  <div className="ml-4 pl-4 border-l border-(--gray-200) space-y-0.5 py-1">
+                  <div className="flex flex-wrap gap-1.5 pt-2 border-t border-dashed border-(--gray-200)">
                     {parent.children.map((child) => (
                       <div
                         key={child.id}
-                        className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg hover:bg-(--gray-50) transition-colors"
+                        className="group/child flex items-center gap-1 text-[11px] font-medium text-(--gray-600) bg-(--gray-100) hover:bg-(--gray-200) rounded-full pl-2.5 pr-1 py-1 transition-colors"
                       >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="w-1 h-1 rounded-full bg-(--gray-300) shrink-0" />
-                          <p className="text-[13px] text-(--gray-600) truncate">{child.name}</p>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            onClick={() =>
-                              setModal({
-                                mode: "edit",
-                                id: child.id,
-                                name: child.name,
-                                parentId: parent.id,
-                              })
-                            }
-                            title="Edit"
-                            className="w-8 h-8 rounded-lg flex items-center justify-center text-(--gray-500) hover:bg-(--gray-100) hover:text-(--gray-600) transition-colors cursor-pointer"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setDeactivateTarget({ id: child.id, name: child.name })}
-                            disabled={deactivatingId === child.id}
-                            title="Deactivate"
-                            className="w-8 h-8 rounded-lg flex items-center justify-center text-(--gray-500) hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
-                          >
-                            {deactivatingId === child.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                        </div>
+                        <button
+                          onClick={() =>
+                            setModal({
+                              mode: "edit",
+                              id: child.id,
+                              name: child.name,
+                              parentId: parent.id,
+                            })
+                          }
+                          title="Edit subcategory"
+                          className="cursor-pointer"
+                        >
+                          {child.name}
+                        </button>
+                        <button
+                          onClick={() => setDeactivateTarget({ id: child.id, name: child.name })}
+                          disabled={deactivatingId === child.id}
+                          title="Deactivate subcategory"
+                          className="w-4.5 h-4.5 rounded-full flex items-center justify-center text-(--gray-400) hover:bg-red-100 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50 shrink-0"
+                        >
+                          {deactivatingId === child.id ? (
+                            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-2.5 h-2.5" />
+                          )}
+                        </button>
                       </div>
                     ))}
                   </div>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
+import gsap from "gsap";
 import ApprovalsFilterBar from "./filter-bar";
 import RejectModal from "./reject-modal";
 import ApprovalActionsMenu from "./approval-actions-menu";
@@ -78,6 +79,20 @@ export default function ApprovalsTable() {
   const totalCount = data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
+
+  useEffect(() => {
+    if (!tbodyRef.current || filteredRows.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        tbodyRef.current!.querySelectorAll(".approval-row"),
+        { opacity: 0, x: -12 },
+        { opacity: 1, x: 0, duration: 0.3, stagger: 0.04, ease: "power3.out" },
+      );
+    });
+    return () => ctx.revert();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const updateAndResetPage =
     <T,>(setter: (v: T) => void) =>
@@ -168,7 +183,7 @@ export default function ApprovalsTable() {
         exporting={exporting}
       />
 
-      <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4">
+      <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 shadow-sm hover:shadow-lg transition-shadow duration-200">
         <div className="overflow-x-auto -mx-5 px-5">
           <table className="min-w-full border-collapse">
             <thead>
@@ -193,7 +208,7 @@ export default function ApprovalsTable() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-(--gray-50)">
+            <tbody ref={tbodyRef} className="divide-y divide-(--gray-50)">
               {isLoading ? (
                 <tr>
                   <td
@@ -229,7 +244,7 @@ export default function ApprovalsTable() {
                   return (
                     <tr
                       key={c.id}
-                      className="hover:bg-(--gray-50) transition-colors"
+                      className="approval-row opacity-0 hover:bg-(--gray-50) transition-colors"
                     >
                       <td className="py-3 pr-8">
                         <button

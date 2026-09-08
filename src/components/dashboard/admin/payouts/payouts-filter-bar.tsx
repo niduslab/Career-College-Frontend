@@ -46,7 +46,7 @@ export default function PayoutsFilterBar({
   }, [statusOpen, onStatusToggle]);
 
   return (
-    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 shadow-sm hover:shadow-lg transition-shadow duration-200">
       <div className="relative flex-1 min-w-0">
         <Search className="w-4 h-4 text-(--gray-400) absolute left-3 top-1/2 -translate-y-1/2" />
         <input
@@ -72,9 +72,9 @@ export default function PayoutsFilterBar({
             <div className="absolute right-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-10 py-1 min-w-36">
               <button
                 onClick={() => onStatusChange("")}
-                className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-colors ${
+                className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-all ${
                   status === ""
-                    ? "bg-(--primary-50) text-(--primary-600) font-semibold"
+                    ? "bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white font-semibold"
                     : "text-(--gray-600) hover:bg-(--gray-50)"
                 }`}
               >
@@ -84,9 +84,9 @@ export default function PayoutsFilterBar({
                 <button
                   key={s}
                   onClick={() => onStatusChange(s)}
-                  className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-colors ${
+                  className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-all ${
                     s === status
-                      ? "bg-(--primary-50) text-(--primary-600) font-semibold"
+                      ? "bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white font-semibold"
                       : "text-(--gray-600) hover:bg-(--gray-50)"
                   }`}
                 >
@@ -98,7 +98,7 @@ export default function PayoutsFilterBar({
         </div>
         <button
           onClick={onGenerateClick}
-          className="text-[12px] cursor-pointer font-medium text-white bg-(--primary-600) hover:bg-(--primary-700) rounded-lg px-3 py-2 flex items-center gap-1.5 transition-colors"
+          className="text-[12px] cursor-pointer font-medium text-white bg-linear-to-br from-(--primary-600) to-(--primary-700) hover:from-(--primary-700) hover:to-(--primary-900) rounded-lg px-3 py-2 flex items-center gap-1.5 transition-all shadow-sm"
         >
           <Wallet className="w-4 h-4" />
           Generate Payouts
