@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
+import gsap from "gsap";
 import PayoutsFilterBar from "./payouts-filter-bar";
 import PayoutActionsMenu from "./payout-actions-menu";
 import PayoutStatusBadge from "./status-badge";
@@ -69,6 +70,20 @@ export default function PayoutsTable() {
   const totalCount = data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
+
+  useEffect(() => {
+    if (!tbodyRef.current || rows.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        tbodyRef.current!.querySelectorAll(".payout-row"),
+        { opacity: 0, x: -12 },
+        { opacity: 1, x: 0, duration: 0.3, stagger: 0.04, ease: "power3.out" },
+      );
+    });
+    return () => ctx.revert();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const updateAndResetPage =
     <T,>(setter: (v: T) => void) =>
@@ -151,7 +166,7 @@ export default function PayoutsTable() {
         onGenerateClick={() => setGenerateOpen(true)}
       />
 
-      <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4">
+      <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 shadow-sm hover:shadow-lg transition-shadow duration-200">
         <div className="overflow-x-auto -mx-5 px-5">
           <table className="min-w-full border-collapse">
             <thead>
@@ -176,7 +191,7 @@ export default function PayoutsTable() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-(--gray-50)">
+            <tbody ref={tbodyRef} className="divide-y divide-(--gray-50)">
               {isLoading ? (
                 <tr>
                   <td colSpan={6} className="py-10 text-center text-[13px] text-(--gray-400)">
@@ -203,7 +218,7 @@ export default function PayoutsTable() {
                     (review.isPending && review.variables?.id === p.id) ||
                     (markPaid.isPending && markPaid.variables?.id === p.id);
                   return (
-                    <tr key={p.id} className="hover:bg-(--gray-50) transition-colors">
+                    <tr key={p.id} className="payout-row opacity-0 hover:bg-(--gray-50) transition-colors">
                       <td className="py-3 pr-8">
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="w-8 h-8 rounded-full shrink-0 bg-(--primary-50) text-(--primary-600) flex items-center justify-center text-[11px] font-semibold">

@@ -125,7 +125,11 @@ export default function RowActionsMenu({
         ref={btnRef}
         onClick={handleToggleMenu}
         disabled={busy}
-        className="w-7 h-7 rounded-lg flex items-center justify-center text-(--gray-400) hover:bg-(--gray-100) hover:text-(--gray-600) transition-colors cursor-pointer disabled:opacity-50"
+        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all cursor-pointer disabled:opacity-50 ${
+          open
+            ? "bg-(--primary-50) text-(--primary-600) shadow-sm"
+            : "text-(--gray-400) hover:bg-(--gray-100) hover:text-(--gray-600)"
+        }`}
         aria-label="Row actions"
       >
         {busy ? (
@@ -144,35 +148,39 @@ export default function RowActionsMenu({
               right: coords.right,
               zIndex: 9999,
             }}
-            className="bg-white border border-(--gray-200) rounded-xl shadow-lg py-1 min-w-44 text-left"
+            className="animate-menu-in origin-top-right bg-white border border-(--gray-200) rounded-xl shadow-xl py-1.5 min-w-48 text-left overflow-hidden"
           >
             <button
               onClick={handleViewProfile}
-              className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-(--gray-600) hover:bg-(--gray-50) transition-colors cursor-pointer"
+              className="group w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-(--gray-700) hover:bg-(--gray-50) transition-colors cursor-pointer"
             >
-              <Eye className="w-3.5 h-3.5" />
+              <span className="w-6 h-6 rounded-md flex items-center justify-center bg-blue-50 text-blue-600 shrink-0 group-hover:scale-105 transition-transform">
+                <Eye className="w-3.5 h-3.5" />
+              </span>
               View profile
             </button>
 
             <button
               onClick={handleToggleRoleMenu}
-              className="w-full flex items-center justify-between gap-2 px-3 py-2 text-[12px] text-(--gray-600) hover:bg-(--gray-50) transition-colors cursor-pointer"
+              className="group w-full flex items-center justify-between gap-2.5 px-3 py-2.5 text-[13px] font-medium text-(--gray-700) hover:bg-(--gray-50) transition-colors cursor-pointer"
             >
-              <span className="flex items-center gap-2">
-                <ShieldCheck className="w-3.5 h-3.5" />
+              <span className="flex items-center gap-2.5">
+                <span className="w-6 h-6 rounded-md flex items-center justify-center bg-purple-50 text-purple-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                </span>
                 Change role
               </span>
               <ChevronDown
-                className={`w-3.5 h-3.5 transition-transform ${roleMenuOpen ? "rotate-180" : ""}`}
+                className={`w-3.5 h-3.5 text-(--gray-400) transition-transform duration-200 ${roleMenuOpen ? "rotate-180" : ""}`}
               />
             </button>
             {roleMenuOpen && (
-              <div className="bg-(--gray-50) py-1">
+              <div className="animate-menu-in bg-(--gray-50) py-1 border-y border-(--gray-100)">
                 {ROLES.filter((r) => r !== user.role).map((r) => (
                   <button
                     key={r}
                     onClick={() => handleChangeRole(r)}
-                    className="w-full text-left pl-8 pr-3 py-2 text-[12px] text-(--gray-600) hover:bg-(--gray-100) transition-colors cursor-pointer"
+                    className="w-full text-left pl-11 pr-3 py-2 text-[12px] font-medium text-(--gray-600) hover:bg-white hover:text-(--primary-600) transition-colors cursor-pointer"
                   >
                     {r}
                   </button>
@@ -180,11 +188,15 @@ export default function RowActionsMenu({
               </div>
             )}
 
+            <div className="my-1 border-t border-dashed border-(--gray-100)" />
+
             <button
               onClick={handleToggleSuspend}
-              className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-orange-600 hover:bg-orange-50 transition-colors cursor-pointer"
+              className="group w-full flex items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-orange-600 hover:bg-orange-50 transition-colors cursor-pointer"
             >
-              <Ban className="w-3.5 h-3.5" />
+              <span className="w-6 h-6 rounded-md flex items-center justify-center bg-orange-50 text-orange-600 shrink-0 group-hover:scale-105 transition-transform">
+                <Ban className="w-3.5 h-3.5" />
+              </span>
               {user.status === "Suspended" ? "Reinstate" : "Suspend"}
             </button>
           </div>,

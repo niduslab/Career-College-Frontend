@@ -54,9 +54,9 @@ function FilterDropdown<T extends string>({
         <div className="absolute right-0 top-full mt-1 bg-white border border-(--gray-200) rounded-xl shadow-lg z-10 py-1 min-w-32.5">
           <button
             onClick={() => onSelect("All")}
-            className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-colors ${
+            className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-all ${
               value === "All"
-                ? "bg-(--primary-50) text-(--primary-600) font-semibold"
+                ? "bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white font-semibold"
                 : "text-(--gray-600) hover:bg-(--gray-50)"
             }`}
           >
@@ -66,9 +66,9 @@ function FilterDropdown<T extends string>({
             <button
               key={o}
               onClick={() => onSelect(o)}
-              className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-colors ${
+              className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-all ${
                 o === value
-                  ? "bg-(--primary-50) text-(--primary-600) font-semibold"
+                  ? "bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white font-semibold"
                   : "text-(--gray-600) hover:bg-(--gray-50)"
               }`}
             >
@@ -107,7 +107,7 @@ export default function InstructorsFilterBar({
   onVerificationToggle,
 }: InstructorsFilterBarProps) {
   return (
-    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 shadow-sm hover:shadow-lg transition-shadow duration-200">
       <div className="relative flex-1 min-w-0">
         <Search className="w-4 h-4 text-(--gray-400) absolute left-3 top-1/2 -translate-y-1/2" />
         <input

@@ -12,7 +12,7 @@ export default function CoursesPage() {
         action={
           <Link
             href="/dashboard/partnership/course-builder"
-            className="flex items-center gap-1.5 h-10 px-4 rounded-md bg-(--primary-700) text-white text-[14px] font-medium cursor-pointer hover:bg-(--primary-600) transition-colors whitespace-nowrap"
+            className="flex items-center gap-1.5 h-10 px-4 rounded-md bg-linear-to-br from-(--primary-600) to-(--primary-700) hover:from-(--primary-700) hover:to-(--primary-900) text-white text-[14px] font-medium cursor-pointer transition-all whitespace-nowrap shadow-sm"
           >
             <Plus className="w-4 h-4" />
             Add Course

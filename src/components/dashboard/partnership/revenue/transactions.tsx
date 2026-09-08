@@ -42,7 +42,7 @@ export default function Transactions() {
   );
 
   return (
-    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4">
+    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 shadow-sm hover:shadow-lg transition-shadow duration-200">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
         <div className="flex-1">
@@ -116,7 +116,7 @@ export default function Transactions() {
                 return (
                   <div
                     key={tx.order_id}
-                    className={`grid ${COLS} gap-4 items-center px-3 py-3.5 hover:bg-(--gray-50) rounded-xl transition-colors`}
+                    className={`grid ${COLS} gap-4 items-center px-3 py-3.5 hover:bg-(--gray-50) hover:shadow-sm rounded-xl transition-all duration-200`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div

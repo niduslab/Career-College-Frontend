@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   BookOpen,
@@ -8,19 +9,20 @@ import {
   Video,
   Star,
   TrendingUp,
-  Loader2,
   ArrowUpRight,
 } from "lucide-react";
+import gsap from "gsap";
 import {
   usePartnerAnalyticsSummary,
   usePartnerTopCourses,
 } from "@/hooks/use-partner-analytics";
+import { StatsSkeleton } from "@/components/common/query-states";
 import EnrollmentTrendChart from "./enrollment-trend-chart";
 
 function GrowthBadge({ pct }: { pct: number | null }) {
   if (pct === null) {
     return (
-      <p className="text-[12px] font-medium text-(--success-500)">
+      <p className="text-[12px] font-medium text-(--gray-500)">
         no prior data
       </p>
     );
@@ -39,16 +41,36 @@ function GrowthBadge({ pct }: { pct: number | null }) {
   );
 }
 
+const KPI_TINTS = {
+  primary: {
+    bg: "from-(--primary-50) to-white",
+    icon: "from-(--primary-500) to-(--primary-600)",
+  },
+  indigo: {
+    bg: "from-indigo-50 to-white",
+    icon: "from-indigo-400 to-indigo-500",
+  },
+  amber: { bg: "from-amber-50 to-white", icon: "from-amber-400 to-amber-500" },
+  emerald: {
+    bg: "from-emerald-50 to-white",
+    icon: "from-emerald-400 to-emerald-500",
+  },
+} as const;
+
 interface KpiCardProps {
   label: string;
   value: string;
   icon: React.ElementType;
   footer: React.ReactNode;
+  tint?: keyof typeof KPI_TINTS;
 }
 
-function KpiCard({ label, value, icon: Icon, footer }: KpiCardProps) {
+function KpiCard({ label, value, icon: Icon, footer, tint = "primary" }: KpiCardProps) {
+  const { bg, icon } = KPI_TINTS[tint];
   return (
-    <div className="bg-white rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3">
+    <div
+      className={`kpi-card opacity-0 bg-linear-to-b ${bg} rounded-2xl p-4 border border-(--gray-200) flex flex-col gap-3 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200`}
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-[12px] text-[#4a5565] font-normal mb-2">{label}</p>
@@ -56,8 +78,10 @@ function KpiCard({ label, value, icon: Icon, footer }: KpiCardProps) {
             {value}
           </p>
         </div>
-        <div className="w-10 h-10 rounded-[6px_4px_6px_6px] bg-(--primary-50) flex items-center justify-center shrink-0">
-          <Icon className="w-6 h-6 text-(--primary-600)" />
+        <div
+          className={`w-10 h-10 rounded-[6px_4px_6px_6px] bg-linear-to-br ${icon} flex items-center justify-center shrink-0 shadow-sm`}
+        >
+          <Icon className="w-6 h-6 text-white" />
         </div>
       </div>
       <div className="border border-dashed border-gray-200 mt-2 mb-2" />
@@ -76,12 +100,32 @@ const ENGAGEMENT_LABELS: Record<string, string> = {
 export default function PartnershipDashboard() {
   const { data, isLoading, isError } = usePartnerAnalyticsSummary();
   const { data: topCourses } = usePartnerTopCourses("enrollments", 5);
+  const kpiRef = useRef<HTMLDivElement>(null);
+  const secondaryRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!data) return;
+    const ctx = gsap.context(() => {
+      [kpiRef.current, secondaryRef.current].forEach((el) => {
+        if (!el) return;
+        gsap.fromTo(
+          el.querySelectorAll(".kpi-card"),
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.45, stagger: 0.08, ease: "power3.out" },
+        );
+      });
+    });
+    return () => ctx.revert();
+  }, [data]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20 text-(--gray-500)">
-        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-        Loading...
+      <div className="space-y-5">
+        <StatsSkeleton count={4} />
+        <div className="flex flex-col xl:flex-row gap-5">
+          <div className="flex-3 h-96 rounded-2xl border border-(--gray-200) bg-(--gray-50) animate-pulse" />
+          <div className="flex-2 h-96 rounded-2xl border border-(--gray-200) bg-(--gray-50) animate-pulse" />
+        </div>
       </div>
     );
   }
@@ -97,19 +141,21 @@ export default function PartnershipDashboard() {
   return (
     <div className="space-y-5">
       {/* KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div ref={kpiRef} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard
           label="Active Enrollments"
           value={data.enrollments.active.toLocaleString()}
           icon={Users}
+          tint="primary"
           footer={<GrowthBadge pct={data.enrollments.growth.growth_pct} />}
         />
         <KpiCard
           label="Courses"
           value={String(data.courses.total)}
           icon={BookOpen}
+          tint="indigo"
           footer={
-            <p className="text-[12px] font-medium text-(--success-500)">
+            <p className="text-[12px] font-medium text-(--gray-500)">
               {data.courses.published} published · {data.courses.draft} drafts
             </p>
           }
@@ -118,8 +164,9 @@ export default function PartnershipDashboard() {
           label="Webinars"
           value={String(data.webinars.total)}
           icon={Video}
+          tint="amber"
           footer={
-            <p className="text-[12px] font-medium text-(--success-500)">
+            <p className="text-[12px] font-medium text-(--gray-500)">
               {data.webinars.upcoming} upcoming · {data.webinars.registrations}{" "}
               registrations
             </p>
@@ -129,8 +176,9 @@ export default function PartnershipDashboard() {
           label="Avg. Rating"
           value={data.courses.avg_rating.toFixed(2)}
           icon={Star}
+          tint="emerald"
           footer={
-            <p className="text-[12px] font-medium text-(--success-500)">
+            <p className="text-[12px] font-medium text-(--gray-500)">
               ({data.courses.total_reviews} reviews)
             </p>
           }
@@ -142,13 +190,14 @@ export default function PartnershipDashboard() {
         <div className="flex-3 min-w-0 space-y-5">
           <EnrollmentTrendChart />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div ref={secondaryRef} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <KpiCard
               label="Certificates Issued"
               value={String(data.certificates.total)}
               icon={Award}
+              tint="primary"
               footer={
-                <p className="text-[12px] font-medium text-(--success-500)">
+                <p className="text-[12px] font-medium text-(--gray-500)">
                   +{data.certificates.this_month} this month
                 </p>
               }
@@ -158,8 +207,9 @@ export default function PartnershipDashboard() {
               label="Active Experts"
               value={String(data.roster.experts_active)}
               icon={Users}
+              tint="indigo"
               footer={
-                <p className="text-[12px] font-medium text-(--success-500)">
+                <p className="text-[12px] font-medium text-(--gray-500)">
                   / {data.roster.experts_total} total
                 </p>
               }
@@ -169,7 +219,7 @@ export default function PartnershipDashboard() {
 
         {/* Right column: engagement score breakdown */}
         <div className="flex-2 min-w-0">
-          <div className="bg-white rounded-2xl border border-(--gray-200) p-5 lg:p-6 h-full">
+          <div className="bg-white rounded-2xl border border-(--gray-200) p-5 lg:p-6 h-full shadow-sm hover:shadow-lg transition-shadow duration-200">
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-[14px] lg:text-[16px] font-semibold text-(--text-title)">
                 Engagement Score
@@ -224,7 +274,7 @@ export default function PartnershipDashboard() {
       </div>
 
       {/* Top courses — full width */}
-      <div className="bg-white rounded-2xl border border-(--gray-200) overflow-hidden">
+      <div className="bg-white rounded-2xl border border-(--gray-200) overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-200">
         <div className="flex items-center justify-between px-5 py-4">
           <h3 className="text-[14px] lg:text-[16px] font-semibold text-(--text-title)">
             Top Performing Courses

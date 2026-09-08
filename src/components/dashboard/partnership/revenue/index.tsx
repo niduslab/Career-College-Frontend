@@ -1,7 +1,7 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
 import { usePartnerRevenueSummary } from "@/hooks/use-partner-revenue";
+import { StatsSkeleton } from "@/components/common/query-states";
 import RevenueStatsCards from "./stats-cards";
 import RevenueChart from "./revenue-chart";
 import RevenueByItem from "./revenue-by-item";
@@ -12,9 +12,13 @@ export default function RevenuePageContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20 text-(--gray-500)">
-        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-        Loading...
+      <div className="space-y-5">
+        <StatsSkeleton count={4} />
+        <div className="flex flex-col lg:flex-row gap-5">
+          <div className="flex-3 h-72 rounded-2xl border border-(--gray-200) bg-(--gray-50) animate-pulse" />
+          <div className="flex-2 h-72 rounded-2xl border border-(--gray-200) bg-(--gray-50) animate-pulse" />
+        </div>
+        <div className="h-64 rounded-2xl border border-(--gray-200) bg-(--gray-50) animate-pulse" />
       </div>
     );
   }

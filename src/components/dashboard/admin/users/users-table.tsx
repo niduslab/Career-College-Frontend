@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
+import gsap from "gsap";
 import UsersFilterBar from "./filter-bar";
 import RowActionsMenu from "./row-actions-menu";
 import { Pagination } from "@/components/common/pagination";
@@ -54,6 +55,7 @@ export default function UsersTable() {
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
   const menuRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
 
   const debouncedSearch = useDebounced(search, 350);
 
@@ -88,6 +90,19 @@ export default function UsersTable() {
   const { data, isLoading, isError, isFetching } = useAdminUsers(queryParams);
 
   const rows = (data?.results ?? []).map(toPlatformUser);
+
+  useEffect(() => {
+    if (!tbodyRef.current || rows.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        tbodyRef.current!.querySelectorAll(".user-row"),
+        { opacity: 0, x: -12 },
+        { opacity: 1, x: 0, duration: 0.3, stagger: 0.04, ease: "power3.out" },
+      );
+    });
+    return () => ctx.revert();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
   const totalCount = data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -164,7 +179,7 @@ export default function UsersTable() {
         exporting={exporting}
       />
 
-      <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4">
+      <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 shadow-sm hover:shadow-lg transition-shadow duration-200">
         <div className="overflow-x-auto -mx-5 px-5">
           <table className="w-full border-collapse">
             <thead>
@@ -186,7 +201,7 @@ export default function UsersTable() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-(--gray-50)">
+            <tbody ref={tbodyRef} className="divide-y divide-(--gray-50)">
               {isLoading ? (
                 <tr>
                   <td
@@ -219,7 +234,7 @@ export default function UsersTable() {
                 rows.map((u) => (
                   <tr
                     key={u.id}
-                    className="hover:bg-(--gray-50) transition-colors"
+                    className="user-row opacity-0 hover:bg-(--gray-50) transition-colors"
                   >
                     <td className="py-3 pr-8">
                       <div className="flex items-center gap-3 min-w-0">

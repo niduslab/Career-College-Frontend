@@ -98,7 +98,7 @@ export default function EnrollmentTrendChart() {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-(--gray-200) p-5 relative">
+    <div className="bg-white rounded-2xl border border-(--gray-200) p-5 relative shadow-sm hover:shadow-lg transition-shadow duration-200">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-[14px] lg:text-[16px] font-semibold text-(--text-title)">
           Enrollment Trend
@@ -109,9 +109,9 @@ export default function EnrollmentTrendChart() {
               key={g}
               type="button"
               onClick={() => setGranularity(g)}
-              className={`text-[12px] cursor-pointer px-2.5 py-1 rounded-md transition-colors capitalize ${
+              className={`text-[12px] cursor-pointer px-2.5 py-1 rounded-md transition-all capitalize ${
                 granularity === g
-                  ? "bg-(--primary-600) text-white font-medium"
+                  ? "bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white font-medium shadow-sm"
                   : "text-(--gray-500) hover:bg-(--gray-50)"
               }`}
             >

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Search } from "lucide-react";
+import gsap from "gsap";
 
 import { Pagination } from "@/components/common/pagination";
 import { FilterDropdown } from "@/components/common/filter-dropdown";
@@ -104,6 +105,20 @@ export default function CertificatesTable() {
   const totalCount = data?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
+
+  useEffect(() => {
+    if (!tbodyRef.current || rows.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        tbodyRef.current!.querySelectorAll(".certificate-row"),
+        { opacity: 0, x: -12 },
+        { opacity: 1, x: 0, duration: 0.3, stagger: 0.04, ease: "power3.out" },
+      );
+    });
+    return () => ctx.revert();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const busy = revoke.isPending || restore.isPending;
 
@@ -148,7 +163,7 @@ export default function CertificatesTable() {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4">
+    <div className="bg-white rounded-2xl border border-(--gray-200) px-5 py-4 shadow-sm hover:shadow-lg transition-shadow duration-200">
       {/* Toolbar — search sizing matches the approvals filter bar. */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
         <div className="relative flex-1 min-w-0">
@@ -199,7 +214,7 @@ export default function CertificatesTable() {
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-(--gray-50)">
+          <tbody ref={tbodyRef} className="divide-y divide-(--gray-50)">
             {isLoading ? (
               <tr>
                 <td
@@ -232,7 +247,7 @@ export default function CertificatesTable() {
               rows.map((row) => (
                 <tr
                   key={row.certificate_uid}
-                  className="hover:bg-(--gray-50) transition-colors"
+                  className="certificate-row opacity-0 hover:bg-(--gray-50) transition-colors"
                 >
                   <td className="py-3 pr-8">
                     <span className="text-[12px] font-mono font-medium text-(--text-title)">

@@ -121,7 +121,7 @@ export default function AdminRevenueChart() {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-(--gray-200) p-5 flex-1 h-full">
+    <div className="bg-white rounded-xl border border-(--gray-200) p-5 flex-1 h-full shadow-sm hover:shadow-lg transition-shadow duration-200">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-[16px] font-semibold text-(--text-title)">
           Platform Revenue
@@ -145,9 +145,9 @@ export default function AdminRevenueChart() {
                     setActive(f.label);
                     setOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-colors ${
+                  className={`w-full text-left px-3 py-2 cursor-pointer text-[12px] transition-all ${
                     f.label === active
-                      ? "bg-(--primary-50) text-(--primary-600) font-semibold"
+                      ? "bg-linear-to-br from-(--primary-500) to-(--primary-600) text-white font-semibold"
                       : "text-(--gray-600) hover:bg-(--gray-50)"
                   }`}
                 >

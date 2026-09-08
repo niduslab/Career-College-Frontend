@@ -328,3 +328,26 @@ body {
     animation: none;
   }
 }
+
+/* Dropdown/context-menu pop-in — scales up from its anchor corner so the
+   menu reads as growing out of the trigger rather than just appearing. */
+@keyframes menuIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-menu-in {
+  animation: menuIn 0.15s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-menu-in {
+    animation: none;
+  }
+}

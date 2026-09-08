@@ -228,7 +228,7 @@ export function ProfileTab() {
       <SectionCard title="Profile Photo">
         <div className="flex items-center gap-5">
           <div className="relative">
-            <div className="w-18 h-18 rounded-full bg-gradient-to-br from-(--primary-100) to-(--primary-50) text-(--primary-700) text-[22px] font-semibold flex items-center justify-center shrink-0 overflow-hidden ring-4 ring-(--primary-50) shadow-sm">
+            <div className="w-18 h-18 rounded-full bg-linear-to-br from-(--primary-100) to-(--primary-50) text-(--primary-700) text-[22px] font-semibold flex items-center justify-center shrink-0 overflow-hidden ring-4 ring-(--primary-50) shadow-sm">
               {photoUrl ? (
                 <Image
                   src={photoUrl}
@@ -246,7 +246,7 @@ export function ProfileTab() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-gradient-to-br from-(--primary-500) to-(--primary-700) text-white flex items-center justify-center cursor-pointer hover:scale-110 transition-all shadow-sm disabled:opacity-60 disabled:hover:scale-100"
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-linear-to-br from-(--primary-500) to-(--primary-700) text-white flex items-center justify-center cursor-pointer hover:scale-110 transition-all shadow-sm disabled:opacity-60 disabled:hover:scale-100"
             >
               {uploading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
