@@ -12,4 +12,4 @@ export function prepareGsap(): void {
   gsapReady = true;
 }
 
-export { gsap };
+export { gsap, ScrollTrigger };

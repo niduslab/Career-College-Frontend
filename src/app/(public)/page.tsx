@@ -6,6 +6,7 @@ import { TrendingCourses } from "@/components/home/trending-courses";
 import { LearningJourneySteps } from "@/components/home/learning-journey-steps";
 import { Testimonials } from "@/components/home/testimonials";
 import { InstructorsSection } from "@/components/home/instructors-section";
+import { FavoriteMentors } from "@/components/home/favorite-mentors";
 import { UpcomingWebinars } from "@/components/home/upcoming-webinars";
 import { FaqSection } from "@/components/common/faq-section";
 import { InsightsResources } from "@/components/home/insights-resources";
@@ -21,6 +22,7 @@ export default function HomePage() {
       <TrendingCourses />
       <LearningJourneySteps />
       <InstructorsSection />
+      <FavoriteMentors />
       <Testimonials />
       <UpcomingWebinars />
       <FaqSection />
