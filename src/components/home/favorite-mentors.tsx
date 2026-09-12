@@ -180,8 +180,8 @@ export function FavoriteMentors() {
               ease: "none",
               scrollTrigger: {
                 trigger: panel,
-                start: "top 85%",
-                end: "top 35%",
+                start: "top 75%",
+                end: "top 25%",
                 scrub: 1, // follows the wheel, like the reference's smoothing
                 invalidateOnRefresh: true,
               },
@@ -317,12 +317,16 @@ export function FavoriteMentors() {
   return (
     <section
       ref={sectionRef}
-      className="relative w-full bg-(--text-white) py-12 md:py-16 lg:py-20"
+      className="relative w-full bg-(--text-white) sg-section-y"
       style={
         {
-          // Shared by the sticky frame, the clipped images and each left panel,
-          // so the wipe stays pixel-aligned with the scroll steps.
+          // The sticky image frame. Capped so it always fits on screen.
           "--mentor-frame-h": "min(78vh, 660px)",
+          // Each left panel gets its own, taller height. It must exceed the
+          // viewport, otherwise the later panels' trigger windows run past the
+          // end of the section's scroll range and those wipes never fire —
+          // which looked like "only the first image changes".
+          "--mentor-panel-h": "100vh",
         } as CSSProperties
       }
     >
@@ -363,7 +367,7 @@ export function FavoriteMentors() {
               <div
                 key={mentor.slug}
                 data-mentor-panel
-                className="grid grid-cols-[1fr_1.15fr] items-center gap-4 py-6 sm:grid-cols-[1fr_1.35fr] sm:gap-6 md:gap-8 lg:flex lg:flex-col lg:justify-center lg:gap-0 lg:py-0 lg:h-(--mentor-frame-h)"
+                className="grid grid-cols-[1fr_1.15fr] items-center gap-4 py-6 sm:grid-cols-[1fr_1.35fr] sm:gap-6 md:gap-8 lg:flex lg:flex-col lg:justify-center lg:gap-0 lg:py-0 lg:h-(--mentor-panel-h)"
               >
                 <div data-mentor-copy className="min-w-0 text-left">
                   <p className="sg-caption sm:sg-p-small font-medium tracking-widest text-(--text-paragraph) uppercase">
@@ -415,6 +419,12 @@ export function FavoriteMentors() {
                 </Link>
               </div>
             ))}
+
+            {/* Tail spacer. The last mentor's wipe ends near the very bottom
+                of the scroll range, and `scrub` lags a beat behind the wheel —
+                without this, the section scrolls away before that final wipe
+                finishes, so the last image never fully appeared. */}
+            <div aria-hidden="true" className="hidden lg:block lg:h-[45vh]" />
           </div>
 
           {/* RIGHT — sticky frame. Images are stacked and pixel-aligned; each

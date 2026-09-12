@@ -117,7 +117,7 @@ export function InstructorsSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative mt-10 w-full overflow-hidden bg-[#2E076E] py-12 md:py-16 lg:mt-25 lg:py-20"
+      className="relative w-full overflow-hidden bg-[#2E076E] sg-section-y"
     >
       <div
         className="pointer-events-none absolute"

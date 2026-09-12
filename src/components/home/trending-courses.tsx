@@ -82,7 +82,9 @@ function TrendingCard({
           <Heart
             size={18}
             strokeWidth={2.2}
-            className={course.is_wishlisted ? "fill-rose-500 text-rose-500" : ""}
+            className={
+              course.is_wishlisted ? "fill-rose-500 text-rose-500" : ""
+            }
           />
         </button>
       </div>
@@ -229,10 +231,7 @@ export function TrendingCourses() {
   }, [courses.length]);
 
   return (
-    <section
-      ref={sectionRef}
-      className="w-full  mt-10 lg:mt-25 bg-(--gray-50) py-12 md:py-16 lg:py-20"
-    >
+    <section ref={sectionRef} className="w-full bg-(--gray-50) sg-section-y">
       <div className="mx-auto w-full max-w-310 px-4 md:px-6 lg:px-8">
         <h2
           ref={headingRef}

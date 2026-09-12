@@ -110,10 +110,7 @@ export function InsightsResources() {
   }, []);
 
   return (
-    <section
-      ref={sectionRef}
-      className="mt-10 w-full bg-(--gray-50) py-12 md:py-16 lg:mt-25 lg:py-20"
-    >
+    <section ref={sectionRef} className="w-full bg-(--gray-50) sg-section-y">
       <div className="mx-auto w-full max-w-310 px-4 md:px-6 lg:px-8">
         <h2
           ref={headingRef}
