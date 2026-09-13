@@ -21,10 +21,10 @@ export default function HomePage() {
       <PopularCourses />
       <CareerJourney />
       <TrendingCourses />
-      <PlatformFeatures />
+      {/* <PlatformFeatures /> */}
       <LearningJourneySteps />
       <InstructorsSection />
-      <FavoriteMentors />
+      {/* <FavoriteMentors /> */}
       <Testimonials />
       <UpcomingWebinars />
       <FaqSection />
