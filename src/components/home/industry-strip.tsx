@@ -25,7 +25,7 @@ export function IndustryStrip() {
   const loopItems = [...LOGOS, ...LOGOS];
 
   return (
-    <section className="w-full lg:mt-25 mt-10">
+    <section className="w-full sg-section-y">
       <div className="px-4 md:px-6 lg:px-8">
         <h2 className="text-center text-[24px] lg:leading-12 font-semibold tracking-[-0.4px] text-(--text-title) md:text-[40px] lg:text-[40px]">
           Meet Our Partners

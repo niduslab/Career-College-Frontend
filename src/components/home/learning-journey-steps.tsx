@@ -115,10 +115,7 @@ export function LearningJourneySteps() {
   }, []);
 
   return (
-    <section
-      ref={sectionRef}
-      className=" w-full  mt-10 lg:mt-25  py-12 md:py-16 lg:py-20"
-    >
+    <section ref={sectionRef} className="w-full sg-section-y">
       <div className="mx-auto grid w-full max-w-310 items-stretch gap-8 px-4 md:gap-10 md:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8">
         <div ref={headingRef} className="flex h-full flex-col justify-between">
           <div>

@@ -183,10 +183,7 @@ export function Testimonials() {
   }, [slideNext]);
 
   return (
-    <section
-      ref={sectionRef}
-      className="w-full mt-10 lg:mt-25 py-12 md:py-16 lg:py-20"
-    >
+    <section ref={sectionRef} className="w-full sg-section-y">
       <div className="mx-auto w-full max-w-310 px-4 md:px-6 lg:px-8">
         <div className="flex items-start justify-between gap-4 md:items-center">
           <h2
